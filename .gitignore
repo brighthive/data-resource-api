@@ -1,0 +1,12 @@
+# vscode settings
+.vscode/
+
+# python artifacts
+**/*.py[abc]
+**/__pycache__/
+
+# pytest artifacts
+**/.pytest_cache
+
+# sphinx artifacts
+docs/build

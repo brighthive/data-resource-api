@@ -12,6 +12,7 @@ flask-migrate = "*"
 gunicorn = "*"
 tableschema = "*"
 tableschema-sql = "*"
+alembic = "*"
 
 [dev-packages]
 pytest = "*"

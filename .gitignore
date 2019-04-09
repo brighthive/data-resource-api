@@ -10,3 +10,6 @@
 
 # sphinx artifacts
 docs/build
+
+# development crud
+**/sandbox.py

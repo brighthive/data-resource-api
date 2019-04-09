@@ -2,3 +2,9 @@ version: '3'
 services:
   postgres:
     image: postgres:11.2
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_DB=data_resource_dev

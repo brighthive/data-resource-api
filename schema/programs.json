@@ -1,0 +1,15 @@
+{
+  "datastore": {
+    "table_name": "programs",
+    "schema": {
+      "fields": [
+        {
+          "name": "provider_id",
+          "title": "Provider ID",
+          "type": "string",
+          "description": "Provider's Unique ID"
+        }
+      ]
+    }
+  }
+}

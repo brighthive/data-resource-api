@@ -13,3 +13,6 @@ docs/build
 
 # development crud
 **/sandbox.py
+
+# alembic migrations
+**/migrations/versions/*

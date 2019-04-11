@@ -13,6 +13,7 @@ gunicorn = "*"
 tableschema = "*"
 tableschema-sql = "*"
 alembic = "*"
+brighthive-authlib = "*"
 
 [dev-packages]
 pytest = "*"

@@ -103,9 +103,11 @@ class DataResourceManager(Thread):
                     table_schema = schema_obj['datastore']['schema']
                     if self.data_resource_exists(data_resource_name):
                         if self.data_resource_changed(data_resource_name, api_methods, table_name, table_schema):
-                            print('resource changed...')
+                            print('Changes Detected to Data Resource {}...'.format(
+                                data_resource_name))
                         else:
-                            print('resource unchanged')
+                            print('No Change to Data Resource {}...'.format(
+                                data_resource_name))
                     else:
                         new_resource = DataResource()
                         new_resource.data_resource_name = data_resource_name
@@ -113,6 +115,8 @@ class DataResourceManager(Thread):
                         new_resource.table_name = table_name
                         new_resource.table_schema = table_schema
                         self.data_resources.append(new_resource)
+                        print('Created New Data Resource {}'.format(
+                            new_resource.table_name))
                 except Exception as e:
                     print(
                         'Error Parsing Schema `{}` Failed With Exception `{}`'.format(schema, e))
@@ -124,7 +128,9 @@ class DataResourceManager(Thread):
         """Run the data resource manager."""
 
         while True:
+            print('Data Resource Monitor Running...')
             self.monitor_data_resources()
+            print('Data Resource Monitor Sleeping for {} seconds...'.format(self.get_sleep_interval()))
             sleep(self.get_sleep_interval())
 
     def create_app(self):

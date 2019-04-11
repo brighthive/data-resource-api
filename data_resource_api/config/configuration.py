@@ -26,6 +26,7 @@ class Config(object):
     ROOT_PATH = ABSOLUTE_PATH.split(RELATIVE_PATH)[0]
     MIGRATION_HOME = os.getenv(
         'MIGRATION_HOME', os.path.join(ROOT_PATH, 'migrations'))
+    SLEEP_INTERVAL = os.getenv('SLEEP_INTERVAL', 30)
 
 
 class TestConfig(Config):

@@ -1,15 +1,50 @@
 {
-  "datastore": {
-    "table_name": "programs",
-    "schema": {
-      "fields": [
-        {
-          "name": "provider_id",
-          "title": "Provider ID",
-          "type": "string",
-          "description": "Provider's Unique ID"
+  "api": {
+    "resource": "programs",
+    "methods": [
+      {
+        "get": {
+          "enabled": "true",
+          "secured": "true"
+        },
+        "post": {
+          "enabled": "true",
+          "secured": "true"
+        },
+        "put": {
+          "enabled": "true",
+          "secured": "true"
+        },
+        "patch": {
+          "enabled": "true",
+          "secured": "true"
+        },
+        "delete": {
+          "enabled": "true",
+          "secured": "true"
         }
-      ]
+      },
+      {
+        "custom": [
+          {
+            "resource": "/programs/{programId}/credentials",
+            "methods": [
+              {
+                "get": {
+                  "enabled": "true",
+                  "secured": "true"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "datastore": {
+    "tablename": "programs",
+    "schema": {
+      "fields": []
     }
   }
 }

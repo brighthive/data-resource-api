@@ -1,0 +1,9 @@
+version: '3'
+services:
+  data-resource-api:
+    image: brighthive/data-resource-api:1.0.0-alpha
+    build: .
+    ports:
+      - 8000:8000
+    environment:
+      - APP_ENV=SANDBOX

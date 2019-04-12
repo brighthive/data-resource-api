@@ -19,6 +19,7 @@ class Config(object):
         ABSOLUTE_PATH (str): The configuration file's absolute path on disk.
         ROOT_PATH (str): The application's root location on disk derived from subtracting this file's
             relative path from it's absolute path.
+        SLEEP_INTERVAL (int): The number of seconds to sleep between checking the status of data resources.
 
     """
     RELATIVE_PATH = os.path.dirname(os.path.relpath(__file__))

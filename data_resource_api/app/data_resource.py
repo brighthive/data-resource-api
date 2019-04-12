@@ -41,4 +41,5 @@ class DataResource(object):
         self.api_methods = None
         self.table_name = None
         self.table_schema = None
+        self.api_object = None
         self.datastore_object = None

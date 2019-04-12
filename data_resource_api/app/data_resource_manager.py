@@ -18,6 +18,20 @@ from data_resource_api.db import engine
 from data_resource_api.app import DataResource
 
 
+class AvailableServicesResource(Resource):
+    """
+    """
+
+    def __init__(self):
+        self.endpoints = []
+
+    def add_endpoint(self, new_endpoint):
+        self.endpoints.append(new_endpoint)
+
+    def get(self):
+        return {'endpoints': self.endpoints}, 200
+
+
 class DataResourceManager(Thread):
     """Data Resource Manager.
 
@@ -31,6 +45,9 @@ class DataResourceManager(Thread):
         Thread.__init__(self)
         self.data_resources = []
         self.app_config = ConfigurationFactory.from_env()
+        self.app = None
+        self.api = None
+        self.available_services = AvailableServicesResource()
 
     def get_data_resource_schema_path(self):
         """Retrieve the path to look for data resource specifications.
@@ -87,8 +104,21 @@ class DataResourceManager(Thread):
         return False
 
     def monitor_data_resources(self):
-        """Monitor data resources."""
+        """Monitor data resources.
+
+        Note:
+            This method is responsible for checking for new data resources and determining
+            changes to existing ones. It does have a relatively high degree of overhead in
+            that it queries the filesystem quite frequently; however, it tries to limit the
+            impact by running in a thread that is logically separated from the main
+            application.
+
+        """
         schema_dir = self.get_data_resource_schema_path()
+        try:
+            print(self.api.resources)
+        except AttributeError:
+            pass
         if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
             schemas = os.listdir(schema_dir)
             for schema in schemas:
@@ -114,9 +144,14 @@ class DataResourceManager(Thread):
                         new_resource.api_methods = api_methods
                         new_resource.table_name = table_name
                         new_resource.table_schema = table_schema
+                        new_resource.api_object = self.build_api_object(
+                            new_resource.api_methods)
+                        new_resource.datastore_object = self.build_database_object(
+                            new_resource.table_schema)
                         self.data_resources.append(new_resource)
                         print('Created New Data Resource {}'.format(
                             new_resource.table_name))
+                        self.available_services.add_endpoint(new_resource.table_name)
                 except Exception as e:
                     print(
                         'Error Parsing Schema `{}` Failed With Exception `{}`'.format(schema, e))
@@ -124,17 +159,27 @@ class DataResourceManager(Thread):
         else:
             print('Schema directory does not exist')
 
+    def build_api_object(self, schema: dict):
+        print(schema)
+        return None
+
+    def build_database_object(self, schema: dict):
+        print(schema)
+        return None
+
     def run(self):
         """Run the data resource manager."""
 
         while True:
             print('Data Resource Monitor Running...')
             self.monitor_data_resources()
-            print('Data Resource Monitor Sleeping for {} seconds...'.format(self.get_sleep_interval()))
+            print('Data Resource Monitor Sleeping for {} seconds...'.format(
+                self.get_sleep_interval()))
             sleep(self.get_sleep_interval())
 
     def create_app(self):
         self.app = Flask(__name__)
         self.api = Api(self.app)
-        self.api.add_resource(Resource, '/', endpoint='placeholder_ep')
+        self.api.add_resource(self.available_services(),
+                              '/', endpoint='all_services_ep')
         return self.app

@@ -187,7 +187,8 @@ def create_table_from_dict(table_schema: dict, table_name: str):
         fields.update({'__tablename__': table_name})
         new_class = type(table_name, (Base,), fields)
         try:
-            command.revision(config=alembic_config, autogenerate=True)
+            command.revision(config=alembic_config, message='Create table {}'.format(
+                table_name), autogenerate=True)
             command.upgrade(config=alembic_config, revision='head')
             return new_class
         except Exception as e:

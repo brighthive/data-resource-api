@@ -44,7 +44,216 @@
   "datastore": {
     "tablename": "programs",
     "schema": {
-      "fields": []
+      "fields": [
+        {
+          "name": "id",
+          "title": "Program ID",
+          "type": "integer",
+          "description": "Program's unique identifier",
+          "required": true
+        },
+        {
+          "name": "program_name",
+          "title": "Program Name",
+          "type": "string",
+          "description": "Program's name.",
+          "required": true
+        },
+        {
+          "name": "program_code",
+          "title": "Program Code",
+          "type": "string",
+          "description": "Program's Code",
+          "required": true
+        },
+        {
+          "name": "program_description",
+          "title": "Program Description",
+          "type": "string",
+          "description": "Program's Description",
+          "required": true
+        },
+        {
+          "name": "program_status",
+          "title": "Program Status",
+          "type": "string",
+          "description": "Program's Status",
+          "required": true
+        },
+        {
+          "name": "program_fees",
+          "title": "Program Fees",
+          "type": "number",
+          "description": "Program's tuition fees",
+          "required": true
+        },
+        {
+          "name": "eligibility_criteria",
+          "title": "Eligibility Criteria",
+          "type": "string",
+          "description": "Program's eligibility criteria",
+          "required": true
+        },
+        {
+          "name": "program_url",
+          "title": "Program URL",
+          "type": "string",
+          "format": "uri",
+          "description": "Program's webpage url",
+          "required": true
+        },
+        {
+          "name": "program_contact_phone",
+          "title": "Program Contact Phone",
+          "type": "string",
+          "description": "Program's contact telephone",
+          "required": false
+        },
+        {
+          "name": "program_contact_email",
+          "title": "Program Contact Email",
+          "type": "string",
+          "format": "email",
+          "description": "Program's contact email address",
+          "required": false
+        },
+        {
+          "name": "languages",
+          "title": "Languages",
+          "type": "string",
+          "description": "Languages the program is offered in",
+          "required": false
+        },
+        {
+          "name": "current_intake_capacity",
+          "title": "Current Intake Capacity",
+          "type": "integer",
+          "description": "Current intake capacity of the program",
+          "required": false
+        },
+        {
+          "name": "program_offering_model",
+          "title": "Program Offering Model",
+          "type": "integer",
+          "description": "The program's current offering model",
+          "required": false
+        },
+        {
+          "name": "program_length_hours",
+          "title": "Program Length (Hours)",
+          "type": "number",
+          "description": "Length of the program (in hours)",
+          "required": false
+        },
+        {
+          "name": "program_length_weeks",
+          "title": "Program Length (Weeks)",
+          "type": "number",
+          "description": "Length of the program (in weeks)",
+          "required": false
+        },
+        {
+          "name": "program_soc",
+          "title": "Program SOC",
+          "type": "integer",
+          "description": "Program SOC",
+          "required": false
+        },
+        {
+          "name": "funding_sources",
+          "title": "Funding Source",
+          "type": "string",
+          "description": "The program's funding source",
+          "required": false
+        },
+        {
+          "name": "on_etpl",
+          "title": "On ETPL",
+          "type": "integer",
+          "description": "Whether or not the student is on ETPL",
+          "required": false
+        },
+        {
+          "name": "cost_of_books_and_supplies",
+          "title": "Cost of Books and Supplies",
+          "type": "number",
+          "description": "Cost of Books and Supplies",
+          "required": false
+        },
+        {
+          "name": "provider_id",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": "false"
+        },
+        {
+          "name": "location_id",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": "false"
+        },
+        {
+          "name": "credential_earned",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": "false"
+        },
+        {
+          "name": "potential_outcome_id",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": "false"
+        },
+        {
+          "name": "prerequisite_id",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": "false"
+        }
+      ],
+      "primaryKey": "id",
+      "foreignKeys": [
+        {
+          "fields": ["provider_id"],
+          "reference": {
+            "resource": "providers",
+            "fields": ["id"]
+          }
+        },
+        {
+          "fields": ["location_id"],
+          "reference": {
+            "resource": "locations",
+            "fields": ["id"]
+          }
+        },
+        {
+          "fields": ["credential_earned"],
+          "reference": {
+            "resource": "credentials",
+            "fields": ["id"]
+          }
+        },
+        {
+          "fields": ["potential_outcome_id"],
+          "reference": {
+            "resource": "program_potential_outcomes",
+            "fields": ["id"]
+          }
+        },
+        {
+          "fields": ["prerequisite_id"],
+          "reference": {
+            "resource": "program_prerequisites",
+            "fields": ["id"]
+          }
+        }
+      ]
     }
   }
 }

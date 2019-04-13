@@ -16,6 +16,7 @@ from flask_restful import Api, Resource
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine
 from data_resource_api.app import DataResource
+from data_resource_api.utilities import create_table_from_dict, run_first_migration
 
 
 class AvailableServicesResource(Resource):
@@ -146,12 +147,18 @@ class DataResourceManager(Thread):
                         new_resource.table_schema = table_schema
                         new_resource.api_object = self.build_api_object(
                             new_resource.api_methods)
-                        new_resource.datastore_object = self.build_database_object(
-                            new_resource.table_schema)
-                        self.data_resources.append(new_resource)
-                        print('Created New Data Resource {}'.format(
-                            new_resource.table_name))
-                        self.available_services.add_endpoint(new_resource.table_name)
+                        new_resource.datastore_object = create_table_from_dict(
+                            new_resource.table_schema, new_resource.table_name)
+
+                        if new_resource.datastore_object is not None:
+                            self.data_resources.append(new_resource)
+                            print('Created New Data Resource {}'.format(
+                                new_resource.table_name))
+                            self.available_services.add_endpoint(
+                                new_resource.table_name)
+                        else:
+                            print('Failed to create new data resource {}'.format(
+                                new_resource.table_name))
                 except Exception as e:
                     print(
                         'Error Parsing Schema `{}` Failed With Exception `{}`'.format(schema, e))
@@ -160,15 +167,16 @@ class DataResourceManager(Thread):
             print('Schema directory does not exist')
 
     def build_api_object(self, schema: dict):
-        print(schema)
+        # print(schema)
         return None
 
     def build_database_object(self, schema: dict):
-        print(schema)
+        # print(schema)
         return None
 
     def run(self):
         """Run the data resource manager."""
+        run_first_migration()
 
         while True:
             print('Data Resource Monitor Running...')
@@ -180,6 +188,6 @@ class DataResourceManager(Thread):
     def create_app(self):
         self.app = Flask(__name__)
         self.api = Api(self.app)
-        self.api.add_resource(self.available_services(),
+        self.api.add_resource(self.available_services,
                               '/', endpoint='all_services_ep')
         return self.app

@@ -16,7 +16,7 @@ from flask_restful import Api, Resource
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine
 from data_resource_api.app import DataResource
-from data_resource_api.utilities import create_table_from_dict, run_first_migration
+from data_resource_api.utilities import create_table_from_dict, upgrade
 
 
 class AvailableServicesResource(Resource):
@@ -176,7 +176,10 @@ class DataResourceManager(Thread):
 
     def run(self):
         """Run the data resource manager."""
-        run_first_migration()
+
+        migration_path = os.path.join(self.app_config.ROOT_PATH, 'migrations', 'versions')
+        for file in os.listdir(migration_path):
+            os.remove(os.path.join(migration_path, file))
 
         while True:
             print('Data Resource Monitor Running...')

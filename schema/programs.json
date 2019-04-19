@@ -27,7 +27,7 @@
       {
         "custom": [
           {
-            "resource": "/programs/{programId}/credentials",
+            "resource": "/programs/<id>/credentials",
             "methods": [
               {
                 "get": {

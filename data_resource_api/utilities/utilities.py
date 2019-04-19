@@ -6,11 +6,10 @@ This module contains various data processing and support utilities.
 
 import os
 from sqlalchemy import Column, Integer, String, Float, Boolean, Date, DateTime,\
-    ForeignKey
+    ForeignKey, MetaData
 from alembic.config import Config
 from alembic import command, autogenerate
 from tableschema import Schema
-from pprint import pprint
 from data_resource_api.db import Base, engine
 from data_resource_api.config import ConfigurationFactory
 
@@ -85,6 +84,7 @@ def evaluate_foreign_key(foreign_keys, field_name, field_type):
             key and the name of the reference table.
 
     """
+
     for foreign_key in foreign_keys:
         if not isinstance(foreign_key['fields'], list):
             fk = [foreign_key['fields']]
@@ -100,10 +100,13 @@ def evaluate_foreign_key(foreign_keys, field_name, field_type):
                 try:
                     type(table, (Base,), {
                         '__tablename__': table,
-                        field_name: Column(get_sqlalchemy_type(
+                        'id': Column(get_sqlalchemy_type(
                             field_type), primary_key=True)
                     })
-                except Exception:
+                    revision(table_name=table)
+                    upgrade()
+                    return True, foreign_key_reference
+                except Exception as e:
                     return False, None
             return True, foreign_key_reference
     return False, None
@@ -139,31 +142,49 @@ def create_sqlalchemy_fields(fields: dict, primary_key, foreign_keys=[]):
                 sqlalchemy_fields[field['name']] = Column(
                     get_sqlalchemy_type(field['type']), nullable=nullable)
             else:
+                print('I am a foreign key.... {} {} {}'.format(
+                    field['name'], field['type'], reference_table))
                 try:
                     sqlalchemy_fields[field['name']] == Column(
-                        get_sqlalchemy_type(field['type']),
-                        ForeignKey(reference_table))
+                        get_sqlalchemy_type(field['type']), ForeignKey(reference_table))
                 except Exception as e:
-                    print(e)
+                    print('An exception occured {}'.format(e))
+                    # sqlalchemy_fields[field['name']] = Column(
+                    #     get_sqlalchemy_type(field['type']), nullable=nullable)
     return sqlalchemy_fields
 
 
-def run_first_migration():
-    """Run the Alembic migration.
+def upgrade():
+    """Migrate up to head.
 
-    This method runs the Alembic upgrade command.
-
-    Return:
-        object: The new SQLAlchemy object or None if the table could not
-            be created.
+    This method runs  the Alembic upgrade command programatically.
 
     """
     app_config = get_app_config()
     alembic_config = Config(os.path.join(app_config.ROOT_PATH, 'alembic.ini'))
-    try:
+    migrations_dir = os.path.join(
+        app_config.ROOT_PATH, 'migrations', 'versions')
+    if os.path.exists(migrations_dir) and os.path.isdir(migrations_dir) and len(os.listdir(migrations_dir)):
         command.upgrade(config=alembic_config, revision='head')
-    except Exception as e:
-        print(e)
+    else:
+        print('No Migrations to Run...')
+
+
+def revision(table_name: str):
+    """Create a new migration.
+
+    This method runs the Alembic revision command programmatically.
+
+    """
+    app_config = get_app_config()
+    alembic_config = Config(os.path.join(app_config.ROOT_PATH, 'alembic.ini'))
+    migrations_dir = os.path.join(
+        app_config.ROOT_PATH, 'migrations', 'versions')
+    if os.path.exists(migrations_dir) and os.path.isdir(migrations_dir):
+        command.revision(config=alembic_config, message='Create table {}'.format(
+            table_name), autogenerate=True)
+    else:
+        print('No Migrations to Run...')
 
 
 def create_table_from_dict(table_schema: dict, table_name: str):
@@ -186,14 +207,12 @@ def create_table_from_dict(table_schema: dict, table_name: str):
             table_schema['fields'], table_schema['primaryKey'], foreign_keys)
         fields.update({'__tablename__': table_name})
         new_class = type(table_name, (Base,), fields)
-        try:
-            command.revision(config=alembic_config, message='Create table {}'.format(
-                table_name), autogenerate=True)
-            command.upgrade(config=alembic_config, revision='head')
-            return new_class
-        except Exception as e:
-            print(e)
-            return None
+        if table_name not in engine.table_names():
+            revision(table_name)
+            upgrade()
+        print(new_class.provider_id)
+        print('getting ready to return...')
+        return new_class
     else:
         print(schema.errors)
         return None

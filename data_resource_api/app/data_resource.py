@@ -43,3 +43,4 @@ class DataResource(object):
         self.table_schema = None
         self.api_object = None
         self.datastore_object = None
+        self.checksum = None

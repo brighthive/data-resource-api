@@ -217,11 +217,10 @@ class DataResourceManager(Thread):
 
     def run(self):
         """Run the data resource manager."""
-        self.data_model_factory.revision('checksum')
-        self.data_model_factory.upgrade()
+        self.data_model_factory.create_checksum_table()
         while True:
             print('Data Resource Monitor Running...')
-            self.monitor_data_resources()
+            # self.monitor_data_resources()
             print('Data Resource Monitor Sleeping for {} seconds...'.format(
                 self.get_sleep_interval()))
             sleep(self.get_sleep_interval())

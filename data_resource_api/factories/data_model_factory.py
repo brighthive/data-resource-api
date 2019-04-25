@@ -5,37 +5,13 @@ This module contains a factory object for creating database objects.
 """
 
 import os
-from sqlalchemy import Column, Integer, String, Float, Boolean, Date, DateTime,\
-    ForeignKey, MetaData
+from sqlalchemy import Column, ForeignKey, MetaData
 from alembic.config import Config
 from alembic import command, autogenerate
 from tableschema import Schema
-from data_resource_api.db import Base, engine
+from data_resource_api.db import Base, engine, Session, Checksum
+from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 from data_resource_api.config import ConfigurationFactory
-
-# Mapping of a Frictionless Table Schema to SQLAlchemy Data Type.
-#
-# Note:
-#   Only a subset of Table Schema elements are mapped to SQLAlchemy data types.
-#   See: https://frictionlessdata.io/specs/table-schema/
-#
-TABLESCHEMA_TO_SQLALCHEMY_TYPES = {
-    'string': String,
-    'number': Float,
-    'integer': Integer,
-    'boolean': Boolean,
-    'object': String,
-    'array': String,
-    'date': Date,
-    'time': DateTime,
-    'datetime': DateTime,
-    'year': Integer,
-    'yearmonth': Integer,
-    'duration': Integer,
-    'geopoint': String,
-    'geojson': String,
-    'any': String
-}
 
 
 class DataModelFactory(object):
@@ -152,6 +128,21 @@ class DataModelFactory(object):
                         # sqlalchemy_fields[field['name']] = Column(
                         #     get_sqlalchemy_type(field['type']), nullable=nullable)
         return sqlalchemy_fields
+
+    def create_checksum_table(self):
+        """Create the checksum table migration.
+
+        This method will first attempt to query the checksum table and if it
+        cannot be located, it will create a new migration for the table.
+
+        """
+
+        try:
+            session = Session()
+            session.query(Checksum).all()
+        except Exception:
+            self.revision('checksums')
+            self.upgrade()
 
     def upgrade(self):
         """Migrate up to head.

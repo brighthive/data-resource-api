@@ -3,10 +3,19 @@
 """
 
 from data_resource_api.db import Base
-from sqlalchemy import Column, String, MetaData
+from sqlalchemy import Column, String, Date
 
 
 class Checksum(Base):
+    """Data Resource Checksum
+
+    This class is used for keeping track of the checksums associated with each data resource.
+    It is used to prevent data migrations for data resources from being overwritten if they
+    haven't been changed.
+
+    """
     __tablename__ = 'checksums'
     data_resource = Column(String, primary_key=True)
-    checksum = Column(String, nullable=False)
+    model_checksum = Column(String, nullable=False)
+    api_checksum = Column(String, nullable=False)
+    date_modified = Column(Date, nullable=False)

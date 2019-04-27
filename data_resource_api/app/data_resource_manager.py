@@ -17,7 +17,7 @@ from flask_restful import Api, Resource
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Session
 from data_resource_api.app import DataResource
-from data_resource_api.factories import DataModelFactory
+from data_resource_api.factories import DataModelFactory, ApiFactory
 from data_resource_api.logging.database_handler import DatabaseHandler
 
 
@@ -52,6 +52,7 @@ class DataResourceManager(Thread):
         self.api = None
         self.available_services = AvailableServicesResource()
         self.data_model_factory = DataModelFactory()
+        self.api_factory = ApiFactory()
 
     def get_data_resource_schema_path(self):
         """Retrieve the path to look for data resource specifications.
@@ -138,7 +139,7 @@ class DataResourceManager(Thread):
                     checksum = hashlib.md5(json.dumps(
                         schema_obj, sort_keys=True).encode('utf-8')).hexdigest()
                     data_resource_name = schema_obj['api']['resource']
-                    api_methods = schema_obj['api']['methods']
+                    api_schema = schema_obj['api']['methods']
                     table_name = schema_obj['datastore']['tablename']
                     table_schema = schema_obj['datastore']['schema']
                     if self.data_resource_exists(data_resource_name):
@@ -156,26 +157,18 @@ class DataResourceManager(Thread):
                         new_resource = DataResource()
                         new_resource.checksum = checksum
                         new_resource.data_resource_name = data_resource_name
-                        new_resource.api_methods = api_methods
+                        new_resource.api_methods = api_schema
                         new_resource.table_name = table_name
                         new_resource.table_schema = table_schema
-                        new_resource.api_object = self.build_api_object(
-                            new_resource.api_methods)
                         new_resource.datastore_object = self.data_model_factory.create_table_from_dict(
                             new_resource.table_schema, new_resource.table_name)
+                        new_resource.api_object = self.api_factory.create_api_from_dict(
+                            api_schema, data_resource_name, table_name, self.api, new_resource.datastore_object)
                         self.data_resources.append(new_resource)
                 except KeyError:
                     print('Error in schema...')
         else:
             print('Schema directory does not exist')
-
-    def build_api_object(self, schema: dict):
-        # print(schema)
-        return None
-
-    def build_database_object(self, schema: dict):
-        # print(schema)
-        return None
 
     def run(self):
         """Run the data resource manager."""

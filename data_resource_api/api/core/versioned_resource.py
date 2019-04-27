@@ -8,7 +8,6 @@ the API version number in the request header.
 from flask_restful import Resource
 from flask import request
 from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandler
-# from data_resource_api.api.v1_0_0.resource_handler import ResourceHandler as V1_0_0_ResourceHandler
 
 
 class VersionedResource(Resource):

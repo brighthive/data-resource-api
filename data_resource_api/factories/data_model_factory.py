@@ -10,7 +10,6 @@ import json
 from datetime import datetime
 from sqlalchemy import Column, ForeignKey, MetaData, String
 from alembic.config import Config
-from alembic.context import EnvironmentContext
 from alembic import command, autogenerate
 from tableschema import Schema
 from data_resource_api.db import Base, engine, Session, Checksum, Log

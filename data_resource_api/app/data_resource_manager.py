@@ -105,10 +105,16 @@ class DataResourceManager(Thread):
                     return True
                 else:
                     break
-                # if data_resource.api_methods != api_methods or data_resource.table_name != table_name or\
-                #         data_resource.table_schema != table_schema:
-                #     return True
         return False
+
+    def get_data_resource_index(self, data_resource_name):
+        index = -1
+        for idx, data_resource in enumerate(self.data_resources):
+            if data_resource.data_resource_name.lower() == data_resource_name.lower():
+                index = idx
+                break
+        print('index is {}'.format(index))
+        return index
 
     def monitor_data_resources(self):
         """Monitor data resources.
@@ -136,7 +142,13 @@ class DataResourceManager(Thread):
                     table_schema = schema_obj['datastore']['schema']
                     if self.data_resource_exists(data_resource_name):
                         if self.data_resource_changed(data_resource_name, checksum):
-                            print('Data Resource Changed')
+                            index = self.get_data_resource_index(
+                                data_resource_name)
+                            if index > -1:
+                                self.data_resources[index].datastore_object = self.data_model_factory.create_table_from_dict(
+                                    self.data_resources[index].table_schema, self.data_resources[index].table_name)
+                                print(self.data_resources[index])
+                                print('Data Resource Changed')
                         else:
                             print('Data Resource Same')
                     else:
@@ -148,9 +160,9 @@ class DataResourceManager(Thread):
                         new_resource.table_schema = table_schema
                         new_resource.api_object = self.build_api_object(
                             new_resource.api_methods)
+                        new_resource.datastore_object = self.data_model_factory.create_table_from_dict(
+                            new_resource.table_schema, new_resource.table_name)
                         self.data_resources.append(new_resource)
-                        # new_resource.datastore_object = self.data_model_factory.create_table_from_dict(
-                        #     new_resource.table_schema, new_resource.table_name)
                 except KeyError:
                     print('Error in schema...')
         else:
@@ -217,10 +229,11 @@ class DataResourceManager(Thread):
 
     def run(self):
         """Run the data resource manager."""
+        self.data_model_factory.upgrade()
         self.data_model_factory.create_checksum_table()
         while True:
             print('Data Resource Monitor Running...')
-            # self.monitor_data_resources()
+            self.monitor_data_resources()
             print('Data Resource Monitor Sleeping for {} seconds...'.format(
                 self.get_sleep_interval()))
             sleep(self.get_sleep_interval())

@@ -5,8 +5,12 @@ This module contains a factory object for creating database objects.
 """
 
 import os
+import hashlib
+import json
+from datetime import datetime
 from sqlalchemy import Column, ForeignKey, MetaData
 from alembic.config import Config
+from alembic.context import EnvironmentContext
 from alembic import command, autogenerate
 from tableschema import Schema
 from data_resource_api.db import Base, engine, Session, Checksum
@@ -77,11 +81,21 @@ class DataModelFactory(object):
                     try:
                         type(table, (Base,), {
                             '__tablename__': table,
+                            '__table_args__': {'extend_existing': True},
                             'id': Column(self.get_sqlalchemy_type(
                                 field_type), primary_key=True)
                         })
                         self.revision(table_name=table)
                         self.upgrade()
+                        session = Session()
+                        table_checksum = Checksum()
+                        table_checksum.data_resource = table
+                        table_checksum.api_checksum = '0'
+                        table_checksum.model_checksum = '0'
+                        table_checksum.date_modified = datetime.utcnow()
+                        session.add(table_checksum)
+                        session.commit()
+                        session.close()
                         return True, foreign_key_reference
                     except Exception as e:
                         return False, None
@@ -118,15 +132,13 @@ class DataModelFactory(object):
                     sqlalchemy_fields[field['name']] = Column(
                         self.get_sqlalchemy_type(field['type']), nullable=nullable)
                 else:
-                    print('I am a foreign key.... {} {} {}'.format(
-                        field['name'], field['type'], reference_table))
                     try:
-                        sqlalchemy_fields[field['name']] == Column(
-                            self.get_sqlalchemy_type(field['type']), ForeignKey(reference_table))
+                        sqlalchemy_fields[field['name']] = Column(
+                            self.get_sqlalchemy_type(
+                                field['type']), ForeignKey(reference_table),
+                            onupdate='CASCADE', ondelete='CASCADE')
                     except Exception as e:
                         print('An exception occured {}'.format(e))
-                        # sqlalchemy_fields[field['name']] = Column(
-                        #     get_sqlalchemy_type(field['type']), nullable=nullable)
         return sqlalchemy_fields
 
     def create_checksum_table(self):
@@ -137,12 +149,14 @@ class DataModelFactory(object):
 
         """
 
+        session = Session()
         try:
-            session = Session()
             session.query(Checksum).all()
         except Exception:
             self.revision('checksums')
             self.upgrade()
+        finally:
+            session.close()
 
     def upgrade(self):
         """Migrate up to head.
@@ -185,25 +199,71 @@ class DataModelFactory(object):
             table_name (str): Name to assign to the table.
 
         """
-        app_config = self.get_app_config()
-        alembic_config = Config(os.path.join(
-            app_config.ROOT_PATH, 'alembic.ini'))
-        schema = Schema(table_schema)
-        if schema.valid:
-            if 'foreignKeys' in table_schema:
-                foreign_keys = table_schema['foreignKeys']
+        session = Session()
+        table_checksum = hashlib.md5(json.dumps(
+            table_schema).encode('utf-8')).hexdigest()
+        print('********* TABLE CHECKSUM ********* {}'.format(table_checksum))
+        try:
+            table_metadata = session.query(Checksum).filter(
+                Checksum.data_resource == table_name).first()
+            if table_metadata is None:
+                app_config = self.get_app_config()
+                alembic_config = Config(os.path.join(
+                    app_config.ROOT_PATH, 'alembic.ini'))
+                schema = Schema(table_schema)
+                if schema.valid:
+                    if 'foreignKeys' in table_schema:
+                        foreign_keys = table_schema['foreignKeys']
+                    else:
+                        foreign_keys = []
+                    fields = self.create_sqlalchemy_fields(
+                        table_schema['fields'], table_schema['primaryKey'], foreign_keys)
+                    fields.update({
+                        '__tablename__': table_name,
+                        '__table_args__': {'extend_existing': True}
+                    })
+                    new_class = type(table_name, (Base,), fields)
+                    session = Session()
+                    table_metadata = session.query(Checksum).filter(
+                        Checksum.data_resource == table_name).first()
+                    if table_metadata is None:
+                        checksum = Checksum()
+                        checksum.data_resource = table_name
+                        checksum.model_checksum = table_checksum
+                        checksum.api_checksum = '0'
+                        checksum.date_modified = datetime.utcnow()
+                        session.add(checksum)
+                        session.commit()
+                        session.close()
+                        self.revision(table_name)
+                        self.upgrade()
+                    return new_class
+                else:
+                    print(schema.errors)
+            elif table_metadata.model_checksum == table_checksum:
+                print(table_metadata.model_checksum, table_checksum)
+                print('no change to table')
             else:
-                foreign_keys = []
-            fields = self.create_sqlalchemy_fields(
-                table_schema['fields'], table_schema['primaryKey'], foreign_keys)
-            fields.update({'__tablename__': table_name})
-            new_class = type(table_name, (Base,), fields)
-            if table_name not in engine.table_names():
+                app_config = self.get_app_config()
+                alembic_config = Config(os.path.join(
+                    app_config.ROOT_PATH, 'alembic.ini'))
+                schema = Schema(table_schema)
+                if schema.valid:
+                    if 'foreignKeys' in table_schema:
+                        foreign_keys = table_schema['foreignKeys']
+                    else:
+                        foreign_keys = []
+                    fields = self.create_sqlalchemy_fields(
+                        table_schema['fields'], table_schema['primaryKey'], foreign_keys)
+                    fields.update({
+                        '__tablename__': table_name,
+                        '__table_args__': {'extend_existing': True}
+                    })
+                    new_class = type(table_name, (Base,), fields)
+                print('table changed, upgrading migration....')
                 self.revision(table_name)
                 self.upgrade()
-            print(new_class.provider_id)
-            print('getting ready to return...')
-            return new_class
-        else:
-            print(schema.errors)
-            return None
+        except Exception as e:
+            print('exception {}'.format(e))
+        finally:
+            session.close()

@@ -1,3 +1,13 @@
 # Data Resource API
 
-A tool for generating simple, elegant Data Resource APIs for inclusion in Data Trusts.
+An elegant, opinionated framework for generating BrightHive **Data Resources** with little or no coding involved.
+
+## Purpose
+
+TODO: Write purpose.
+
+## Terminology
+
+- Data Trust
+- Data Resource
+- Data Model

@@ -15,7 +15,7 @@ from time import sleep
 from flask import Flask
 from flask_restful import Api, Resource
 from data_resource_api.config import ConfigurationFactory
-from data_resource_api.db import engine
+from data_resource_api.db import engine, Session
 from data_resource_api.app import DataResource
 from data_resource_api.factories import DataModelFactory
 from data_resource_api.logging.database_handler import DatabaseHandler
@@ -168,57 +168,6 @@ class DataResourceManager(Thread):
                     print('Error in schema...')
         else:
             print('Schema directory does not exist')
-        # try:
-        #     print(self.api.resources)
-        # except AttributeError:
-        #     pass
-        # if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
-        #     schemas = os.listdir(schema_dir)
-        #     for schema in schemas:
-        #         with open(os.path.join(self.get_data_resource_schema_path(), schema), 'r') as fh:
-        #             schema_obj = json.load(fh)
-
-        #         # build a schema
-        #         try:
-        #             data_resource_name = schema_obj['api']['resource']
-        #             api_methods = schema_obj['api']['methods']
-        #             table_name = schema_obj['datastore']['tablename']
-        #             table_schema = schema_obj['datastore']['schema']
-        #             if self.data_resource_exists(data_resource_name):
-        #                 if self.data_resource_changed(data_resource_name, api_methods, table_name, table_schema):
-        #                     print('Changes Detected to Data Resource {}...'.format(
-        #                         data_resource_name))
-        #                 else:
-        #                     print('No Change to Data Resource {}...'.format(
-        #                         data_resource_name))
-        #             else:
-        #                 new_resource = DataResource()
-        #                 new_resource.data_resource_name = data_resource_name
-        #                 new_resource.api_methods = api_methods
-        #                 new_resource.table_name = table_name
-        #                 new_resource.table_schema = table_schema
-        #                 new_resource.api_object = self.build_api_object(
-        #                     new_resource.api_methods)
-        #                 new_resource.datastore_object = self.data_model_factory.create_table_from_dict(
-        #                     new_resource.table_schema, new_resource.table_name)
-        #                 # new_resource.datastore_object = create_table_from_dict(
-        #                 #     new_resource.table_schema, new_resource.table_name)
-
-        #                 if new_resource.datastore_object is not None:
-        #                     self.data_resources.append(new_resource)
-        #                     print('Created New Data Resource {}'.format(
-        #                         new_resource.table_name))
-        #                     self.available_services.add_endpoint(
-        #                         new_resource.table_name)
-        #                 else:
-        #                     print('Failed to create new data resource {}'.format(
-        #                         new_resource.table_name))
-        #         except Exception as e:
-        #             print(
-        #                 'Error Parsing Schema `{}` Failed With Exception `{}`'.format(schema, e))
-
-        # else:
-        #     print('Schema directory does not exist')
 
     def build_api_object(self, schema: dict):
         # print(schema)
@@ -232,6 +181,7 @@ class DataResourceManager(Thread):
         """Run the data resource manager."""
         self.data_model_factory.upgrade()
         self.data_model_factory.create_checksum_table()
+        self.data_model_factory.create_log_table()
         while True:
             print('Data Resource Monitor Running...')
             self.monitor_data_resources()

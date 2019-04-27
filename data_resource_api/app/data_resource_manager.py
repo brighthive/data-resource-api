@@ -18,6 +18,7 @@ from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine
 from data_resource_api.app import DataResource
 from data_resource_api.factories import DataModelFactory
+from data_resource_api.logging.database_handler import DatabaseHandler
 
 
 class AvailableServicesResource(Resource):

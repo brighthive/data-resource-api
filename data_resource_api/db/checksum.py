@@ -3,7 +3,8 @@
 """
 
 from data_resource_api.db import Base
-from sqlalchemy import Column, String, Date
+from sqlalchemy import Column, String, DateTime
+from sqlalchemy.sql import func
 
 
 class Checksum(Base):
@@ -18,4 +19,4 @@ class Checksum(Base):
     data_resource = Column(String, primary_key=True)
     model_checksum = Column(String, nullable=False)
     api_checksum = Column(String, nullable=False)
-    date_modified = Column(Date, nullable=False)
+    date_modified = Column(DateTime, default=func.now())

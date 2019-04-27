@@ -30,8 +30,20 @@ class VersionedResource(Resource):
             return V1_0_0_ResourceHandler()
 
     def get(self, id=None):
+        offset = 0
+        limit = 20
+        try:
+            offset = request.args['offset']
+        except Exception:
+            pass
+
+        try:
+            limit = request.args['limit']
+        except Exception:
+            pass
+
         if id is None:
-            return self.get_resource_handler(request.headers).get_all(self.data_resource)
+            return self.get_resource_handler(request.headers).get_all(self.data_resource, offset, limit)
         else:
             return self.get_resource_handler(request.headers).get_one(id, self.data_resource)
 

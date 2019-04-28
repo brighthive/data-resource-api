@@ -38,9 +38,9 @@ class DataResource(object):
 
     def __init__(self):
         self.data_resource_name = None
-        self.api_methods = None
-        self.table_name = None
-        self.table_schema = None
-        self.api_object = None
-        self.datastore_object = None
+        self.data_resource_methods = None
+        self.data_resource_object = None
+        self.data_model_name = None
+        self.data_model_schema = None
+        self.data_model_object = None
         self.checksum = None

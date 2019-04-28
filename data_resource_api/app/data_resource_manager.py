@@ -17,7 +17,7 @@ from flask_restful import Api, Resource
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Session
 from data_resource_api.app import DataResource
-from data_resource_api.factories import DataModelFactory, ApiFactory
+from data_resource_api.factories import DataModelFactory, DataResourceFactory
 from data_resource_api.logging.database_handler import DatabaseHandler
 
 
@@ -52,7 +52,7 @@ class DataResourceManager(Thread):
         self.api = None
         self.available_services = AvailableServicesResource()
         self.data_model_factory = DataModelFactory()
-        self.api_factory = ApiFactory()
+        self.data_resource_factory = DataResourceFactory()
 
     def get_data_resource_schema_path(self):
         """Retrieve the path to look for data resource specifications.
@@ -154,17 +154,17 @@ class DataResourceManager(Thread):
                         else:
                             print('Data Resource Same')
                     else:
-                        new_resource = DataResource()
-                        new_resource.checksum = checksum
-                        new_resource.data_resource_name = data_resource_name
-                        new_resource.api_methods = api_schema
-                        new_resource.table_name = table_name
-                        new_resource.table_schema = table_schema
-                        new_resource.datastore_object = self.data_model_factory.create_table_from_dict(
-                            new_resource.table_schema, new_resource.table_name)
-                        new_resource.api_object = self.api_factory.create_api_from_dict(
-                            api_schema, data_resource_name, table_name, self.api, new_resource.datastore_object)
-                        self.data_resources.append(new_resource)
+                        data_resource = DataResource()
+                        data_resource.checksum = checksum
+                        data_resource.data_resource_name = data_resource_name
+                        data_resource.data_resource_methods = api_schema
+                        data_resource.data_model_name = table_name
+                        data_resource.data_model_schema = table_schema
+                        data_resource.data_model_object = self.data_model_factory.create_table_from_dict(
+                            data_resource.data_model_schema, data_resource.data_model_name)
+                        data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
+                            api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object)
+                        self.data_resources.append(data_resource)
                 except KeyError:
                     print('Error in schema...')
         else:

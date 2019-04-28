@@ -11,7 +11,7 @@ from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandl
 
 
 class VersionedResource(Resource):
-    __slots__ = ['data_resource']
+    __slots__ = ['data_resource_name', 'data_model']
 
     def __init__(self):
         Resource.__init__(self)
@@ -43,9 +43,9 @@ class VersionedResource(Resource):
             pass
 
         if id is None:
-            return self.get_resource_handler(request.headers).get_all(self.data_resource, offset, limit)
+            return self.get_resource_handler(request.headers).get_all(self.data_model, self.data_resource_name, offset, limit)
         else:
-            return self.get_resource_handler(request.headers).get_one(id, self.data_resource)
+            return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name)
 
     def post(self):
         return {'message': 'posted!'}

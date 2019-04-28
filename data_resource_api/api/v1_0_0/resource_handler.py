@@ -117,20 +117,21 @@ class ResourceHandler(object):
         """
         return {'error': error_text}, status_code
 
-    def get_all(self, data_resource, offset=0, limit=1):
+    def get_all(self, data_model, data_resource_name, offset=0, limit=1):
         session = Session()
         response = OrderedDict()
-        response['credentials'] = []
+        response[data_resource_name] = []
         response['links'] = []
         try:
-            results = session.query(data_resource).limit(
+            results = session.query(data_model).limit(
                 limit).offset(offset).all()
             for row in results:
-                response['credentials'].append(self.build_json_from_object(row))
-            row_count = session.query(data_resource).count()
+                response[data_resource_name].append(
+                    self.build_json_from_object(row))
+            row_count = session.query(data_model).count()
             if row_count > 0:
                 links = self.build_links(
-                    'credentials', offset, limit, row_count)
+                    data_resource_name, offset, limit, row_count)
             response['links'] = links
         except Exception as e:
             print('exception to be logged {}'.format(e))
@@ -140,7 +141,7 @@ class ResourceHandler(object):
     def insert_one(self, data_resource):
         return {'message': 'inserted one'}, 200
 
-    def get_one(self, id, data_resource):
+    def get_one(self, id, data_model, data_resource_name):
         return {'message': 'get one {}'.format(id)}, 200
 
     def update_one(self, id, data_resource):

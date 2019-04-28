@@ -1,3 +1,3 @@
 from data_resource_api.factories.data_model_factory import DataModelFactory
-from data_resource_api.factories.api_factory import ApiFactory
+from data_resource_api.factories.data_resource_factory import DataResourceFactory
 from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES

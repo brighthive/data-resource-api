@@ -1,4 +1,4 @@
-"""API Factory
+"""Data Resource Factory
 
 This module contains a factory object for creating API resources.
 
@@ -11,7 +11,7 @@ from data_resource_api.factories import DataModelFactory
 from data_resource_api.api import VersionedResource
 
 
-class ApiFactory(object):
+class DataResourceFactory(object):
     """API factory for generating new Flask resources.
 
     """
@@ -43,7 +43,9 @@ class ApiFactory(object):
             api_schema).encode('utf-8')).hexdigest()
         resources = ['/{}'.format(endpoint_name),
                      '/{}/<id>'.format(endpoint_name)]
-        new_api = type(endpoint_name, (VersionedResource,), {'data_resource': table_obj})
+        new_api = type(endpoint_name, (VersionedResource,),
+                       {'data_resource_name': table_name,
+                        'data_model': table_obj})
         for idx, resource in enumerate(resources):
             api.add_resource(new_api, resource,
                              endpoint='{}_ep_{}'.format(endpoint_name, idx))

@@ -5,7 +5,7 @@ A factory for handling database table management with Alembic.
 Note:
     The purpose of this factory is to decouple physical database creation from
     data model object creation, which means that a large number of operations
-    that would be handled by the Data Model Factory is now handled by this class.  
+    that would be handled by the Data Model Factory is now handled by this class.
 
 """
 

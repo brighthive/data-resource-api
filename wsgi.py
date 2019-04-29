@@ -6,7 +6,6 @@ in it's own thread and creates a Flask application.
 """
 
 import threading
-from time import sleep
 from data_resource_api import DataResourceManager
 
 manager = DataResourceManager()

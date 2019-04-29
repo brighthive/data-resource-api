@@ -29,6 +29,22 @@ class Config(object):
         'MIGRATION_HOME', os.path.join(ROOT_PATH, 'migrations'))
     SLEEP_INTERVAL = os.getenv('SLEEP_INTERVAL', 30)
 
+    # Database Settings
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    PROPAGATE_EXCEPTIONS = True
+    POSTGRES_USER = 'test_user'
+    POSTGRES_PASSWORD = 'test_password'
+    POSTGRES_DATABASE = 'data_resource_dev'
+    POSTGRES_HOSTNAME = 'localhost'
+    POSTGRES_PORT = 5432
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(
+        POSTGRES_USER,
+        POSTGRES_PASSWORD,
+        POSTGRES_HOSTNAME,
+        POSTGRES_PORT,
+        POSTGRES_DATABASE
+    )
+
 
 class TestConfig(Config):
     """Unit testing configuration class.

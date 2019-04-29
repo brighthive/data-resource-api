@@ -17,7 +17,7 @@ from flask_restful import Api, Resource
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Session
 from data_resource_api.app import DataResource
-from data_resource_api.factories import DataModelFactory, DataResourceFactory
+from data_resource_api.factories import DataModelFactory, DataResourceFactory, TableBuilderFactory
 from data_resource_api.logging.database_handler import DatabaseHandler
 
 
@@ -53,6 +53,7 @@ class DataResourceManager(Thread):
         self.available_services = AvailableServicesResource()
         self.data_model_factory = DataModelFactory()
         self.data_resource_factory = DataResourceFactory()
+        self.table_builder_factory = TableBuilderFactory()
 
     def get_data_resource_schema_path(self):
         """Retrieve the path to look for data resource specifications.
@@ -147,7 +148,7 @@ class DataResourceManager(Thread):
                             index = self.get_data_resource_index(
                                 data_resource_name)
                             if index > -1:
-                                self.data_resources[index].datastore_object = self.data_model_factory.create_table_from_dict(
+                                self.data_resources[index].datastore_object = self.data_model_factory.create_data_model_from_dict(
                                     self.data_resources[index].table_schema, self.data_resources[index].table_name)
                                 print(self.data_resources[index])
                                 print('Data Resource Changed')
@@ -160,7 +161,7 @@ class DataResourceManager(Thread):
                         data_resource.data_resource_methods = api_schema
                         data_resource.data_model_name = table_name
                         data_resource.data_model_schema = table_schema
-                        data_resource.data_model_object = self.data_model_factory.create_table_from_dict(
+                        data_resource.data_model_object = self.data_model_factory.create_data_model_from_dict(
                             data_resource.data_model_schema, data_resource.data_model_name)
                         data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
                             api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object)
@@ -172,9 +173,9 @@ class DataResourceManager(Thread):
 
     def run(self):
         """Run the data resource manager."""
-        self.data_model_factory.upgrade()
-        self.data_model_factory.create_checksum_table()
-        self.data_model_factory.create_log_table()
+        self.table_builder_factory.upgrade()
+        self.table_builder_factory.create_checksum_table()
+        self.table_builder_factory.create_log_table()
         while True:
             print('Data Resource Monitor Running...')
             self.monitor_data_resources()

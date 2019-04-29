@@ -1,6 +1,11 @@
-"""Data Model Factory
+"""Table Builder Factory
 
-This module contains a factory object for creating database objects.
+A factory for handling database table management with Alembic.
+
+Note:
+    The purpose of this factory is to decouple physical database creation from
+    data model object creation, which means that a large number of operations
+    that would be handled by the Data Model Factory is now handled by this class.  
 
 """
 
@@ -17,8 +22,10 @@ from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALC
 from data_resource_api.config import ConfigurationFactory
 
 
-class DataModelFactory(object):
-    """Data model factory for generating new data resource tables."""
+class TableBuilderFactory(object):
+    """Table Builder Factory Class.
+
+    """
 
     def get_app_config(self):
         """Convenience method for returning application configuration.
@@ -28,6 +35,40 @@ class DataModelFactory(object):
 
         """
         return ConfigurationFactory.from_env()
+
+    def create_checksum_table(self):
+        """Create the checksum table migration.
+
+        This method will first attempt to query the checksum table and if it
+        cannot be located, it will create a new migration for the table.
+
+        """
+
+        session = Session()
+        try:
+            session.query(Checksum).all()
+        except Exception:
+            self.revision('checksums')
+            self.upgrade()
+        finally:
+            session.close()
+
+    def create_log_table(self):
+        """Create the log table migration.
+
+        This method will first attempt to query the log table and if it
+        cannot be located, it will create a new migration for the table.
+
+        """
+
+        session = Session()
+        try:
+            session.query(Log).all()
+        except Exception:
+            self.revision('logs')
+            self.upgrade()
+        finally:
+            session.close()
 
     def get_sqlalchemy_type(self, data_type: str):
         """Convert Tableschema to SQLAlchemy type.
@@ -84,6 +125,9 @@ class DataModelFactory(object):
                             '__table_args__': {'extend_existing': True},
                             'id': Column(self.get_sqlalchemy_type(field_type), primary_key=True)
                         })
+                        self.revision(table_name=table)
+                        self.upgrade()
+                        self.add_model_checksum(table)
                         return True, foreign_key_reference
                     except Exception as e:
                         print('LOG THIS -> {}'.format(e))
@@ -216,7 +260,32 @@ class DataModelFactory(object):
             print('LOG THIS {}'.format(e))
             return None, None
 
-    def create_data_model_from_dict(self, table_schema: dict, table_name: str):
+    def upgrade(self):
+        """Migrate up to head.
+
+        This method runs  the Alembic upgrade command programatically.
+
+        """
+        alembic_config, migrations_dir = self.get_alembic_config()
+        if migrations_dir is not None:
+            command.upgrade(config=alembic_config, revision='head')
+        else:
+            print('LOG THIS: No Migrations to Run...')
+
+    def revision(self, table_name: str):
+        """Create a new migration.
+
+        This method runs the Alembic revision command programmatically.
+
+        """
+        alembic_config, migrations_dir = self.get_alembic_config()
+        if migrations_dir is not None:
+            command.revision(config=alembic_config, message='Create table {}'.format(
+                table_name), autogenerate=True)
+        else:
+            print('LOG THIS: No Migrations to Run...')
+
+    def create_table_from_dict(self, table_schema: dict, table_name: str):
         """Create a table from a Tableschema specification.
 
         Args:
@@ -243,6 +312,14 @@ class DataModelFactory(object):
                     '__table_args__': {'extend_existing': True}
                 })
                 new_class = type(table_name, (Base,), fields)
+                if checksum is None:
+                    self.revision(table_name)
+                    self.upgrade()
+                    self.add_model_checksum(table_name, table_checksum)
+                elif checksum.model_checksum != table_checksum:
+                    self.revision(table_name)
+                    self.upgrade()
+                    self.update_model_checksum(table_name, table_checksum)
             else:
                 print('LOG THIS: Invalid Schema: {}'.format(schema.errors))
         except Exception as e:

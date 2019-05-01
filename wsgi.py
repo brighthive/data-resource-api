@@ -8,7 +8,9 @@ in it's own thread and creates a Flask application.
 import threading
 from data_resource_api import DataResourceManager
 
-manager = DataResourceManager()
-thread = threading.Thread(target=manager.run, args=())
-thread.start()
-app = application = manager.create_app()
+data_resource_manager = DataResourceManager()
+data_resource_thread = threading.Thread(
+    target=data_resource_manager.run, args=())
+data_resource_thread.start()
+
+app = application = data_resource_manager.create_app()

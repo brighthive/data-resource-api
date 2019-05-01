@@ -1,2 +1,0 @@
-from data_resource_api.app.data_resource import DataResource
-from data_resource_api.app.data_resource_manager import DataResourceManager

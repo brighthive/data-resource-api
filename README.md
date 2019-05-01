@@ -1,10 +1,12 @@
 # Data Resource API
 
-An elegant, opinionated framework for generating BrightHive **Data Resources** with little or no coding involved.
+An elegant, opinionated framework for deploying BrightHive Data Resources with zero coding.
 
-## Purpose
+## Design Goals
 
-TODO: Write purpose.
+The goals of this project are to:
+
+- Build a framework that is capable of dynamically monitoring configur
 
 ## Terminology
 

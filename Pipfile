@@ -21,6 +21,7 @@ pytest-cov = "*"
 pycodestyle = "*"
 "autopep8" = "*"
 sphinx = "*"
+expects = "*"
 
 [requires]
 python_version = "3.7"

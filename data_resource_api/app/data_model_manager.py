@@ -11,9 +11,12 @@ import json
 from hashlib import md5
 from threading import Thread
 from time import sleep
+from alembic.config import Config
+from alembic import command, autogenerate
 from data_resource_api.factories import ORMFactory
 from data_resource_api import ConfigurationFactory
 from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
+from data_resource_api.db import Session, Log, Checksum
 
 
 class DataModelDescriptor(object):
@@ -112,6 +115,112 @@ class DataModelManager(Thread):
                 break
         return changed
 
+    def add_model_checksum(self, table_name: str, model_checksum: str = '0'):
+        """Adds a new checksum for a data model.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+            checksum (str): Checksum value.
+        """
+        session = Session()
+        try:
+            checksum = Checksum()
+            checksum.data_resource = table_name
+            checksum.model_checksum = model_checksum
+            checksum.api_checksum = '0'
+            session.add(checksum)
+            session.commit()
+        except Exception as e:
+            print('Error adding checksum {}'.format(e))
+        session.close()
+
+    def update_model_checksum(self, table_name: str, model_checksum: str):
+        """Updates a checksum for a data model.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+            checksum (str): Checksum value.
+
+        Returns:
+            bool: True if checksum was updated. False otherwise.
+
+        """
+        session = Session()
+        updated = False
+        try:
+            checksum = session.query(Checksum).filter(
+                Checksum.data_resource == table_name).first()
+            checksum.model_checksum = model_checksum
+            session.commit()
+            updated = True
+        except Exception as e:
+            print('Error updating checksum {}'.format(e))
+        session.close()
+        return updated
+
+    def get_model_checksum(self, table_name: str):
+        """Retrieves a checksum by table name.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+
+        Returns:
+            object: The checksum object if it exists, None otherwise.
+
+        """
+        session = Session()
+        checksum = None
+        try:
+            checksum = session.query(Checksum).filter(
+                Checksum.data_resource == table_name).first()
+        except Exception as e:
+            print('Error retrieving checksum {}'.format(e))
+        session.close()
+        return checksum
+
+    def get_alembic_config(self):
+        """ Load the Alembic configuration.
+
+        Returns:
+            object, object: The Alembic configuration and migration directory.
+        """
+
+        try:
+            alembic_config = Config(os.path.join(
+                self.app_config.ROOT_PATH, 'alembic.ini'))
+            migrations_dir = os.path.join(
+                self.app_config.ROOT_PATH, 'migrations', 'versions')
+            if not os.path.exists(migrations_dir) or not os.path.isdir(migrations_dir):
+                migrations_dir = None
+            return alembic_config, migrations_dir
+        except Exception as e:
+            return None, None
+
+    def upgrade(self):
+        """Migrate up to head.
+
+        This method runs  the Alembic upgrade command programatically.
+
+        """
+        alembic_config, migrations_dir = self.get_alembic_config()
+        if migrations_dir is not None:
+            command.upgrade(config=alembic_config, revision='heads')
+        else:
+            print('LOG THIS: No Migrations to Run...')
+
+    def revision(self, table_name: str):
+        """Create a new migration.
+
+        This method runs the Alembic revision command programmatically.
+
+        """
+        alembic_config, migrations_dir = self.get_alembic_config()
+        if migrations_dir is not None:
+            command.revision(config=alembic_config, message='Create table {}'.format(
+                table_name), autogenerate=True)
+        else:
+            print('LOG THIS: No Migrations to Run...')
+
     def monitor_data_models(self):
         """Monitor data models for changes.
 
@@ -143,11 +252,14 @@ class DataModelManager(Thread):
                             schema_filename, table_name, model_checksum)
                         self.data_model_descriptors.append(
                             data_model_descriptor)
-                        data_model = self.orm_factory.create_orm_from_dict(
-                            table_schema, table_name)
-                        print(data_model)
-                        del data_model
-                        # TODO create a new migration for the schema
+                        stored_checksum = self.get_model_checksum(table_name)
+                        if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
+                            data_model = self.orm_factory.create_orm_from_dict(
+                                table_schema, table_name)
+                            self.revision(table_name)
+                            self.upgrade()
+                            self.add_model_checksum(table_name, model_checksum)
+                            del data_model
                 except Exception as e:
                     print('Error loading data resource schema {} {}'.format(schema, e))
         else:

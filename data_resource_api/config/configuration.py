@@ -51,13 +51,24 @@ class Config(object):
 
 
 class TestConfig(Config):
-    """Unit testing configuration class.
-
-
-    """
+    """Unit testing configuration class."""
 
     def __init__(self):
         super().__init__()
+
+    os.environ['FLASK_ENV'] = 'testing'
+    POSTGRES_PORT = 5433
+    CONTAINER_NAME = 'postgres-test'
+    IMAGE_NAME = 'postgres'
+    IMAGE_VERSION = '11.1'
+    POSTGRES_DATABASE = 'data_resource_test'
+    POSTGRES_PORT = 5433
+    SQLALCHEMY_DATABASE_URI = 'postgresql://{}:{}@{}:{}/{}'.format(
+        Config.POSTGRES_USER,
+        Config.POSTGRES_PASSWORD,
+        Config.POSTGRES_HOSTNAME,
+        POSTGRES_PORT,
+        POSTGRES_DATABASE)
 
 
 class IntegrationTestConfig(Config):

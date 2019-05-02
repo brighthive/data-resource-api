@@ -85,23 +85,29 @@ class DataModelManager(Thread):
         return os.getenv(
             'DATA_RESOURCE_PATH', os.path.join(self.app_config.ROOT_PATH, 'schema'))
 
-    def data_model_exists(self, data_model_name):
+    def data_model_exists(self, schema_filename):
         """Checks if a data model is already registered with the data model manager.
+
+        Args:
+            schema_filename (str): Name of the schema file on disk.
 
         Returns:
             bool: True if the data model exists. False if not.
 
         """
-
         exists = False
         for data_model in self.data_model_descriptors:
-            if data_model.schema_filename.lower() == data_model_name.lower():
+            if data_model.schema_filename.lower() == schema_filename.lower():
                 exists = True
                 break
         return exists
 
-    def data_model_changed(self, data_model_name, checksum):
+    def data_model_changed(self, schema_filename, checksum):
         """Checks if the medata for a data model has been changed.
+
+        Args:
+            schema_filename (str): Name of the schema file on disk.
+            checksum (str): Computed MD5 checksum of the schema.
 
         Returns:
             bool: True if the data model has been changed. False if not.
@@ -109,11 +115,27 @@ class DataModelManager(Thread):
         """
         changed = False
         for data_model in self.data_model_descriptors:
-            if data_model.schema_filename.lower() == data_model_name.lower():
+            if data_model.schema_filename.lower() == schema_filename.lower():
                 if data_model.model_checksum != checksum:
                     changed = True
                 break
         return changed
+
+    def get_data_model_index(self, schema_filename):
+        """Checks if the medata for a data model has been changed.
+
+        Args:
+           schema_filename (str): Name of the schema file on disk.
+
+        Returns:
+            int: Index of the schema stored in memory, or -1 if not found.
+        """
+        index = -1
+        for idx, data_model in enumerate(self.data_model_descriptors):
+            if data_model.schema_filename.lower() == schema_filename.lower():
+                index = idx
+                break
+        return index
 
     def add_model_checksum(self, table_name: str, model_checksum: str = '0'):
         """Adds a new checksum for a data model.
@@ -204,11 +226,11 @@ class DataModelManager(Thread):
         """
         alembic_config, migrations_dir = self.get_alembic_config()
         if migrations_dir is not None:
-            command.upgrade(config=alembic_config, revision='heads')
+            command.upgrade(config=alembic_config, revision='head')
         else:
             print('LOG THIS: No Migrations to Run...')
 
-    def revision(self, table_name: str):
+    def revision(self, table_name: str, create_table: bool = True):
         """Create a new migration.
 
         This method runs the Alembic revision command programmatically.
@@ -216,8 +238,12 @@ class DataModelManager(Thread):
         """
         alembic_config, migrations_dir = self.get_alembic_config()
         if migrations_dir is not None:
-            command.revision(config=alembic_config, message='Create table {}'.format(
-                table_name), autogenerate=True)
+            if create_table:
+                message = 'Create table {}'.format(table_name)
+            else:
+                message = 'Update table {}'.format(table_name)
+            command.revision(config=alembic_config,
+                             message=message, autogenerate=True)
         else:
             print('LOG THIS: No Migrations to Run...')
 
@@ -245,21 +271,29 @@ class DataModelManager(Thread):
                         table_schema, sort_keys=True).encode('utf-8')).hexdigest()
                     if self.data_model_exists(schema_filename):
                         if self.data_model_changed(schema_filename, model_checksum):
-                            print('Changed')
-                            # TODO update the schema for the new migration
+                            data_model_index = self.get_data_model_index(
+                                schema_filename)
+                            data_model = self.orm_factory.create_orm_from_dict(
+                                table_schema, table_name)
+                            self.revision(table_name, create_table=False)
+                            self.upgrade()
+                            self.update_model_checksum(
+                                table_name, model_checksum)
+                            del data_model
+                            self.data_model_descriptors[data_model_index].model_checksum = model_checksum
                     else:
                         data_model_descriptor = DataModelDescriptor(
                             schema_filename, table_name, model_checksum)
                         self.data_model_descriptors.append(
                             data_model_descriptor)
                         stored_checksum = self.get_model_checksum(table_name)
+                        data_model = self.orm_factory.create_orm_from_dict(
+                            table_schema, table_name)
                         if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
-                            data_model = self.orm_factory.create_orm_from_dict(
-                                table_schema, table_name)
                             self.revision(table_name)
                             self.upgrade()
                             self.add_model_checksum(table_name, model_checksum)
-                            del data_model
+                        del data_model
                 except Exception as e:
                     print('Error loading data resource schema {} {}'.format(schema, e))
         else:

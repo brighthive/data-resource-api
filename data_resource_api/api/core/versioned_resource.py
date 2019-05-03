@@ -45,7 +45,7 @@ class VersionedResource(Resource):
         if id is None:
             return self.get_resource_handler(request.headers).get_all(self.data_model, self.data_resource_name, offset, limit)
         else:
-            return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name)
+            return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name, self.table_schema)
 
     def post(self):
         return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)

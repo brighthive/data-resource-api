@@ -165,18 +165,30 @@ class ResourceHandler(object):
         if len(errors) > 0:
             return {'message': 'Invalid request body.', 'errors': errors}, 400
         else:
-            session = Session()
-            new_object = data_model()
-            for key, value in request_obj.items():
-                setattr(new_object, key, value)
-            session.add(new_object)
-            session.commit()
-            id = new_object.id
-            session.close()
-            return {'message': 'Successfully added new object.', 'id': id}, 201
+            try:
+                session = Session()
+                new_object = data_model()
+                for key, value in request_obj.items():
+                    setattr(new_object, key, value)
+                session.add(new_object)
+                session.commit()
+                id = new_object.id
+                return {'message': 'Successfully added new resource.', 'id': id}, 201
+            except Exception:
+                return {'error': 'Failed to create new resource.'}, 400
+            finally:
+                session.close()
 
-    def get_one(self, id, data_model, data_resource_name):
-        return {'message': 'get one {}'.format(id)}, 200
+    def get_one(self, id, data_model, data_resource_name, table_schema):
+        try:
+            primary_key = table_schema['primaryKey']
+            session = Session()
+            result = session.query(data_model).filter(
+                getattr(data_model, primary_key) == id).first()
+            response = self.build_json_from_object(result)
+            return response, 200
+        except Exception:
+            return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
     def update_one(self, id, data_resource):
         pass

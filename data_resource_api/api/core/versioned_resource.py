@@ -11,7 +11,7 @@ from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandl
 
 
 class VersionedResource(Resource):
-    __slots__ = ['data_resource_name', 'data_model']
+    __slots__ = ['data_resource_name', 'data_model', 'table_schema']
 
     def __init__(self):
         Resource.__init__(self)
@@ -48,7 +48,7 @@ class VersionedResource(Resource):
             return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name)
 
     def post(self):
-        return {'message': 'posted!'}
+        return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
 
     def put(self):
         return {'message': 'put'}

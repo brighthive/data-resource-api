@@ -4,7 +4,9 @@
 
 import math
 import re
+import json
 from collections import OrderedDict
+from tableschema import Table, Schema, validate
 from data_resource_api.db import Session
 
 
@@ -138,8 +140,40 @@ class ResourceHandler(object):
         return response, 200
         session.close()
 
-    def insert_one(self, data_resource):
-        return {'message': 'inserted one'}, 200
+    def insert_one(self, data_model, data_resource_name, table_schema, request_obj):
+        try:
+            request_obj = request_obj.json
+        except Exception:
+            return {'error': 'No request body found.'}, 400
+
+        schema = Schema(table_schema)
+        errors = []
+        required_fields = []
+        if validate(table_schema):
+            for field in table_schema['fields']:
+                required_fields.append(field['name'])
+                if field['required']:
+                    if not field['name'] in request_obj.keys():
+                        errors.append(
+                            'Required field \'{}\' is missing'.format(field['name']))
+            for field in request_obj.keys():
+                if field not in required_fields:
+                    errors.append('Unknown field \'{}\' found'.format(field))
+        else:
+            return {'error': 'Data schema validation error.'}, 400
+
+        if len(errors) > 0:
+            return {'message': 'Invalid request body.', 'errors': errors}, 400
+        else:
+            session = Session()
+            new_object = data_model()
+            for key, value in request_obj.items():
+                setattr(new_object, key, value)
+            session.add(new_object)
+            session.commit()
+            id = new_object.id
+            session.close()
+            return {'message': 'Successfully added new object.', 'id': id}, 201
 
     def get_one(self, id, data_model, data_resource_name):
         return {'message': 'get one {}'.format(id)}, 200

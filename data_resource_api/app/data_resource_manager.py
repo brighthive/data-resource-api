@@ -155,16 +155,7 @@ class DataResourceManager(Thread):
                     data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
                         table_schema, table_name)
                     data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
-                        api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object)
-                    if table_name == 'credentials':
-                        try:
-                            session = Session()
-                            credential = data_resource.data_model_object()
-                            credential.credential_name = 'Sample'
-                            session.add(credential)
-                            session.commit()
-                        except Exception as e:
-                            print('Oops....{}'.format(e))
+                        api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema)
                     self.data_resources.append(data_resource)
                 except Exception as e:
                     print('Error loading schema {}'.format(e))

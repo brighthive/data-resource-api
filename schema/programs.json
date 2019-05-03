@@ -50,7 +50,7 @@
           "title": "Program ID",
           "type": "integer",
           "description": "Program's unique identifier",
-          "required": true
+          "required": false
         },
         {
           "name": "program_name",

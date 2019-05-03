@@ -24,7 +24,7 @@ class DataResourceFactory(object):
         """
         return ConfigurationFactory.from_env()
 
-    def create_api_from_dict(self, api_schema: dict, endpoint_name: str, table_name: str, api: object, table_obj: object):
+    def create_api_from_dict(self, api_schema: dict, endpoint_name: str, table_name: str, api: object, table_obj: object, table_schema: dict):
         """Create an API endpoint from a custom specification.
 
         Args:
@@ -41,7 +41,8 @@ class DataResourceFactory(object):
                      '/{}/<id>'.format(endpoint_name)]
         new_api = type(endpoint_name, (VersionedResource,),
                        {'data_resource_name': table_name,
-                        'data_model': table_obj})
+                        'data_model': table_obj,
+                        'table_schema': table_schema})
         for idx, resource in enumerate(resources):
             api.add_resource(new_api, resource,
                              endpoint='{}_ep_{}'.format(endpoint_name, idx))

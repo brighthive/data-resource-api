@@ -19,3 +19,4 @@ docs/build
 
 # development crud
 **/*.old
+**/docker-compose.local.yml

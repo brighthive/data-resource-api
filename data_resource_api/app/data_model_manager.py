@@ -8,11 +8,13 @@ monitoring data resources on a regular interval.
 
 import os
 import json
+import psycopg2
 from hashlib import md5
 from threading import Thread
 from time import sleep
 from alembic.config import Config
 from alembic import command, autogenerate
+from sqlalchemy.exc import ProgrammingError
 from data_resource_api.factories import ORMFactory
 from data_resource_api import ConfigurationFactory
 from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
@@ -51,18 +53,25 @@ class DataModelManager(Thread):
 
     def run(self):
         db_active = False
-        retries = 5
-        while not db_active and retries > 0:
+        max_retries = 5
+        retry_wait = 10
+        retries = 1
+        while not db_active and retries <= max_retries:
             try:
-                print('Waiting on database...{}'.format(retries))
-                self.revision(table_name='checksums')
-                self.upgrade()
+                session = Session()
+                data = session.query(Checksum).all()
                 db_active = True
-            except Exception:
-                retries -= 1
-                sleep(10)
+            except Exception as e:
+                if e.code == 'f405':
+                    self.revision('checksum_and_logs')
+                    self.upgrade()
+                else:
+                    print(
+                        'Waiting on database to become available....{}/{}'.format(retries, max_retries))
+                retries += 1
+                sleep(retry_wait)
 
-        while True:
+        while True and db_active:
             print('Data Model Manager Running...')
             self.monitor_data_models()
             sleep(self.get_sleep_interval())

@@ -126,6 +126,58 @@ class DataResourceManager(Thread):
         return os.getenv(
             'DATA_RESOURCE_PATH', os.path.join(self.app_config.ROOT_PATH, 'schema'))
 
+    def data_resource_exists(self, data_resource_name):
+        """Checks if a data resource is already registered with the data resource manager.
+
+        Args:
+            data_resource_name (str): Name of the data resource.
+
+        Returns:
+            bool: True if the data resource exists. False if not.
+
+        """
+        exists = False
+        for data_resource in self.data_resources:
+            if data_resource.data_resource_name.lower() == data_resource_name.lower():
+                exists = True
+                break
+        return exists
+
+    def data_resource_changed(self, data_resource_name, checksum):
+        """Checks if the medata for a data model has been changed.
+
+        Args:
+            data_resource_name (str): Name of the data resource.
+            checksum (str): Computed MD5 checksum of the data resource schema.
+
+        Returns:
+            bool: True if the data resource has been changed. False if not.
+
+        """
+        changed = False
+        for data_resource in self.data_resources:
+            if data_resource.data_resource_name.lower() == data_resource_name.lower():
+                if data_resource.checksum != checksum:
+                    changed = True
+                break
+        return changed
+
+    def get_data_resource_index(self, data_resource_name):
+        """Retrieves the index of a specific data resource in the data resources dict.
+
+        Args:
+           data_resource_name (str): Name of the data resource file on disk.
+
+        Returns:
+            int: Index of the data resource stored in memory, or -1 if not found.
+        """
+        index = -1
+        for idx, data_resource in enumerate(self.data_resources):
+            if data_resource.data_resource_name == data_resource_name.lower():
+                index = idx
+                break
+        return index
+
     def monitor_data_resources(self):
         """Monitor all data resources.
         """
@@ -142,21 +194,21 @@ class DataResourceManager(Thread):
                     api_schema = schema_dict['api']['methods']
                     table_name = schema_dict['datastore']['tablename']
                     table_schema = schema_dict['datastore']['schema']
-                    # if self.data_resource_exists(data_resource_name):
-                    #     if self.data_resource_changed(data_resource_name, data_resource_checksum):
-                    #         print('Changed')
-                    # else:
-                    data_resource = DataResource()
-                    data_resource.checksum = data_resource_checksum
-                    data_resource.data_resource_name = data_resource_name
-                    data_resource.data_resource_methods = api_schema
-                    data_resource.data_model_name = table_name
-                    data_resource.data_model_schema = table_schema
-                    data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
-                        table_schema, table_name)
-                    data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
-                        api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema)
-                    self.data_resources.append(data_resource)
+                    if self.data_resource_exists(data_resource_name):
+                        if self.data_resource_changed(data_resource_name, data_resource_checksum):
+                            print('Changed')
+                    else:
+                        data_resource = DataResource()
+                        data_resource.checksum = data_resource_checksum
+                        data_resource.data_resource_name = data_resource_name
+                        data_resource.data_resource_methods = api_schema
+                        data_resource.data_model_name = table_name
+                        data_resource.data_model_schema = table_schema
+                        data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
+                            table_schema, table_name)
+                        data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
+                            api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema)
+                        self.data_resources.append(data_resource)
                 except Exception as e:
                     print('Error loading schema {}'.format(e))
         else:

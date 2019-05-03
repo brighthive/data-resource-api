@@ -4,8 +4,9 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 
 """
 
+import warnings
 from tableschema import Schema
-from sqlalchemy import Column, ForeignKey, MetaData, String
+from sqlalchemy import Column, ForeignKey, MetaData, String, exc
 from data_resource_api.db import Base
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 
@@ -52,11 +53,13 @@ class ORMFactory(object):
                     field = [field]
                 foreign_key_reference = '{}.{}'.format(table, field[0])
                 try:
-                    type(table, (Base,), {
-                        '__tablename__': table,
-                        '__table_args__': {'extend_existing': True},
-                        'id': Column(self.get_sqlalchemy_type(field_type), primary_key=True)
-                    })
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore', category=exc.SAWarning)
+                        type(table, (Base,), {
+                            '__tablename__': table,
+                            '__table_args__': {'extend_existing': True},
+                            'id': Column(self.get_sqlalchemy_type(field_type), primary_key=True)
+                        })
                 except Exception as e:
                     return False, None
                 return True, foreign_key_reference

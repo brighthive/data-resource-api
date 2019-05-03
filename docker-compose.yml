@@ -12,6 +12,8 @@ services:
       - POSTGRES_DATABASE=data_resource_dev
       - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
+    volumes:
+      - /path/to/schemas:/data-resource/schema
   postgres:
     image: postgres:11.2
     ports:

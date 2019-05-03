@@ -27,7 +27,7 @@
       {
         "custom": [
           {
-            "resource": "/programs/<id>/credentials",
+            "resource": "/programs/credentials",
             "methods": [
               {
                 "get": {
@@ -43,6 +43,7 @@
   },
   "datastore": {
     "tablename": "programs",
+    "restricted_fields": [],
     "schema": {
       "fields": [
         {

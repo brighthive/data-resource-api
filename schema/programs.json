@@ -186,35 +186,35 @@
           "title": "Provider ID",
           "type": "integer",
           "description": "Foreign key for provider",
-          "required": "false"
+          "required": false
         },
         {
           "name": "location_id",
           "title": "Provider ID",
           "type": "integer",
           "description": "Foreign key for provider",
-          "required": "false"
+          "required": false
         },
         {
           "name": "credential_earned",
           "title": "Provider ID",
           "type": "integer",
           "description": "Foreign key for provider",
-          "required": "false"
+          "required": false
         },
         {
           "name": "potential_outcome_id",
           "title": "Provider ID",
           "type": "integer",
           "description": "Foreign key for provider",
-          "required": "false"
+          "required": false
         },
         {
           "name": "prerequisite_id",
           "title": "Provider ID",
           "type": "integer",
           "description": "Foreign key for provider",
-          "required": "false"
+          "required": false
         }
       ],
       "primaryKey": "id",

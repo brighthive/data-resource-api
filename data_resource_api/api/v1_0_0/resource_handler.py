@@ -148,16 +148,16 @@ class ResourceHandler(object):
 
         schema = Schema(table_schema)
         errors = []
-        required_fields = []
+        accepted_fields = []
         if validate(table_schema):
             for field in table_schema['fields']:
-                required_fields.append(field['name'])
+                accepted_fields.append(field['name'])
                 if field['required']:
                     if not field['name'] in request_obj.keys():
                         errors.append(
                             'Required field \'{}\' is missing'.format(field['name']))
             for field in request_obj.keys():
-                if field not in required_fields:
+                if field not in accepted_fields:
                     errors.append('Unknown field \'{}\' found'.format(field))
         else:
             return {'error': 'Data schema validation error.'}, 400
@@ -174,7 +174,8 @@ class ResourceHandler(object):
                 session.commit()
                 id = new_object.id
                 return {'message': 'Successfully added new resource.', 'id': id}, 201
-            except Exception:
+            except Exception as e:
+                print(e)
                 return {'error': 'Failed to create new resource.'}, 400
             finally:
                 session.close()

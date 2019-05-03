@@ -6,6 +6,7 @@ ADD alembic.ini alembic.ini
 ADD Pipfile Pipfile
 ADD Pipfile.lock Pipfile.lock
 ADD wsgi.py wsgi.py
+ADD data_model_manager_runner.py data_model_manager_runner.py
 RUN apt-get update && apt-get install -y python3-dev build-essential &&\ 
     pip install --upgrade pipenv && pipenv install --system &&\
     apt-get remove -y python3-dev build-essential

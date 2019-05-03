@@ -50,6 +50,18 @@ class DataModelManager(Thread):
         self.orm_factory = ORMFactory()
 
     def run(self):
+        db_active = False
+        retries = 5
+        while not db_active and retries > 0:
+            try:
+                print('Waiting on database...{}'.format(retries))
+                self.revision(table_name='checksums')
+                self.upgrade()
+                db_active = True
+            except Exception:
+                retries -= 1
+                sleep(10)
+
         while True:
             print('Data Model Manager Running...')
             self.monitor_data_models()

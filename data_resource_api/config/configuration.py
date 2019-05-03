@@ -97,6 +97,21 @@ class SandboxConfig(Config):
 
     def __init__(self):
         super().__init__()
+    # Database Settings
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    PROPAGATE_EXCEPTIONS = True
+    POSTGRES_USER = os.getenv('POSTGRES_USER')
+    POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+    POSTGRES_DATABASE = os.getenv('POSTGRES_DATABASE')
+    POSTGRES_HOSTNAME = os.getenv('POSTGRES_HOSTNAME', 'localhost')
+    POSTGRES_PORT = os.getenv('POSTGRES_PORT', 5432)
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(
+        POSTGRES_USER,
+        POSTGRES_PASSWORD,
+        POSTGRES_HOSTNAME,
+        POSTGRES_PORT,
+        POSTGRES_DATABASE
+    )
 
 
 class ProductionConfig(Config):

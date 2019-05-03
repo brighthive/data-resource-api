@@ -18,5 +18,4 @@ class Checksum(Base):
     __tablename__ = 'checksums'
     data_resource = Column(String, primary_key=True)
     model_checksum = Column(String, nullable=False)
-    api_checksum = Column(String, nullable=False)
     date_modified = Column(DateTime, default=func.now())

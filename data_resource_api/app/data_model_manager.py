@@ -149,7 +149,6 @@ class DataModelManager(Thread):
             checksum = Checksum()
             checksum.data_resource = table_name
             checksum.model_checksum = model_checksum
-            checksum.api_checksum = '0'
             session.add(checksum)
             session.commit()
         except Exception as e:

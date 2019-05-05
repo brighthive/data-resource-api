@@ -142,5 +142,10 @@ class ORMFactory(object):
                 '__tablename__': model_name,
                 '__table_args__': {'extend_existing': True}
             })
-            orm_class = type(model_name, (Base,), fields)
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', category=exc.SAWarning)
+                    orm_class = type(model_name, (Base,), fields)
+            except Exception:
+                orm_class = None
         return orm_class

@@ -89,7 +89,7 @@ class DataModelManager(Thread):
 
         """
 
-        return self.app_config.DATA_RESOURCE_SLEEP_INTERVAL
+        return self.app_config.DATA_MODEL_SLEEP_INTERVAL
 
     def get_data_resource_schema_path(self):
         """Retrieve the path to look for data resource specifications.

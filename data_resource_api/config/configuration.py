@@ -29,10 +29,9 @@ class Config(object):
     MIGRATION_HOME = os.getenv(
         'MIGRATION_HOME', os.path.join(ROOT_PATH, 'migrations'))
     DATA_RESOURCE_SLEEP_INTERVAL = os.getenv(
-        'DATA_RESOURCE_SLEEP_INTERVAL', 30)
-    TABLE_MANAGER_SLEEP_INTERVAL = os.getenv(
-        'TABLE_MANAGER_SLEEP_INTERVAL', 60)
-    TABLE_GUARD = '/tmp/table_builder.lock'
+        'DATA_RESOURCE_SLEEP_INTERVAL', 60)
+    DATA_MODEL_SLEEP_INTERVAL = os.getenv(
+        'DATA_MODEL_SLEEP_INTERVAL', 30)
 
     # Database Settings
     SQLALCHEMY_TRACK_MODIFICATIONS = False

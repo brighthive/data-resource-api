@@ -15,7 +15,7 @@ from brighthive_authlib import OAuth2ProviderError
 from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
-from data_resource_api.db import engine, Base, Session
+from data_resource_api.db import engine, Base, Session, Checksum
 
 
 class DataResource(object):
@@ -39,6 +39,7 @@ class DataResource(object):
         self.data_model_schema = None
         self.data_model_object = None
         self.checksum = None
+        self.model_checksum = None
 
 
 class AvailableServicesResource(Resource):
@@ -210,6 +211,26 @@ class DataResourceManager(Thread):
                 break
         return index
 
+    def get_model_checksum(self, table_name: str):
+        """Retrieves a checksum by table name.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+
+        Returns:
+            object: The checksum object if it exists, None otherwise.
+
+        """
+        session = Session()
+        checksum = None
+        try:
+            checksum = session.query(Checksum).filter(
+                Checksum.data_resource == table_name).first()
+        except Exception as e:
+            print('Error retrieving checksum {}'.format(e))
+        session.close()
+        return checksum
+
     def monitor_data_resources(self):
         """Monitor all data resources.
         """
@@ -227,8 +248,18 @@ class DataResourceManager(Thread):
                     table_name = schema_dict['datastore']['tablename']
                     table_schema = schema_dict['datastore']['schema']
                     if self.data_resource_exists(data_resource_name):
-                        if self.data_resource_changed(data_resource_name, data_resource_checksum):
-                            print('Changed')
+                        model = self.get_model_checksum(table_name)
+                        data_resource_index = self.get_data_resource_index(
+                            data_resource_name)
+                        # determine if api changed
+                        try:
+                            if self.data_resource_changed(data_resource_name, data_resource_checksum):
+                                self.data_resources[data_resource_index].data_model_object = self.orm_factory.create_orm_from_dict(
+                                    table_schema, table_name)
+                                self.data_resources[data_resource_index].model_checksum = model
+                                self.data_resources[data_resource_index].data_resource_object.table_schema = table_schema
+                        except Exception as e:
+                            print('Error chacking data resource {}'.format(e))
                     else:
                         data_resource = DataResource()
                         data_resource.checksum = data_resource_checksum
@@ -238,6 +269,8 @@ class DataResourceManager(Thread):
                         data_resource.data_model_schema = table_schema
                         data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
                             table_schema, table_name)
+                        data_resource.model_checksum = self.get_model_checksum(
+                            table_name)
                         data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
                             api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema)
                         self.data_resources.append(data_resource)

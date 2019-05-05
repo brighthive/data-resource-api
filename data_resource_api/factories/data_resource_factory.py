@@ -39,7 +39,8 @@ class DataResourceFactory(object):
         new_api = type(endpoint_name, (VersionedResource,),
                        {'data_resource_name': table_name,
                         'data_model': table_obj,
-                        'table_schema': table_schema})
+                        'table_schema': table_schema,
+                        'api_schema': api_schema})
         for idx, resource in enumerate(resources):
             api.add_resource(new_api, resource,
                              endpoint='{}_ep_{}'.format(endpoint_name, idx))

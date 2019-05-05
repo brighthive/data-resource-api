@@ -4,24 +4,29 @@
     "methods": [
       {
         "get": {
-          "enabled": "true",
-          "secured": "true"
+          "enabled": true,
+          "secured": true,
+          "grants": ["get:users"]
         },
         "post": {
-          "enabled": "true",
-          "secured": "true"
+          "enabled": true,
+          "secured": true,
+          "grants": ["get:users"]
         },
         "put": {
-          "enabled": "true",
-          "secured": "true"
+          "enabled": true,
+          "secured": true,
+          "grants": ["get:users"]
         },
         "patch": {
-          "enabled": "true",
-          "secured": "true"
+          "enabled": true,
+          "secured": true,
+          "grants": ["get:users"]
         },
         "delete": {
-          "enabled": "true",
-          "secured": "true"
+          "enabled": true,
+          "secured": true,
+          "grants": ["get:users"]
         }
       },
       {
@@ -31,8 +36,9 @@
             "methods": [
               {
                 "get": {
-                  "enabled": "true",
-                  "secured": "true"
+                  "enabled": true,
+                  "secured": true,
+                  "grants": ["get:users"]
                 }
               }
             ]

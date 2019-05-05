@@ -223,7 +223,7 @@ class DataResourceManager(Thread):
                     data_resource_checksum = hashlib.md5(json.dumps(
                         schema_dict, sort_keys=True).encode('utf-8')).hexdigest()
                     data_resource_name = schema_dict['api']['resource']
-                    api_schema = schema_dict['api']['methods']
+                    api_schema = schema_dict['api']['methods'][0]
                     table_name = schema_dict['datastore']['tablename']
                     table_schema = schema_dict['datastore']['schema']
                     if self.data_resource_exists(data_resource_name):

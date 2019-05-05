@@ -46,6 +46,7 @@ class ResourceHandler(object):
             offset (int): Database query offset.
             limit (int): Number of items to return in query.
             rows (int): Count of rows in table.
+
         Returns:
             dict: The links based on the offset and limit
         """
@@ -122,9 +123,32 @@ class ResourceHandler(object):
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_all_secure(self, data_model, data_resource_name, offset=0, limit=1):
+        """Wrapper method for get_all method.
+
+        Args:
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            offset (int): Pagination offset.
+            limit (int): Result limit.
+
+        Return:
+            function: The wrapped method.
+
+        """
         return self.get_all(data_model, data_resource_name, offset, limit)
 
     def get_all(self, data_model, data_resource_name, offset=0, limit=1):
+        """ Retrieve a paginated list of items.
+
+        Args:
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            offset (int): Pagination offset.
+            limit (int): Result limit.
+
+        Return:
+            dict, int: The response object and associated HTTP status code.
+        """
         session = Session()
         response = OrderedDict()
         response[data_resource_name] = []
@@ -143,14 +167,37 @@ class ResourceHandler(object):
             response['links'] = links
         except Exception as e:
             print('exception to be logged {}'.format(e))
-        return response, 200
         session.close()
+        return response, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def insert_one_secure(self, data_model, data_resource_name, table_schema, request_obj):
+        """Wrapper method for insert one method.
+
+        Args:
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+            request_obj (dict): HTTP request object.
+
+        Return:
+            function: The wrapped method.
+
+        """
         return self.insert_one(data_model, data_resource_name, table_schema, request_obj)
 
     def insert_one(self, data_model, data_resource_name, table_schema, request_obj):
+        """Insert a new object.
+
+        Args:
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+            request_obj (dict): HTTP request object.
+
+        Return:
+            dict, int: The response object and associated HTTP status code.
+        """
         try:
             request_obj = request_obj.json
         except Exception:
@@ -192,9 +239,33 @@ class ResourceHandler(object):
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
+        """Wrapper method for get one method.
+
+        Args:
+            id (any): The primary key for the specific object.
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+
+        Return:
+            function: The wrapped method.
+
+        """
         return self.get_one(id, data_model, data_resource_name, table_schema)
 
     def get_one(self, id, data_model, data_resource_name, table_schema):
+        """Retrieve a single object from the data model based on it's primary key.
+
+        Args:
+            id (any): The primary key for the specific object.
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+
+        Return:
+            dict, int: The response object and the HTTP status code.
+
+        """
         try:
             primary_key = table_schema['primaryKey']
             session = Session()
@@ -207,14 +278,60 @@ class ResourceHandler(object):
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_resource):
+        """Wrapper method for update one method.
+
+        Args:
+            id (any): The primary key for the specific object.
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+
+        Return:
+            function: The wrapped method.
+
+        """
         return self.update_one(id, data_resource)
 
     def update_one(self, id, data_resource):
+        """Update a single object from the data model based on it's primary key.
+
+        Args:
+            id (any): The primary key for the specific object.
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+
+        Return:
+            dict, int: The response object and the HTTP status code.
+        """
         pass
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def delete_one_secure(self, id, data_resource):
+        """Wrapper method for delete one method.
+
+        Args:
+            id (any): The primary key for the specific object.
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+
+        Return:
+            function: The wrapped method.
+
+        """
         return self.delete_one(id, data_resource)
 
     def delete_one(self, id, data_resource):
+        """Delete a single object from the data model based on it's primary key.
+
+        Args:
+            id (any): The primary key for the specific object.
+            data_model (object): SQLAlchemy ORM model.
+            data_resource_name (str): Name of the data resource.
+            table_schema (dict): The Table Schema object to use for validation.
+
+        Return:
+            dict, int: The response object and the HTTP status code.
+        """
         pass

@@ -7,6 +7,8 @@ import re
 import json
 from collections import OrderedDict
 from tableschema import Table, Schema, validate
+from brighthive_authlib import token_required
+from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
 
 
@@ -54,7 +56,6 @@ class ResourceHandler(object):
         current_page = self.compute_page(offset, limit)
 
         # Links
-        links = OrderedDict()
         current = OrderedDict()
         first = OrderedDict()
         prev = OrderedDict()
@@ -119,11 +120,16 @@ class ResourceHandler(object):
         """
         return {'error': error_text}, status_code
 
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def get_all_secure(self, data_model, data_resource_name, offset=0, limit=1):
+        return self.get_all(data_model, data_resource_name, offset, limit)
+
     def get_all(self, data_model, data_resource_name, offset=0, limit=1):
         session = Session()
         response = OrderedDict()
         response[data_resource_name] = []
         response['links'] = []
+        links = []
         try:
             results = session.query(data_model).limit(
                 limit).offset(offset).all()
@@ -139,6 +145,10 @@ class ResourceHandler(object):
             print('exception to be logged {}'.format(e))
         return response, 200
         session.close()
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def insert_one_secure(self, data_model, data_resource_name, table_schema, request_obj):
+        return self.insert_one(data_model, data_resource_name, table_schema, request_obj)
 
     def insert_one(self, data_model, data_resource_name, table_schema, request_obj):
         try:
@@ -180,6 +190,10 @@ class ResourceHandler(object):
             finally:
                 session.close()
 
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def get_one_secure(self, id, data_model, data_resource_name, table_schema):
+        return self.get_one(id, data_model, data_resource_name, table_schema)
+
     def get_one(self, id, data_model, data_resource_name, table_schema):
         try:
             primary_key = table_schema['primaryKey']
@@ -191,8 +205,16 @@ class ResourceHandler(object):
         except Exception:
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def update_one_secure(self, id, data_resource):
+        return self.update_one(id, data_resource)
+
     def update_one(self, id, data_resource):
         pass
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def delete_one_secure(self, id, data_resource):
+        return self.delete_one(id, data_resource)
 
     def delete_one(self, id, data_resource):
         pass

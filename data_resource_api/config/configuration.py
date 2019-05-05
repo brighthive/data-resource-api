@@ -4,6 +4,7 @@
 
 import os
 import json
+from brighthive_authlib import OAuth2ProviderFactory, AuthLibConfiguration
 
 
 class InvalidConfigurationError(Exception):
@@ -48,6 +49,28 @@ class Config(object):
         POSTGRES_PORT,
         POSTGRES_DATABASE
     )
+
+    # OAuth 2.0 Settings
+    OAUTH2_PROVIDER = os.getenv('OAUTH2_PROVIDER', 'AUTH0')
+    OAUTH2_URL = os.getenv('OAUTH2_URL', 'https://brighthive-test.auth0.com')
+    OAUTH2_JWKS_URL = '{}/.well-known/jwks.json'.format(OAUTH2_URL)
+    OAUTH2_AUDIENCE = os.getenv('OAUTH2_AUDIENCE', 'http://localhost:8000')
+    OAUTH2_ALGORITHMS = ['RS256']
+
+    @staticmethod
+    def get_oauth2_provider():
+        """Retrieve the OAuth 2.0 Provider.
+
+        Return:
+            object: The OAuth 2.0 Provider.
+
+
+        """
+        auth_config = AuthLibConfiguration(provider=Config.OAUTH2_PROVIDER, base_url=Config.OAUTH2_URL,
+                                           jwks_url=Config.OAUTH2_JWKS_URL, algorithms=Config.OAUTH2_ALGORITHMS, audience=Config.OAUTH2_AUDIENCE)
+        oauth2_provider = OAuth2ProviderFactory.get_provider(
+            Config.OAUTH2_PROVIDER, auth_config)
+        return oauth2_provider
 
 
 class TestConfig(Config):

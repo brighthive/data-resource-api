@@ -11,6 +11,7 @@ import hashlib
 from threading import Thread
 from time import sleep
 from flask import Flask
+from brighthive_authlib import OAuth2ProviderError
 from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
@@ -91,21 +92,52 @@ class DataResourceManager(Thread):
 
         """
         self.app = Flask(__name__)
+        self.app.config.from_object(self.app_config)
         self.api = Api(self.app)
         self.api.add_resource(self.available_services,
                               '/', endpoint='all_services_ep')
+        self.app.register_error_handler(Exception, self.handle_errors)
+
         return self.app
+
+    def handle_errors(self, e):
+        """Flask App Error Handler
+
+        A generic error handler for Flask applications.
+
+        Note:
+            This error handler is essentially to ensure that OAuth 2.0 authorization errors
+            are handled in an appropriate fashion. The application configuration used when
+            building the application must set the PROPOGATE_EXPECTIONS environment variable to
+            True in order for the exception to be propogated.
+
+        Return:
+            dict, int: The error message and associated error code.
+
+        """
+        if isinstance(e, OAuth2ProviderError):
+            return json.dumps({'message': 'Access Denied'}), 401
+        else:
+            try:
+                error_code = str(e).split(':')[0][:3].strip()
+                error_text = str(e).split(':')[0][3:].strip()
+                if isinstance(error_code, int):
+                    return json.dumps({'error': error_text}), error_code
+                else:
+                    raise Exception
+            except Exception as e:
+                return json.dumps({'error': 'An unknown error occured'}), 400
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.
-
-        Returns:
-            int: The sleep interval (in seconds) for the thread.
 
         Note:
             The method will look for an enviroment variable (SLEEP_INTERVAL).
             If the environment variable isn't set or cannot be parsed as an integer,
             the method returns the default interval of 30 seconds.
+
+        Returns:
+            int: The sleep interval (in seconds) for the thread.
 
         """
 

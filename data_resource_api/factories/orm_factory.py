@@ -117,12 +117,13 @@ class ORMFactory(object):
         except Exception:
             return String
 
-    def create_orm_from_dict(self, table_schema: dict, model_name: str):
+    def create_orm_from_dict(self, table_schema: dict, model_name: str, api_schema: dict):
         """Create a SQLAlchemy model from a Frictionless Table Schema spec.
 
         Args:
             table_schema (dict): The Frictionless Table Schema as a dict.
             model_name (str): Name of the ORM model (i.e. table)
+            api_schema (dict): The API schema to identify custom endpoints.
 
         Returns:
             object: The SQLAlchemy ORM class.
@@ -136,6 +137,13 @@ class ORMFactory(object):
                 foreign_keys = table_schema['foreignKeys']
             else:
                 foreign_keys = []
+            join_tables = []
+            if 'custom' in api_schema:
+                for custom_resource in api_schema['custom']:
+                    custom_table = custom_resource['resource'].split('/')
+                    custom_table_name = '{}_{}'.format(
+                        custom_table[1], custom_table[2])
+                    join_tables.append(custom_table_name)
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)
             fields.update({
@@ -146,6 +154,6 @@ class ORMFactory(object):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)
                     orm_class = type(model_name, (Base,), fields)
-            except Exception:
+            except Exception as e:
                 orm_class = None
         return orm_class

@@ -12,7 +12,7 @@ from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandl
 
 class VersionedResource(Resource):
     __slots__ = ['data_resource_name',
-                 'data_model', 'table_schema', 'api_schema']
+                 'data_model', 'table_schema', 'api_schema', 'restricted_fields']
 
     def __init__(self):
         Resource.__init__(self)
@@ -46,9 +46,9 @@ class VersionedResource(Resource):
 
             if id is None:
                 if self.api_schema['get']['secured']:
-                    return self.get_resource_handler(request.headers).get_all_secure(self.data_model, self.data_resource_name, offset, limit)
+                    return self.get_resource_handler(request.headers).get_all_secure(self.data_model, self.data_resource_name, self.restricted_fields, offset, limit)
                 else:
-                    return self.get_resource_handler(request.headers).get_all(self.data_model, self.data_resource_name, offset, limit)
+                    return self.get_resource_handler(request.headers).get_all(self.data_model, self.data_resource_name, self.restricted_fields, offset, limit)
             else:
                 if self.api_schema['get']['secured']:
                     return self.get_resource_handler(request.headers).get_one_secure(id, self.data_model, self.data_resource_name, self.table_schema)

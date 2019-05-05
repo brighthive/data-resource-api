@@ -287,6 +287,7 @@ class DataModelManager(Thread):
                     schema_filename = schema
                     table_name = schema_dict['datastore']['tablename']
                     table_schema = schema_dict['datastore']['schema']
+                    api_schema = schema_dict['api']['methods'][0]
                     model_checksum = md5(json.dumps(
                         table_schema, sort_keys=True).encode('utf-8')).hexdigest()
                     if self.data_model_exists(schema_filename):
@@ -294,7 +295,7 @@ class DataModelManager(Thread):
                             data_model_index = self.get_data_model_index(
                                 schema_filename)
                             data_model = self.orm_factory.create_orm_from_dict(
-                                table_schema, table_name)
+                                table_schema, table_name, api_schema)
                             self.revision(table_name, create_table=False)
                             self.upgrade()
                             self.update_model_checksum(
@@ -308,7 +309,7 @@ class DataModelManager(Thread):
                             data_model_descriptor)
                         stored_checksum = self.get_model_checksum(table_name)
                         data_model = self.orm_factory.create_orm_from_dict(
-                            table_schema, table_name)
+                            table_schema, table_name, api_schema)
                         if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
                             self.revision(table_name)
                             self.upgrade()

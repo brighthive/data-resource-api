@@ -27,9 +27,7 @@
           "enabled": true,
           "secured": true,
           "grants": ["get:users"]
-        }
-      },
-      {
+        },
         "custom": [
           {
             "resource": "/programs/credentials",

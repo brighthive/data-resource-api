@@ -247,6 +247,10 @@ class DataResourceManager(Thread):
                     api_schema = schema_dict['api']['methods'][0]
                     table_name = schema_dict['datastore']['tablename']
                     table_schema = schema_dict['datastore']['schema']
+                    try:
+                        restricted_fields = schema_dict['datastore']['restricted_fields']
+                    except Exception:
+                        restricted_fields = []
                     if self.data_resource_exists(data_resource_name):
                         model = self.get_model_checksum(table_name)
                         data_resource_index = self.get_data_resource_index(
@@ -254,10 +258,20 @@ class DataResourceManager(Thread):
                         # determine if api changed
                         try:
                             if self.data_resource_changed(data_resource_name, data_resource_checksum):
-                                self.data_resources[data_resource_index].data_model_object = self.orm_factory.create_orm_from_dict(
-                                    table_schema, table_name)
-                                self.data_resources[data_resource_index].model_checksum = model
-                                self.data_resources[data_resource_index].data_resource_object.table_schema = table_schema
+                                data_resource = self.data_resources[data_resource_index]
+                                data_resource.checksum = data_resource_checksum
+                                data_resource.data_resource_methods = api_schema
+                                data_resource.data_model_name = table_name
+                                data_resource.data_model_schema = table_schema
+                                data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
+                                    table_schema, table_name, api_schema)
+                                data_resource.model_checksum = self.get_model_checksum(
+                                    table_name)
+                                data_resource.data_resource_object.data_model = data_resource.data_model_object
+                                data_resource.data_resource_object.table_schema = table_schema
+                                data_resource.data_resource_object.api_schema = api_schema
+                                data_resource.data_resource_object.restricted_fields = restricted_fields
+                                self.data_resources[data_resource_index] = data_resource
                         except Exception as e:
                             print('Error chacking data resource {}'.format(e))
                     else:
@@ -268,11 +282,11 @@ class DataResourceManager(Thread):
                         data_resource.data_model_name = table_name
                         data_resource.data_model_schema = table_schema
                         data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
-                            table_schema, table_name)
+                            table_schema, table_name, api_schema)
                         data_resource.model_checksum = self.get_model_checksum(
                             table_name)
                         data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
-                            api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema)
+                            api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
                         self.data_resources.append(data_resource)
                 except Exception as e:
                     print('Error loading schema {}'.format(e))

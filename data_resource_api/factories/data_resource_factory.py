@@ -35,7 +35,8 @@ class DataResourceFactory(object):
         """
         new_api = None
         resources = ['/{}'.format(endpoint_name),
-                     '/{}/<id>'.format(endpoint_name)]
+                     '/{}/<id>'.format(endpoint_name),
+                     '/{}/query'.format(endpoint_name)]
         new_api = type(endpoint_name, (VersionedResource,),
                        {'data_resource_name': table_name,
                         'data_model': table_obj,

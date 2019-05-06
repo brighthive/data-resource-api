@@ -32,6 +32,8 @@ class VersionedResource(Resource):
 
     def get(self, id=None):
         if self.api_schema['get']['enabled']:
+            if request.path.endswith('/query'):
+                return {'error': 'Method not allowed.'}, 405
             offset = 0
             limit = 20
             try:
@@ -60,14 +62,22 @@ class VersionedResource(Resource):
     def post(self):
         if self.api_schema['post']['enabled']:
             if self.api_schema['post']['secured']:
-                return self.get_resource_handler(request.headers).insert_one_secure(self.data_model, self.data_resource_name, self.table_schema, request)
+                if request.path.endswith('/query'):
+                    return {'message': 'Query secured'}, 200
+                else:
+                    return self.get_resource_handler(request.headers).insert_one_secure(self.data_model, self.data_resource_name, self.table_schema, request)
             else:
-                return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
+                if request.path.endswith('/query'):
+                    return {'message': 'Query unsecured'}, 200
+                else:
+                    return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
         else:
             return {'error': 'Method not allowed.'}, 405
 
     def put(self, id):
         if self.api_schema['put']['enabled']:
+            if request.path.endswith('/query'):
+                return {'error': 'Method not allowed.'}, 405
             if self.api_schema['put']['secured']:
                 return {'message': 'put secured'}
             else:
@@ -77,6 +87,8 @@ class VersionedResource(Resource):
 
     def patch(self, id):
         if self.api_schema['patch']['enabled']:
+            if request.path.endswith('/query'):
+                return {'error': 'Method not allowed.'}, 405
             if self.api_schema['patch']['secured']:
                 return {'message': 'patch secure'}
             else:
@@ -86,6 +98,8 @@ class VersionedResource(Resource):
 
     def delete(self, id):
         if self.api_schema['delete']['enabled']:
+            if request.path.endswith('/query'):
+                return {'error': 'Method not allowed.'}, 405
             if self.api_schema['delete']['secured']:
                 return {'message': 'delete secure'}
             else:

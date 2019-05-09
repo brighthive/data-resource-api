@@ -16,6 +16,7 @@ from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Base, Session, Checksum
+from data_resource_api.logging import LogFactory
 
 
 class DataResource(object):
@@ -78,11 +79,14 @@ class DataResourceManager(Thread):
         self.available_services = AvailableServicesResource()
         self.orm_factory = ORMFactory()
         self.data_resource_factory = DataResourceFactory()
+        self.logger = LogFactory.get_console_logger('data-resource-manager')
 
     def run(self):
         while True:
-            print('Data Resource Manager Running...')
+            self.logger.info('Data Resource Manager Running...')
             self.monitor_data_resources()
+            self.logger.info('Data Resource Manager Sleeping for {} seconds...'.format(
+                self.get_sleep_interval()))
             sleep(self.get_sleep_interval())
 
     def create_app(self):
@@ -119,15 +123,16 @@ class DataResourceManager(Thread):
         if isinstance(e, OAuth2ProviderError):
             return json.dumps({'message': 'Access Denied'}), 401
         else:
-            try:
-                error_code = str(e).split(':')[0][:3].strip()
-                error_text = str(e).split(':')[0][3:].strip()
-                if isinstance(error_code, int):
-                    return json.dumps({'error': error_text}), error_code
-                else:
-                    raise Exception
-            except Exception as e:
-                return json.dumps({'error': 'An unknown error occured'}), 400
+            return json.dumps({'error': 'exception is {}'.format(e)})
+            # try:
+            #     error_code = str(e).split(':')[0][:3].strip()
+            #     error_text = str(e).split(':')[0][3:].strip()
+            #     if isinstance(error_code, int):
+            #         return json.dumps({'error': error_text}), error_code
+            #     else:
+            #         raise Exception
+            # except Exception as e:
+            #     return json.dumps({'error': 'An unknown error occured {}'.format(e.__dict__)}), 400
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.
@@ -227,13 +232,14 @@ class DataResourceManager(Thread):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception as e:
-            print('Error retrieving checksum {}'.format(e))
+            self.logger.error('Error retrieving checksum {}'.format(e))
         session.close()
         return checksum
 
     def monitor_data_resources(self):
         """Monitor all data resources.
         """
+        self.logger.info('Checking data resources...')
         schema_dir = self.get_data_resource_schema_path()
         if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
             schemas = os.listdir(schema_dir)
@@ -273,7 +279,8 @@ class DataResourceManager(Thread):
                                 data_resource.data_resource_object.restricted_fields = restricted_fields
                                 self.data_resources[data_resource_index] = data_resource
                         except Exception as e:
-                            print('Error chacking data resource {}'.format(e))
+                            self.logger.error(
+                                'Error checking data resource {}'.format(e))
                     else:
                         data_resource = DataResource()
                         data_resource.checksum = data_resource_checksum
@@ -289,6 +296,7 @@ class DataResourceManager(Thread):
                             api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
                         self.data_resources.append(data_resource)
                 except Exception as e:
-                    print('Error loading schema {}'.format(e))
+                    self.logger.error('Error loading schema {}'.format(e))
         else:
-            print('Schema directory does not exist.')
+            self.logger.error('Schema directory does not exist.')
+        self.logger.info('Completed check of data resources')

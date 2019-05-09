@@ -19,6 +19,7 @@ from data_resource_api.factories import ORMFactory
 from data_resource_api import ConfigurationFactory
 from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 from data_resource_api.db import Session, Log, Checksum
+from data_resource_api.logging import LogFactory
 
 
 class DataModelDescriptor(object):
@@ -50,6 +51,7 @@ class DataModelManager(Thread):
         self.app_config = ConfigurationFactory.from_env()
         self.data_model_descriptors: DataModelDescriptor = []
         self.orm_factory = ORMFactory()
+        self.logger = LogFactory.get_console_logger('data-model-manager')
 
     def run(self):
         db_active = False
@@ -65,15 +67,18 @@ class DataModelManager(Thread):
                 if e.code == 'f405':
                     self.revision('checksum_and_logs')
                     self.upgrade()
+                    db_active = True
                 else:
-                    print(
+                    self.logger.info(
                         'Waiting on database to become available....{}/{}'.format(retries, max_retries))
-                retries += 1
-                sleep(retry_wait)
+                    retries += 1
+                    sleep(retry_wait)
 
-        while True and db_active:
-            print('Data Model Manager Running...')
+        while True:
+            self.logger.info('Data Model Manager Running...')
             self.monitor_data_models()
+            self.logger.info('Data Model Manager Sleeping for {} seconds...'.format(
+                self.get_sleep_interval()))
             sleep(self.get_sleep_interval())
 
     def get_sleep_interval(self):
@@ -173,7 +178,7 @@ class DataModelManager(Thread):
             session.add(checksum)
             session.commit()
         except Exception as e:
-            print('Error adding checksum {}'.format(e))
+            self.logger.error('Error adding checksum {}'.format(e))
         session.close()
 
     def update_model_checksum(self, table_name: str, model_checksum: str):
@@ -196,7 +201,7 @@ class DataModelManager(Thread):
             session.commit()
             updated = True
         except Exception as e:
-            print('Error updating checksum {}'.format(e))
+            self.logger.error('Error updating checksum {}'.format(e))
         session.close()
         return updated
 
@@ -216,7 +221,7 @@ class DataModelManager(Thread):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception as e:
-            print('Error retrieving checksum {}'.format(e))
+            self.logger.error('Error retrieving checksum {}'.format(e))
         session.close()
         return checksum
 
@@ -248,7 +253,7 @@ class DataModelManager(Thread):
         if migrations_dir is not None:
             command.upgrade(config=alembic_config, revision='head')
         else:
-            print('LOG THIS: No Migrations to Run...')
+            self.logger.info('No migrations to run...')
 
     def revision(self, table_name: str, create_table: bool = True):
         """Create a new migration.
@@ -265,7 +270,7 @@ class DataModelManager(Thread):
             command.revision(config=alembic_config,
                              message=message, autogenerate=True)
         else:
-            print('LOG THIS: No Migrations to Run...')
+            self.logger.info('No migrations to run...')
 
     def monitor_data_models(self):
         """Monitor data models for changes.
@@ -277,45 +282,52 @@ class DataModelManager(Thread):
             new Alembic migrations to meet these changes. The data models will then have
             to be reconstructed by each individual worker.
         """
+        self.logger.info('Checking data models')
         schema_dir = self.get_data_resource_schema_path()
         if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
             schemas = os.listdir(schema_dir)
             for schema in schemas:
-                try:
-                    with open(os.path.join(schema_dir, schema), 'r') as fh:
-                        schema_dict = json.load(fh)
-                    schema_filename = schema
-                    table_name = schema_dict['datastore']['tablename']
-                    table_schema = schema_dict['datastore']['schema']
-                    api_schema = schema_dict['api']['methods'][0]
-                    model_checksum = md5(json.dumps(
-                        table_schema, sort_keys=True).encode('utf-8')).hexdigest()
-                    if self.data_model_exists(schema_filename):
-                        if self.data_model_changed(schema_filename, model_checksum):
-                            data_model_index = self.get_data_model_index(
-                                schema_filename)
+                if os.path.isdir(os.path.join(schema_dir, schema)):
+                    self.logger.error('Cannot open a nested schema directory {}'.format(schema))
+                else:
+                    try:
+                        with open(os.path.join(schema_dir, schema), 'r') as fh:
+                            schema_dict = json.load(fh)
+                        schema_filename = schema
+                        table_name = schema_dict['datastore']['tablename']
+                        table_schema = schema_dict['datastore']['schema']
+                        api_schema = schema_dict['api']['methods'][0]
+                        model_checksum = md5(json.dumps(
+                            table_schema, sort_keys=True).encode('utf-8')).hexdigest()
+                        if self.data_model_exists(schema_filename):
+                            if self.data_model_changed(schema_filename, model_checksum):
+                                data_model_index = self.get_data_model_index(
+                                    schema_filename)
+                                data_model = self.orm_factory.create_orm_from_dict(
+                                    table_schema, table_name, api_schema)
+                                self.revision(table_name, create_table=False)
+                                self.upgrade()
+                                self.update_model_checksum(
+                                    table_name, model_checksum)
+                                del data_model
+                                self.data_model_descriptors[data_model_index].model_checksum = model_checksum
+                        else:
+                            data_model_descriptor = DataModelDescriptor(
+                                schema_filename, table_name, model_checksum)
+                            self.data_model_descriptors.append(
+                                data_model_descriptor)
+                            stored_checksum = self.get_model_checksum(table_name)
                             data_model = self.orm_factory.create_orm_from_dict(
                                 table_schema, table_name, api_schema)
-                            self.revision(table_name, create_table=False)
-                            self.upgrade()
-                            self.update_model_checksum(
-                                table_name, model_checksum)
+                            if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
+                                self.revision(table_name)
+                                self.upgrade()
+                                self.add_model_checksum(table_name, model_checksum)
                             del data_model
-                            self.data_model_descriptors[data_model_index].model_checksum = model_checksum
-                    else:
-                        data_model_descriptor = DataModelDescriptor(
-                            schema_filename, table_name, model_checksum)
-                        self.data_model_descriptors.append(
-                            data_model_descriptor)
-                        stored_checksum = self.get_model_checksum(table_name)
-                        data_model = self.orm_factory.create_orm_from_dict(
-                            table_schema, table_name, api_schema)
-                        if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
-                            self.revision(table_name)
-                            self.upgrade()
-                            self.add_model_checksum(table_name, model_checksum)
-                        del data_model
-                except Exception as e:
-                    print('Error loading data resource schema {} {}'.format(schema, e))
+                    except Exception as e:
+                        self.logger.error(
+                            'Error loading data resource schema {} {}'.format(schema, e))
         else:
-            print('Schema directory is missing...')
+            self.logger.error(
+                'Unable to locate schema directory {}'.format(schema_dir))
+        self.logger.info('Completed check of data models')

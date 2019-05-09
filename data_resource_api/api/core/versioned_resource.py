@@ -63,12 +63,12 @@ class VersionedResource(Resource):
         if self.api_schema['post']['enabled']:
             if self.api_schema['post']['secured']:
                 if request.path.endswith('/query'):
-                    return {'message': 'Query secured'}, 200
+                    return self.get_resource_handler(request.headers).query_secure(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
                 else:
                     return self.get_resource_handler(request.headers).insert_one_secure(self.data_model, self.data_resource_name, self.table_schema, request)
             else:
                 if request.path.endswith('/query'):
-                    return {'message': 'Query unsecured'}, 200
+                    return self.get_resource_handler(request.headers).query(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
                 else:
                     return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
         else:

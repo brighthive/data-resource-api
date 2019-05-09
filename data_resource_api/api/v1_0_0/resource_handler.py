@@ -14,7 +14,7 @@ from data_resource_api.db import Session
 
 class ResourceHandler(object):
     def build_json_from_object(self, obj: object, restricted_fields: dict = []):
-        resp = {key: value for key, value in obj.__dict__.items(
+        resp = {key: value if value is not None else '' for key, value in obj.__dict__.items(
         ) if not key.startswith('_') and not callable(key) and key not in restricted_fields}
         return resp
 
@@ -122,7 +122,7 @@ class ResourceHandler(object):
         return {'error': error_text}, status_code
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
-    def get_all_secure(self, data_model, data_resource_name, table_schema, offset=0, limit=1):
+    def get_all_secure(self, data_model, data_resource_name, restricted_fields, offset=0, limit=1):
         """Wrapper method for get_all method.
 
         Args:
@@ -135,7 +135,7 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.get_all(data_model, data_resource_name, offset, limit)
+        return self.get_all(data_model, data_resource_name, restricted_fields, offset, limit)
 
     def get_all(self, data_model, data_resource_name, restricted_fields, offset=0, limit=1):
         """ Retrieve a paginated list of items.
@@ -154,6 +154,7 @@ class ResourceHandler(object):
         response[data_resource_name] = []
         response['links'] = []
         links = []
+
         try:
             results = session.query(data_model).limit(
                 limit).offset(offset).all()

@@ -59,6 +59,7 @@ class DataModelManager(Thread):
         retry_wait = 10
         retries = 1
         while not db_active and retries <= max_retries:
+            self.logger.info('Checking database availability...')
             try:
                 session = Session()
                 data = session.query(Checksum).all()
@@ -71,8 +72,8 @@ class DataModelManager(Thread):
                 else:
                     self.logger.info(
                         'Waiting on database to become available....{}/{}'.format(retries, max_retries))
-                    retries += 1
-                    sleep(retry_wait)
+            retries += 1
+            sleep(retry_wait)
 
         while True:
             self.logger.info('Data Model Manager Running...')
@@ -288,7 +289,8 @@ class DataModelManager(Thread):
             schemas = os.listdir(schema_dir)
             for schema in schemas:
                 if os.path.isdir(os.path.join(schema_dir, schema)):
-                    self.logger.error('Cannot open a nested schema directory {}'.format(schema))
+                    self.logger.error(
+                        'Cannot open a nested schema directory {}'.format(schema))
                 else:
                     try:
                         with open(os.path.join(schema_dir, schema), 'r') as fh:
@@ -316,13 +318,15 @@ class DataModelManager(Thread):
                                 schema_filename, table_name, model_checksum)
                             self.data_model_descriptors.append(
                                 data_model_descriptor)
-                            stored_checksum = self.get_model_checksum(table_name)
+                            stored_checksum = self.get_model_checksum(
+                                table_name)
                             data_model = self.orm_factory.create_orm_from_dict(
                                 table_schema, table_name, api_schema)
                             if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
                                 self.revision(table_name)
                                 self.upgrade()
-                                self.add_model_checksum(table_name, model_checksum)
+                                self.add_model_checksum(
+                                    table_name, model_checksum)
                             del data_model
                     except Exception as e:
                         self.logger.error(

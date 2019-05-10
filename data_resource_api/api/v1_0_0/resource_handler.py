@@ -280,9 +280,10 @@ class ResourceHandler(object):
                     setattr(new_object, key, value)
                 session.add(new_object)
                 session.commit()
-                id = new_object.id
+                id = getattr(new_object, table_schema['primaryKey'])
                 return {'message': 'Successfully added new resource.', 'id': id}, 201
             except Exception as e:
+                print(e)
                 return {'error': 'Failed to create new resource.'}, 400
             finally:
                 session.close()

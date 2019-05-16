@@ -14,7 +14,7 @@ from data_resource_api.db import Session
 
 class ResourceHandler(object):
     def build_json_from_object(self, obj: object, restricted_fields: dict = []):
-        resp = {key: value if value is not None else '' for key, value in obj.__dict__.items(
+        resp = {key: str(value) if value is not None else '' for key, value in obj.__dict__.items(
         ) if not key.startswith('_') and not callable(key) and key not in restricted_fields}
         return resp
 

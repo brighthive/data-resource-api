@@ -244,6 +244,9 @@ class DataResourceManager(Thread):
         if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
             schemas = os.listdir(schema_dir)
             for schema in schemas:
+                if os.path.isdir(schema):
+                    print(schema)
+                    continue 
                 with open(os.path.join(schema_dir, schema), 'r') as fh:
                     schema_dict = json.load(fh)
                 try:

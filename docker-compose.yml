@@ -1,5 +1,18 @@
 version: '3'
 services:
+  data-model-manager:
+    image: brighthive/data-resource-api:1.0.0-alpha
+    build: .
+    environment:
+      - APP_ENV=SANDBOX
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_DATABASE=data_resource_dev
+      - POSTGRES_HOSTNAME=postgres
+      - POSTGRES_PORT=5432
+    command: '--data-model-manager'
+    volumes:
+      - /path/to/schemas:/data-resource/schema
   data-resource-api:
     image: brighthive/data-resource-api:1.0.0-alpha
     build: .

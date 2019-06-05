@@ -1,0 +1,120 @@
+{
+    "api": {
+        "resource": "courses",
+        "methods": [
+            {
+                "get": {
+                    "enabled": true,
+                    "secured": false,
+                    "grants": []
+                },
+                "post": {
+                    "enabled": true,
+                    "secured": true,
+                    "grants": []
+                },
+                "put":{
+                    "enabled": false,
+                    "secured": true,
+                    "grants": []
+                },
+                "patch": {
+                    "enabled": false,
+                    "secured": true,
+                    "grants": []
+                },
+                "delete": {
+                    "enabled": false,
+                    "secured": true,
+                    "grants": []
+                }
+            }
+        ]
+    },
+    "datastore": {
+        "tablename": "courses",
+        "restricted_fields": [],
+        "schema":{
+            "fields":[
+                {
+                    "name": "id",
+                    "title": "Course Identifier",
+                    "type": "integer",
+                    "description": "Unique identifier for the course",
+                    "required": false
+                },
+                {
+                    "name": "course_code",
+                    "title": "Course Code",
+                    "type": "integer",
+                    "description": "Course code",
+                    "required": true
+                },
+                {
+                    "name": "course_name",
+                    "title": "Course Name",
+                    "type": "string",
+                    "description": "Name of the course",
+                    "required": true
+                },
+                {
+                    "name": "district_number",
+                    "title": "District Number",
+                    "type": "integer",
+                    "description": "District number for the course",
+                    "required": true
+                },
+                {
+                    "name": "district_name",
+                    "title": "District Name",
+                    "type": "string",
+                    "description": "Name of the district of the school that offered the course",
+                    "required": true
+                },
+                {
+                    "name": "school_number",
+                    "title": "School Number",
+                    "type": "string",
+                    "description": "Number of school where course is offered",
+                    "required": true
+                },
+                {
+                    "name": "school_name",
+                    "title": "School Name",
+                    "type": "string",
+                    "description": "Name of school that is offering the course",
+                    "required": true
+                },
+                {
+                    "name": "local_course_code",
+                    "title": "Local Course Code",
+                    "type": "string",
+                    "description": "Local code of the course",
+                    "required": true
+                },
+                {
+                    "name": "local_course_title",
+                    "title": "Local Course Title",
+                    "type": "string",
+                    "description": "Local course title",
+                    "required": true
+                },
+                {
+                    "name": "course_level_code",
+                    "title": "Course Level Code",
+                    "type": "string",
+                    "description": "Course's level code",
+                    "required": true
+                },
+                {
+                    "name": "course_level_text",
+                    "title": "Course Level Text",
+                    "type": "string",
+                    "description": "Course's level text",
+                    "required": true
+                }
+            ],
+            "primaryKey": "id"
+        }
+    }
+}

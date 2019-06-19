@@ -16,99 +16,34 @@ From the technical perspective, a BrightHive Data Resource is an entity comprise
 
 
 ## Installation
-1. Download install [docker-cli](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/) based on your machine.
+1. Download install and setup [docker-cli](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/) based on your machine.
 2. Clone or download the project to your local machine
 
-## Basic Usage
-The project uses docker and docker compose to build and stand up the api end points by providing Dockerfile and docker compose yaml.
+## Running the Data Resource API
+This project uses docker and docker-compose for building and running the data-resource-api.
 
 ### Build Docker Image
-You will need to build the docker image using the following tag:
+First, you will need to build the docker image using the command:
 ```bash
 cd path/to/data_resource_api
+mkdir migrations/versions
 docker build -t brighthive/data-resource-api:1.0.0-alpha .
 ```
 ### Running Docker Container
-To run the data resource api, you will need to use docker compose since we will need to use a postgres docker container:
+Now that you have the image of the data resource api built, now you can stand up the data resource api containers using docker-compose:
 ```bash
 cd path/to/data_resource_api
 docker-compose up
 ```
 
-To run the data resource api in the background as a daemon process:
+If you need to run the data resource api in the background as a daemon process, use the following command:
 ```bash
 cd path/to/data_resource_api
 docker-compose up -d
 ```
 ### Stopping the Docker Containers
-To stop the container running in the foreground(without the -d argument), you will need to send a SIGKILL signal using CTRL+C. Then follow with:
+To stop the container running in the foreground(without the -d argument), you will need to send a SIGKILL signal using CTRL+C. Then follow up with:
 ```bash
 docker-compose down
 ```
 
-### Using the data resource api and data model manager to create new endpoints
-The data resource api framework was built for extensibility and provides the ability to create data resource endpoints and data stores without any coding.
-
-To create a new end point and data store, you will first need to create a JSON configuration file that defines the resource endpoint and the data store schema. 
-The config file should have the following structure:
-```json
-
-{
-  "api": {
-    "resource": "credentials",
-    "methods": [
-      {
-        "get": {
-          "enabled": true,
-          "secured": false,
-          "grants": ["get:users"]
-        },
-        "post": {
-          "enabled": true,
-          "secured": false,
-          "grants": []
-        },
-        "put": {
-          "enabled": true,
-          "secured": true,
-          "grants": []
-        },
-        "patch": {
-          "enabled": true,
-          "secured": true,
-          "grants": []
-        },
-        "delete": {
-          "enabled": true,
-          "secured": true,
-          "grants": []
-        }
-      }
-    ]
-  },
-  "datastore": {
-    "tablename": "credentials",
-    "restricted_fields": [],
-    "schema": {
-      "fields": [
-        {
-          "name": "id", 
-          "title": "Credential ID",
-          "type": "integer",
-          "description": "Credential's unique identifier",
-          "required": false
-        },
-        {
-          "name": "credential_name",
-          "title": "Credential Name",
-          "type": "string",
-          "description": "Credential's Name",
-          "required": true
-        }
-      ],
-      "primaryKey": "id" # Name of the field that will be used as a primary key
-    }
-  }
-}  
-}
-```

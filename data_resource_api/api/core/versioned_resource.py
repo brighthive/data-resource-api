@@ -79,9 +79,9 @@ class VersionedResource(Resource):
             if request.path.endswith('/query'):
                 return {'error': 'Method not allowed.'}, 405
             if self.api_schema['put']['secured']:
-                return {'message': 'put secured'}
+                return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
             else:
-                return {'message': 'put'}
+                return self.get_resource_handler(request.headers).update_one(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
         else:
             return {'error': 'Method not allowed.'}, 405
 
@@ -90,9 +90,9 @@ class VersionedResource(Resource):
             if request.path.endswith('/query'):
                 return {'error': 'Method not allowed.'}, 405
             if self.api_schema['patch']['secured']:
-                return {'message': 'patch secure'}
+                return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
             else:
-                return {'message': 'patch'}
+                return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
         else:
             return {'error': 'Method not allowed.'}, 405
 

@@ -67,7 +67,7 @@
         {
           "name": "program_code",
           "title": "Program Code",
-          "type": "date",
+          "type": "integer",
           "description": "Program's Code",
           "required": true
         },

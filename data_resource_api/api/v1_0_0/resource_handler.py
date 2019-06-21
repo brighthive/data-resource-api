@@ -283,7 +283,6 @@ class ResourceHandler(object):
                 id = getattr(new_object, table_schema['primaryKey'])
                 return {'message': 'Successfully added new resource.', 'id': id}, 201
             except Exception as e:
-                print(e)
                 return {'error': 'Failed to create new resource.'}, 400
             finally:
                 session.close()
@@ -328,7 +327,7 @@ class ResourceHandler(object):
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
-    def update_one_secure(self, id, data_resource):
+    def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Wrapper method for update one method.
 
         Args:
@@ -341,9 +340,9 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.update_one(id, data_resource)
+        return self.update_one(id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode)
 
-    def update_one(self, id, data_resource):
+    def update_one(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Update a single object from the data model based on it's primary key.
 
         Args:
@@ -355,7 +354,54 @@ class ResourceHandler(object):
         Return:
             dict, int: The response object and the HTTP status code.
         """
-        pass
+
+        try:
+            request_obj = request_obj.json
+        except Exception:
+            return {'error': 'No request body found.'}, 400
+
+        try:
+            primary_key = table_schema['primaryKey']
+            session = Session()
+            data_obj = session.query(data_model).filter(
+                getattr(data_model, primary_key) == id).first()
+            if data_obj is None:
+                return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
+        except Exception as e:
+            return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
+
+        schema = Schema(table_schema)
+        errors = []
+        accepted_fields = []
+        if validate(table_schema):
+            for field in table_schema['fields']:
+                accepted_fields.append(field['name'])
+            for field in request_obj.keys():
+                if field not in accepted_fields:
+                    errors.append('Unknown field \'{}\' found'.format(field))
+                elif field in restricted_fields:
+                    errors.append(
+                        'Cannot update restricted field \'{}\''.format(field))
+        else:
+            return {'error': 'Data schema validation error.'}, 400
+
+        if len(errors) > 0:
+            return {'message': 'Invalid request body.', 'errors': errors}, 400
+        else:
+            if mode == 'PATCH':
+                for key, value in request_obj.items():
+                    setattr(data_obj, key, value)
+                session.commit()
+            elif mode == 'PUT':
+                for field in table_schema['fields']:
+                    if field['required'] and field['name'] not in request_obj.keys():
+                        errors.append('Required field \'{}\' is missing'.format(field['name']))
+                if len(errors) > 0:
+                    return {'message': 'Invalid request body.', 'errors': errors}, 400
+                for key, value in request_obj.items():
+                    setattr(data_obj, key, value)
+                session.commit()
+            return {'message': 'Successfully updated resource \'{}\''.format(id)}, 201
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def delete_one_secure(self, id, data_resource):

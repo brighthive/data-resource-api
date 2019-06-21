@@ -19,12 +19,12 @@ From the technical perspective, a BrightHive Data Resource is an entity comprise
 Spinning up a fresh, out-of-the-box Data Resource API requires minimal setup. Follow these steps:
 
 
-**1. Download install [docker-cli](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/) based on your machine and preferences (e.g., you may chose to run `docker-compose` in a virtualenv.)**
+**1. Download install [docker-cli](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/) based on your machine and preferences (e.g., you may chose to run `docker-compose` in a virtualenv).**
 
 **2. Clone or download the project to your local machine**
 
 ```bash
-git clone https://github.com/brighthive/data-resource-api.git
+git clone git@github.com:brighthive/data-resource-api.git
 ```
 
 **3. Build the Docker image with specified tag**
@@ -48,7 +48,14 @@ docker-compose up -d
 
 Visit `http://0.0.0.0:8000/programs` to test the API URL (though expect an "Access Denied" message).
 
-Note! The default `docker-compose.yml` launches three containers: postgres_1, data-model-manager_1, and data-resource-api_1. Expect the postgres container to raise an error, at first, something like: `ERROR:  relation "checksums" does not exist at character 171`. This occurs temporarily, as Docker spins up the data-model-manager_1, the service that creates and runs migrations. 
+*Note!* The default `docker-compose.yml` launches three containers: `postgres`, `data-model-manager`, and `data-resource-api`. Expect the postgres container to raise an error, at first, something like: `ERROR:  relation "checksums" does not exist at character 171`. This occurs temporarily, as Docker spins up the `data-model-manager` (i.e., the service that creates and runs migrations). Once the model manager has done its business, the `data-resource-manager` can ease-fully listen for incoming schema files. A successful launch should continuously log the following happy messages:
+
+```
+data-resource-api_1   | 2019-06-21 21:31:21,392 - data-resource-manager - INFO - Data Resource Manager Running...
+data-resource-api_1   | 2019-06-21 21:31:21,393 - data-resource-manager - INFO - Checking data resources...
+data-resource-api_1   | 2019-06-21 21:31:21,413 - data-resource-manager - INFO - Completed check of data resources
+data-resource-api_1   | 2019-06-21 21:31:21,414 - data-resource-manager - INFO - Data Resource Manager Sleeping for 60 seconds...
+```
 
 ## Data and endpoints 
 
@@ -81,7 +88,7 @@ A resource JSON blob should define RESTful methods. These can be enabled or disa
 
 ### Toggle authentication
 
-The Data Resource API makes use of the BrightHive authlib for adding authentication to endpoints. Authentication can be toggle on or off – on a per method basis. 
+The Data Resource API makes use of [the BrightHive authlib](https://github.com/brighthive/authlib) for adding authentication to endpoints. Authentication can be toggle on or off – on a per method basis. 
 
 ```JSON
 {

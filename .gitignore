@@ -16,6 +16,7 @@ docs/build
 
 # alembic migrations
 **/migrations/versions/*
+!**/migrations/versions/.keep
 
 # development crud
 **/*.old

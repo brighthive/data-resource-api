@@ -67,7 +67,7 @@ Each JSON file in the `schema` directory delineates a resource, namely: its REST
 
 A resource JSON blob should define RESTful methods. These can be enabled or disabled.
 
-```JSON
+```
 {
   "api": {
     "resource": "name_of_endpoint",
@@ -90,7 +90,7 @@ A resource JSON blob should define RESTful methods. These can be enabled or disa
 
 The Data Resource API makes use of [the BrightHive authlib](https://github.com/brighthive/authlib) for adding authentication to endpoints. Authentication can be toggle on or off – on a per method basis. 
 
-```JSON
+```
 {
   "api": {
     "resource": "name_of_endpoint",
@@ -143,7 +143,7 @@ Creating a foreign key two involves making two additions to the JSON blob.
 
 First, add the foreign key as a field in the `schema`:
 
-```JSON
+```
   "datastore": {
     "tablename": "programs",
     "restricted_fields": [],
@@ -161,7 +161,7 @@ First, add the foreign key as a field in the `schema`:
 
 Second, define the foreign key in the `foreignKeys` array:
 
-```JSON
+```
 "datastore": {
   "tablename": "programs",
   "restricted_fields": [],

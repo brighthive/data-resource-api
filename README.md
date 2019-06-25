@@ -108,3 +108,78 @@ The Data Resource API makes use of [the BrightHive authlib](https://github.com/b
         },
 ...
 ```
+
+### Define the Table Schema
+
+The Data Resource API utilizes [the Table Schema from fictionless data](https://frictionlessdata.io/specs/table-schema/). The Table Schema is represented by a "descriptor", or a JSON object with particular attributes. In a Data Resource schema, the descriptor occupies the value of "datastore" >> "schema" (see `schema/programs.json` for an example). A schema can have up to four properties, among them: `primaryKey`, `foreignKeys`, and `fields`. 
+
+The `fields` must be an array of JSON objects, and each object must define a field on the data model. A field definition should include, at minimum, a `name`, `type` (defaults to String), and `required` (defaults to `false`). 
+
+Frictionless data and, correspondingly, the Data Resource API can be particular about what goes inside a field descriptor. `TABLESCHEMA_TO_SQLALCHEMY_TYPES` defines the available types in the frictionless schema and the corresponding types in sqlalchemy. Stick to these types, or you can anticipate unexpected behavior in your API! (See `data-resource-api/data_resource_api/factories/table_schema_types.py` for more context.)
+
+```python
+TABLESCHEMA_TO_SQLALCHEMY_TYPES = {
+    'string': String,
+    'number': Float,
+    'integer': Integer,
+    'boolean': Boolean,
+    'object': String,
+    'array': String,
+    'date': Date,
+    'time': DateTime,
+    'datetime': DateTime,
+    'year': Integer,
+    'yearmonth': Integer,
+    'duration': Integer,
+    'geopoint': String,
+    'geojson': String,
+    'any': String
+}
+```
+
+### Add foreign keys
+
+Creating a foreign key two involves making two additions to the JSON blob. 
+
+First, add the foreign key as a field in the `schema`:
+
+```JSON
+  "datastore": {
+    "tablename": "programs",
+    "restricted_fields": [],
+    "schema": {
+      "fields": [
+        {
+          "name": "location_id",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": false
+        },
+...
+```
+
+Second, define the foreign key in the `foreignKeys` array:
+
+```JSON
+"datastore": {
+  "tablename": "programs",
+  "restricted_fields": [],
+  "schema": {  
+    "fields": [ 
+      // Descriptor for location_id field
+...
+
+    ],
+    "foreignKeys": [
+      {
+        "fields": ["location_id"],
+        "reference": {
+          "resource": "locations",
+          "fields": ["id"]
+        }
+      }
+    ]
+  }
+}
+```

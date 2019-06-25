@@ -61,25 +61,27 @@ data-resource-api_1   | 2019-06-21 21:31:21,414 - data-resource-manager - INFO -
 
 The Data Resource API auto-magically instantiates data stores and corresponding endpoints without any coding. 
 
-Each JSON file in the `schema` directory delineates a resource, namely: its RESTful paths ("api"), and its data model ("datastore"). Create a new resource by adding another JSON file to the `schema` directory. (Visit `schema/data-resource-api` for an example JSON file.)
+Each JSON file in the `schema` directory delineates a resource, namely: its RESTful paths ("api"), and its data model ("datastore"). Create a new resource by adding another JSON file to the `schema` directory. (Visit the `schema` direcotry for example JSON files.)
 
 ### Enable or disable methods
 
-A resource JSON blob should define RESTful methods. These can be enabled or disabled.
+A resource JSON blob defines RESTful methods. These can be enabled or disabled.
 
-```JSON
+```JavaScript
 {
   "api": {
     "resource": "name_of_endpoint",
     "methods": [
       {
         "get": {
-          "enabled": true, # enable the method
+          // enable the method
+          "enabled": true, 
           "secured": true,
           "grants": ["get:users"]
         },
         "post": {
-          "enabled": false, # disable the method
+          // disable the method
+          "enabled": false, 
           "secured": true,
           "grants": ["get:users"]
         },
@@ -88,9 +90,9 @@ A resource JSON blob should define RESTful methods. These can be enabled or disa
 
 ### Toggle authentication
 
-The Data Resource API makes use of [the BrightHive authlib](https://github.com/brighthive/authlib) for adding authentication to endpoints. Authentication can be toggle on or off – on a per method basis. 
+The Data Resource API makes use of [BrightHive authlib](https://github.com/brighthive/authlib) for adding authentication to endpoints. Authentication can be toggled on or off – on a per method basis. 
 
-```JSON
+```JavaScript
 {
   "api": {
     "resource": "name_of_endpoint",
@@ -98,13 +100,90 @@ The Data Resource API makes use of [the BrightHive authlib](https://github.com/b
       {
         "get": {
           "enabled": true,
-          "secured": false, # do not require authentication
+          // do not require authentication
+          "secured": false,
           "grants": ["get:users"]
         },
         "post": {
           "enabled": false,
-          "secured": true, # require authentication
+          // require authentication
+          "secured": true, 
           "grants": ["get:users"]
         },
 ...
+```
+
+### Define the Table Schema
+
+The Data Resource API utilizes [the Table Schema from fictionless data](https://frictionlessdata.io/specs/table-schema/). The Table Schema is represented by a "descriptor", or a JSON object with particular attributes. In a Data Resource schema, the descriptor occupies the value of "datastore" >> "schema". A schema can have up to four properties, among them: `primaryKey`, `foreignKeys`, and `fields`. 
+
+The `fields` must be an array of JSON objects, and each object must define a field on the data model. A field definition should include, at minimum, a `name`, `type` (defaults to String), and `required` (defaults to `false`). 
+
+Frictionless data and, correspondingly, the Data Resource API can be particular about what goes inside a field descriptor. `TABLESCHEMA_TO_SQLALCHEMY_TYPES` defines the available types in the frictionless schema and the corresponding types in sqlalchemy. Stick to these types, or you can anticipate unexpected behavior in your API! (See `data-resource-api/data_resource_api/factories/table_schema_types.py` for more context.)
+
+```python
+TABLESCHEMA_TO_SQLALCHEMY_TYPES = {
+    'string': String,
+    'number': Float,
+    'integer': Integer,
+    'boolean': Boolean,
+    'object': String,
+    'array': String,
+    'date': Date,
+    'time': DateTime,
+    'datetime': DateTime,
+    'year': Integer,
+    'yearmonth': Integer,
+    'duration': Integer,
+    'geopoint': String,
+    'geojson': String,
+    'any': String
+}
+```
+
+### Add foreign keys
+
+Creating a foreign key two involves making two additions to the JSON blob. 
+
+First, add the foreign key as a field in the `schema`:
+
+```JavaScript
+  "datastore": {
+    "tablename": "programs",
+    "restricted_fields": [],
+    "schema": {
+      "fields": [
+        {
+          "name": "location_id",
+          "title": "Provider ID",
+          "type": "integer",
+          "description": "Foreign key for provider",
+          "required": false
+        },
+...
+```
+
+Second, define the foreign key in the `foreignKeys` array:
+
+```JavaScript
+"datastore": {
+  "tablename": "programs",
+  "restricted_fields": [],
+  "schema": {  
+    "fields": [ 
+      // Descriptor for location_id field, plus other fields
+...
+
+    ],
+    "foreignKeys": [
+      {
+        "fields": ["location_id"],
+        "reference": {
+          "resource": "locations",
+          "fields": ["id"]
+        }
+      }
+    ]
+  }
+}
 ```

@@ -56,6 +56,9 @@ class Config(object):
     OAUTH2_AUDIENCE = os.getenv('OAUTH2_AUDIENCE', 'http://localhost:8000')
     OAUTH2_ALGORITHMS = ['RS256']
 
+    # Secret Manager
+    SECRET_MANAGER = None
+
     @staticmethod
     def get_oauth2_provider():
         """Retrieve the OAuth 2.0 Provider.
@@ -143,6 +146,12 @@ class ProductionConfig(Config):
 
     def __init__(self):
         super().__init__()
+
+    SECRET_MANAGER = os.getenv('SECRET_MANAGER', 'environment').upper()
+    if SECRET_MANAGER == 'ENVIRONMENT':
+        print('Pulling from environment')
+    elif SECRET_MANAGER == 'SSM':
+        print('AWS has our secrets')
 
 
 class ConfigurationFactory(object):

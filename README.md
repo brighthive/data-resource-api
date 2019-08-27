@@ -19,7 +19,7 @@ From the technical perspective, a BrightHive Data Resource is an entity comprise
 Spinning up a fresh, out-of-the-box Data Resource API requires minimal setup. Follow these steps:
 
 
-**1. Download install [docker-cli](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/) based on your machine and preferences (e.g., you may chose to run `docker-compose` in a virtualenv).**
+**1. Download install [docker-cli](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/) based on your machine and preferences (e.g., you may choose to run `docker-compose` in a virtualenv).**
 
 **2. Clone or download the project to your local machine**
 

@@ -143,7 +143,7 @@ TABLESCHEMA_TO_SQLALCHEMY_TYPES = {
 
 ### Add foreign keys
 
-Creating a foreign key two involves making two additions to the JSON blob. 
+Creating a foreign key involves making two additions to the JSON. 
 
 First, add the foreign key as a field in the `schema`:
 

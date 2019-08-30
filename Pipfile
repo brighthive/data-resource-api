@@ -15,6 +15,7 @@ tableschema-sql = "*"
 alembic = "*"
 brighthive-authlib = "*"
 pip = "*"
+gevent = "*"
 
 [dev-packages]
 pytest = "*"

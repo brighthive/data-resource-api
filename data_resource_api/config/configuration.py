@@ -147,12 +147,6 @@ class ProductionConfig(Config):
     def __init__(self):
         super().__init__()
 
-    SECRET_MANAGER = os.getenv('SECRET_MANAGER', 'environment').upper()
-    if SECRET_MANAGER == 'ENVIRONMENT':
-        print('Pulling from environment')
-    elif SECRET_MANAGER == 'SSM':
-        print('AWS has our secrets')
-
 
 class ConfigurationFactory(object):
     """A factory for handling configuration object creation.

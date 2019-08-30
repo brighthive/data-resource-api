@@ -81,7 +81,8 @@ class ORMFactory(object):
         if isinstance(primary_key, str):
             primary_key = [primary_key]
         for field in fields:
-            if 'required' in field.keys() and field['required'] is True:
+            if ('required' in field.keys() and field['required']) or \
+                ('constraints' in field.keys() and 'required' in field['constraints'].keys() and field['constraints']['required']):
                 nullable = False
             else:
                 nullable = True

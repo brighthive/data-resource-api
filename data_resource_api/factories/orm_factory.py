@@ -65,7 +65,7 @@ class ORMFactory(object):
                 return True, foreign_key_reference
         return False, None
 
-    def create_sqlalchemy_fields(self, descriptor_fields: list(dict), primary_key: str, foreign_keys=[]):
+    def create_sqlalchemy_fields(self, descriptor_fields: list, primary_key: str, foreign_keys=[]):
         """Build SQLAlchemy fields to be added to new table object.
 
         Args:

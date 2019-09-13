@@ -65,11 +65,11 @@ class ORMFactory(object):
                 return True, foreign_key_reference
         return False, None
 
-    def create_sqlalchemy_fields(self, fields: dict, primary_key, foreign_keys=[]):
+    def create_sqlalchemy_fields(self, fields: list(dict), primary_key: str, foreign_keys=[]):
         """Build SQLAlchemy fields to be added to new table object.
 
         Args:
-            fields (dict):
+            fields (list of dict):
             primary_key (str): The primary key field.
             foreign_keys (list): Collection of foreign key fields.
 
@@ -77,31 +77,60 @@ class ORMFactory(object):
             dict: SQLAlchemy fields to append to the new database object.
 
         """
+
+        def is_required(field):
+            has_required_and_true = ('required' in field.keys() and field['required']) 
+            has_required_in_constraints = (
+                'constraints' in field.keys() 
+                and 'required' in field['constraints'].keys() 
+                and field['constraints']['required']
+            )
+            return has_required_and_true or has_required_in_constraints
+
         sqlalchemy_fields = {}
+
         if isinstance(primary_key, str):
             primary_key = [primary_key]
+
         for field in fields:
-            if ('required' in field.keys() and field['required']) or \
-                ('constraints' in field.keys() and 'required' in field['constraints'].keys() and field['constraints']['required']):
+            if is_required(field):
                 nullable = False
             else:
                 nullable = True
+            
+            # If this is the primary key
             if field['name'] in primary_key:
                 sqlalchemy_fields[field['name']] = Column(
-                    self.get_sqlalchemy_type(field['type']), primary_key=True)
-            else:
-                is_foreign_key, reference_table = self.evaluate_foreign_key(
-                    foreign_keys, field['name'], field['type'])
-                if not is_foreign_key:
+                    self.get_sqlalchemy_type(field['type']),
+                    primary_key=True
+                )
+                continue
+
+            # Otherwise check if its a foreign key
+            is_foreign_key, reference_table = self.evaluate_foreign_key(
+                foreign_keys,field['name'], field['type']
+            )
+            if is_foreign_key: 
+                try:
                     sqlalchemy_fields[field['name']] = Column(
-                        self.get_sqlalchemy_type(field['type']), nullable=nullable)
-                else:
-                    try:
-                        sqlalchemy_fields[field['name']] = Column(
-                            self.get_sqlalchemy_type(
-                                field['type']), ForeignKey(reference_table, onupdate='CASCADE', ondelete='CASCADE'))
-                    except Exception as e:
-                        print('An exception occured {}'.format(e))
+                        self.get_sqlalchemy_type(field['type']),
+                        ForeignKey(
+                            reference_table,
+                            onupdate='CASCADE',
+                            ondelete='CASCADE'
+                        )
+                    )
+                except Exception as e:
+                    print(f'An exception occured {e}')
+                
+                continue
+            
+            # It's a regular field
+            sqlalchemy_fields[field['name']] = Column(
+                self.get_sqlalchemy_type(field['type']),
+                nullable=nullable
+            )
+
         return sqlalchemy_fields
 
     def get_sqlalchemy_type(self, data_type: str):

@@ -79,13 +79,13 @@ class ORMFactory(object):
         """
 
         def is_required(descriptor_field):
-            has_required_and_true = ('required' in descriptor_field.keys() and descriptor_field['required']) 
+            has_required_key_and_true = ('required' in descriptor_field.keys() and descriptor_field['required']) 
             has_required_in_constraints = (
                 'constraints' in descriptor_field.keys() 
                 and 'required' in descriptor_field['constraints'].keys() 
                 and descriptor_field['constraints']['required']
             )
-            return has_required_and_true or has_required_in_constraints
+            return has_required_key_and_true or has_required_in_constraints
 
         sqlalchemy_fields = {}
 

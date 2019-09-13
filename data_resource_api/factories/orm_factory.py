@@ -65,11 +65,11 @@ class ORMFactory(object):
                 return True, foreign_key_reference
         return False, None
 
-    def create_sqlalchemy_fields(self, fields: list(dict), primary_key: str, foreign_keys=[]):
+    def create_sqlalchemy_fields(self, descriptor_fields: list(dict), primary_key: str, foreign_keys=[]):
         """Build SQLAlchemy fields to be added to new table object.
 
         Args:
-            fields (list of dict):
+            descriptor_fields (list of dict):
             primary_key (str): The primary key field.
             foreign_keys (list): Collection of foreign key fields.
 
@@ -78,12 +78,12 @@ class ORMFactory(object):
 
         """
 
-        def is_required(field):
-            has_required_and_true = ('required' in field.keys() and field['required']) 
+        def is_required(descriptor_field):
+            has_required_and_true = ('required' in descriptor_field.keys() and descriptor_field['required']) 
             has_required_in_constraints = (
-                'constraints' in field.keys() 
-                and 'required' in field['constraints'].keys() 
-                and field['constraints']['required']
+                'constraints' in descriptor_field.keys() 
+                and 'required' in descriptor_field['constraints'].keys() 
+                and descriptor_field['constraints']['required']
             )
             return has_required_and_true or has_required_in_constraints
 
@@ -92,28 +92,30 @@ class ORMFactory(object):
         if isinstance(primary_key, str):
             primary_key = [primary_key]
 
-        for field in fields:
-            if is_required(field):
+        for descriptor_field in descriptor_fields:
+            if is_required(descriptor_field):
                 nullable = False
             else:
                 nullable = True
             
             # If this is the primary key
-            if field['name'] in primary_key:
-                sqlalchemy_fields[field['name']] = Column(
-                    self.get_sqlalchemy_type(field['type']),
+            if descriptor_field['name'] in primary_key:
+                sqlalchemy_fields[descriptor_field['name']] = Column(
+                    self.get_sqlalchemy_type(descriptor_field['type']),
                     primary_key=True
                 )
                 continue
 
             # Otherwise check if its a foreign key
             is_foreign_key, reference_table = self.evaluate_foreign_key(
-                foreign_keys,field['name'], field['type']
+                foreign_keys,
+                descriptor_field['name'],
+                descriptor_field['type']
             )
             if is_foreign_key: 
                 try:
-                    sqlalchemy_fields[field['name']] = Column(
-                        self.get_sqlalchemy_type(field['type']),
+                    sqlalchemy_fields[descriptor_field['name']] = Column(
+                        self.get_sqlalchemy_type(descriptor_field['type']),
                         ForeignKey(
                             reference_table,
                             onupdate='CASCADE',
@@ -125,9 +127,9 @@ class ORMFactory(object):
                 
                 continue
             
-            # It's a regular field
-            sqlalchemy_fields[field['name']] = Column(
-                self.get_sqlalchemy_type(field['type']),
+            # It's a regular descriptor_field
+            sqlalchemy_fields[descriptor_field['name']] = Column(
+                self.get_sqlalchemy_type(descriptor_field['type']),
                 nullable=nullable
             )
 

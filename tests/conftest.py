@@ -102,7 +102,7 @@ class DataResourceContainer():
             ports=self.db_ports,
             command=command_string,
             volumes={
-                './schema': {
+                '/schema': { # TODO I think this requires abs path
                     'bind': '/data-resource-schema',
                     'mode': 'rw'
                 }
@@ -120,17 +120,22 @@ class DataResourceContainer():
 @pytest.fixture(scope='module')
 def psql_docker():
     """Database container."""
-    return PostgreSQLContainer()
+    container = PostgreSQLContainer()
+    yield container
+    container.stop_postgresql_container()
 
 
 @pytest.fixture(scope='module')
 def dr_docker():
     """Database container."""
-    return DataResourceContainer()
+    container = DataResourceContainer()
+    yield container
+    container.stop_container()
 
 
 @pytest.fixture(scope='module')
 def dr_manager_docker():
     """Database container."""
-    return DataResourceContainer(True)
-    
+    container = DataResourceContainer(True)
+    yield container
+    container.stop_container()

@@ -69,12 +69,22 @@ class DataResourceContainer():
         self.container = None
         self.manager = manager
         self.docker_client = docker.from_env()
+
+        if self.manager:
+            self.command = self.config.DATA_RESOURCE_MANAGER_COMMAND
+            self.name = self.config.DATA_RESOURCE_CONTAINER_NAME + '_manager'
+            self.db_ports = None
+        
+        else:
+            self.command = self.config.DATA_RESOURCE_MANAGER_COMMAND
+            self.name = self.config.DATA_RESOURCE_CONTAINER_NAME
+            self.db_ports = {8000:8000}
+            
         self.db_environment = [
             'POSTGRES_USER={}'.format(self.config.POSTGRES_USER),
             'POSTGRES_PASSWORD={}'.format(self.config.POSTGRES_PASSWORD),
             'POSTGRES_DB={}'.format(self.config.POSTGRES_DATABASE)
         ]
-        self.db_ports = {8000:8000}
 
     def get_image(self):
         """Output the DataResourceManager image from the configuation.
@@ -91,16 +101,14 @@ class DataResourceContainer():
         except Exception as e:
             print(f'Exception {e}')
 
-        command_string = self.config.DATA_RESOURCE_MANAGER_COMMAND if self.manager else ''
-
         self.container = self.docker_client.containers.run(
             self.get_image(),
             detach=True,
             auto_remove=True,
-            name=self.config.DATA_RESOURCE_CONTAINER_NAME,
+            name=self.name,
             environment=self.db_environment,
             ports=self.db_ports,
-            command=command_string,
+            command=self.command,
             volumes={
                 '/schema': { # TODO I think this requires abs path
                     'bind': '/data-resource-schema',
@@ -112,10 +120,11 @@ class DataResourceContainer():
     def stop_container(self):
         if self.container is None:
             self.container = self.docker_client.containers.get(
-                self.config.DATA_RESOURCE_CONTAINER_NAME
+                self.name
             )
+        
         self.container.stop()
-
+        
 
 @pytest.fixture(scope='module')
 def psql_docker():

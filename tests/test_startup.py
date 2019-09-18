@@ -2,6 +2,8 @@
 
 """
 
+import docker
+
 class TestDatabase(object):
     """Database Configuration Unit Tests"""
 
@@ -11,6 +13,8 @@ class TestDatabase(object):
         dr_docker.start_container()
         dr_manager_docker.start_container()
         
-        dr_manager_docker.stop_container()
-        dr_docker.stop_container()
-        psql_docker.stop_postgresql_container()
+        docker_client = docker.from_env()
+        containers = docker_client.containers.list()
+        for c in containers:
+            # TODO assert name running
+            print(c.id, c.name, c.status)

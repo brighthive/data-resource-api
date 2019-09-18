@@ -95,6 +95,12 @@ class TestConfig(Config):
         POSTGRES_PORT,
         POSTGRES_DATABASE)
 
+    DATA_RESOURCE_CONTAINER_NAME = 'data-resource-api-test'
+    DATA_RESOURCE_IMAGE = 'brighthive/data-resource-api'
+    DATA_RESOURCE_VERSION = '1.0.0-alpha'
+    DATA_RESOURCE_MANAGER_COMMAND = '--data-model-manager'
+    DATA_RESOURCE_VOLUME = './schema:/data-resource/schema'
+
 
 class IntegrationTestConfig(Config):
     """Integration testing configuration class.

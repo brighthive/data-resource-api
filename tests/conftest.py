@@ -63,7 +63,74 @@ class PostgreSQLContainer(object):
         self.container.stop()
 
 
+class DataResourceContainer():
+    def __init__(self, manager=False):
+        self.config = ConfigurationFactory.get_config('TEST')
+        self.container = None
+        self.manager = manager
+        self.docker_client = docker.from_env()
+        self.db_environment = [
+            'POSTGRES_USER={}'.format(self.config.POSTGRES_USER),
+            'POSTGRES_PASSWORD={}'.format(self.config.POSTGRES_PASSWORD),
+            'POSTGRES_DB={}'.format(self.config.POSTGRES_DATABASE)
+        ]
+        self.db_ports = {8000:8000}
+
+    def get_image(self):
+        """Output the DataResourceManager image from the configuation.
+
+        Returns:
+            str: The DataResourceManager image name and version tag.
+        """
+        return f'{self.config.DATA_RESOURCE_IMAGE}' \
+            f':{self.config.DATA_RESOURCE_VERSION}'
+
+    def start_container(self):
+        try:
+            self.docker_client.images.pull(self.get_image())
+        except Exception as e:
+            print(f'Exception {e}')
+
+        command_string = self.config.DATA_RESOURCE_MANAGER_COMMAND if self.manager else ''
+
+        self.container = self.docker_client.containers.run(
+            self.get_image(),
+            detach=True,
+            auto_remove=True,
+            name=self.config.DATA_RESOURCE_CONTAINER_NAME,
+            environment=self.db_environment,
+            ports=self.db_ports,
+            command=command_string,
+            volumes={
+                './schema': {
+                    'bind': '/data-resource-schema',
+                    'mode': 'rw'
+                }
+            }
+        )
+
+    def stop_container(self):
+        if self.container is None:
+            self.container = self.docker_client.containers.get(
+                self.config.DATA_RESOURCE_CONTAINER_NAME
+            )
+        self.container.stop()
+
+
 @pytest.fixture(scope='module')
 def psql_docker():
     """Database container."""
     return PostgreSQLContainer()
+
+
+@pytest.fixture(scope='module')
+def dr_docker():
+    """Database container."""
+    return DataResourceContainer()
+
+
+@pytest.fixture(scope='module')
+def dr_manager_docker():
+    """Database container."""
+    return DataResourceContainer(True)
+    

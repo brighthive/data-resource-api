@@ -25,6 +25,7 @@ pycodestyle = "*"
 sphinx = "*"
 expects = "*"
 docker = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

@@ -42,6 +42,8 @@ class PostgreSQLContainer(object):
 
     def start_postgresql_container(self):
         """Start PostgreSQL Container."""
+        if self.container: return
+
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
         except Exception as e:
@@ -80,10 +82,19 @@ class DataResourceContainer():
             self.name = self.config.DATA_RESOURCE_CONTAINER_NAME
             self.db_ports = {8000:8000}
             
-        self.db_environment = [
-            'POSTGRES_USER={}'.format(self.config.POSTGRES_USER),
-            'POSTGRES_PASSWORD={}'.format(self.config.POSTGRES_PASSWORD),
-            'POSTGRES_DB={}'.format(self.config.POSTGRES_DATABASE)
+        self.environment = [
+            'APP_ENV=SANDBOX',
+            'POSTGRES_USER=test_user',
+            'POSTGRES_PASSWORD=test_password',
+            'POSTGRES_DATABASE=data_resource_dev',
+            'POSTGRES_HOSTNAME=postgres',
+            'POSTGRES_PORT=5432'
+            # 'POSTGRES_USER={}'.format(self.config.POSTGRES_USER),
+            # 'POSTGRES_PASSWORD={}'.format(self.config.POSTGRES_PASSWORD),
+            # 'POSTGRES_DB={}'.format(self.config.POSTGRES_DATABASE),
+            # 'POSTGRES_PORT=5432',
+            # 'POSTGRES_DATABASE=data_resource_dev',
+            # 'POSTGRES_HOSTNAME=postgres'
         ]
 
     def get_image(self):
@@ -96,21 +107,25 @@ class DataResourceContainer():
             f':{self.config.DATA_RESOURCE_VERSION}'
 
     def start_container(self):
+        if self.container: return
+
         try:
             self.docker_client.images.pull(self.get_image())
         except Exception as e:
             print(f'Exception {e}')
+
+        full_volume_path = os.path.abspath('./schema')
 
         self.container = self.docker_client.containers.run(
             self.get_image(),
             detach=True,
             auto_remove=True,
             name=self.name,
-            environment=self.db_environment,
+            environment=self.environment,
             ports=self.db_ports,
             command=self.command,
             volumes={
-                '/schema': { # TODO I think this requires abs path
+                full_volume_path: {
                     'bind': '/data-resource-schema',
                     'mode': 'rw'
                 }
@@ -125,6 +140,29 @@ class DataResourceContainer():
         
         self.container.stop()
         
+    def wait_for_ready(self):
+        if not self.manager: return
+
+        # check logs until we are ready
+        counter = 0
+        for log in self.container.logs(stream=True):
+            counter += 1
+            print(log)
+
+            if counter >= 15:
+                print("Message cap reached, returning...")
+                return
+
+            # if "Sleeping for 60 seconds".encode() in log: return
+            if "Context impl PostgresqlImpl".encode() in log:
+                return
+
+        # print(self.container.logs(stream=True))
+        # self.container.logs(since=datetime)
+        # self.container.logs(follow=True)
+        # while True:
+        # print(self.container.logs())
+
 
 @pytest.fixture(scope='module')
 def psql_docker():

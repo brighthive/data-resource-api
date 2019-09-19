@@ -99,7 +99,6 @@ class TestConfig(Config):
     DATA_RESOURCE_IMAGE = 'brighthive/data-resource-api'
     DATA_RESOURCE_VERSION = '1.0.0-alpha'
     DATA_RESOURCE_MANAGER_COMMAND = '--data-model-manager'
-    DATA_RESOURCE_VOLUME = './schema:/data-resource/schema'
 
 
 class IntegrationTestConfig(Config):

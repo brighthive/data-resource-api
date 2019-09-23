@@ -61,7 +61,7 @@ class AvailableServicesResource(Resource):
         return {'endpoints': self.endpoints}, 200
 
 
-class DataResourceManager(Thread):
+class DataResourceManagerSync(object):
     """Data Resource Manager.
 
     Attributes:
@@ -71,7 +71,6 @@ class DataResourceManager(Thread):
     """
 
     def __init__(self):
-        Thread.__init__(self)
         self.data_resources: DataResource = []
         self.app_config = ConfigurationFactory.from_env()
         self.app = None
@@ -303,3 +302,12 @@ class DataResourceManager(Thread):
         else:
             self.logger.error('Schema directory does not exist.')
         self.logger.info('Completed check of data resources')
+
+
+class DataResourceManager(Thread, DataResourceManagerSync):
+    def __init__(self):
+        Thread.__init__(self)
+        DataResourceManagerSync.__init__(self)
+
+    def run(self):
+        DataResourceManagerSync.run(self)

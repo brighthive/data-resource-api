@@ -53,6 +53,16 @@ class DataModelManagerSync(object):
         self.logger = LogFactory.get_console_logger('data-model-manager')
 
     def run(self):
+        self.run_upgrade()
+
+        while True:
+            self.logger.info('Data Model Manager Running...')
+            self.monitor_data_models()
+            self.logger.info('Data Model Manager Sleeping for {} seconds...'.format(
+                self.get_sleep_interval()))
+            sleep(self.get_sleep_interval())
+
+    def run_upgrade(self):
         db_active = False
         max_retries = 5
         retry_wait = 10
@@ -73,13 +83,6 @@ class DataModelManagerSync(object):
                         'Waiting on database to become available....{}/{}'.format(retries, max_retries))
             retries += 1
             sleep(retry_wait)
-
-        while True:
-            self.logger.info('Data Model Manager Running...')
-            self.monitor_data_models()
-            self.logger.info('Data Model Manager Sleeping for {} seconds...'.format(
-                self.get_sleep_interval()))
-            sleep(self.get_sleep_interval())
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.

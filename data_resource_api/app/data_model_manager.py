@@ -38,7 +38,7 @@ class DataModelDescriptor(object):
         self.model_checksum = model_checksum
 
 
-class DataModelManager(Thread):
+class DataModelManagerSync(object):
     """Data Model Manager Class.
 
     This class extends the Thread base class and is intended to be run in its own thread.
@@ -47,7 +47,6 @@ class DataModelManager(Thread):
     """
 
     def __init__(self):
-        Thread.__init__(self)
         self.app_config = ConfigurationFactory.from_env()
         self.data_model_descriptors: DataModelDescriptor = []
         self.orm_factory = ORMFactory()
@@ -335,3 +334,13 @@ class DataModelManager(Thread):
             self.logger.error(
                 'Unable to locate schema directory {}'.format(schema_dir))
         self.logger.info('Completed check of data models')
+
+
+class DataModelManager(Thread, DataModelManagerSync):
+    def __init__(self):
+        Thread.__init__(self)
+        DataModelManagerSync.__init__(self)
+
+    def run(self):
+        DataModelManagerSync.run(self)
+

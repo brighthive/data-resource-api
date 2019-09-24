@@ -107,17 +107,25 @@ def app():
     data_model_manager = DataModelManagerSync()
 
     upgraded = False
-    while not upgraded:
+    counter = 1
+    counter_max = 10
+    while not upgraded and counter <= counter_max:
         print("in loop")
         try:
             with app.app_context():
                 print("before run upgrade, app worked!")
+                data_model_manager.monitor_data_models()
                 data_model_manager.run_upgrade()
                 print("Ran upgrade!")
                 upgraded = True
         except Exception as e:
-            print("Not upgraded, sleeping...")
+            print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")
+            counter += 1
             sleep(1)
 
-    yield postgres
-    postgres.stop_container()
+    if counter > counter_max:
+        print("Max fail reached; stopping postgres container")
+        postgres.stop_container()
+    else:
+        yield postgres
+        postgres.stop_container()

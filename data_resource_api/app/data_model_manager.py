@@ -76,9 +76,9 @@ class DataModelManagerSync(object):
                 data = session.query(Checksum).all()
                 db_active = True
             except Exception as e:
-                print("exception", e)
+                print("exception", e.code)
                 if e.code == 'f405':
-                    self.logger.info('errorrrrr f405')
+                    print('errorrrrr f405')
                     self.revision('checksum_and_logs')
                     self.upgrade()
                     db_active = True

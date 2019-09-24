@@ -1,4 +1,4 @@
-from expects import expect, be_an, raise_error, have_property
+from expects import expect, be_an, raise_error, have_property, equal
 from data_resource_api import ConfigurationFactory, InvalidConfigurationError
 
 
@@ -12,3 +12,5 @@ class TestStartup(object):
 
         """
 
+        expect(1).to(equal(1))
+        # client

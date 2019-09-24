@@ -63,6 +63,7 @@ class DataModelManagerSync(object):
             sleep(self.get_sleep_interval())
 
     def run_upgrade(self):
+        print('in run upgrade')
         db_active = False
         max_retries = 5
         retry_wait = 10
@@ -70,19 +71,24 @@ class DataModelManagerSync(object):
         while not db_active and retries <= max_retries:
             self.logger.info('Checking database availability...')
             try:
+                print('trying session')
                 session = Session()
                 data = session.query(Checksum).all()
                 db_active = True
             except Exception as e:
+                print("exception", e)
                 if e.code == 'f405':
+                    self.logger.info('errorrrrr f405')
                     self.revision('checksum_and_logs')
                     self.upgrade()
                     db_active = True
                 else:
                     self.logger.info(
-                        'Waiting on database to become available....{}/{}'.format(retries, max_retries))
+                        'Waiting on database to become available.... {} - {}/{}'.format(data_resource_config.SQLALCHEMY_DATABASE_URI, retries, max_retries))
             retries += 1
             sleep(retry_wait)
+        
+        self.logger.info('Upgrade loop exited')
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.
@@ -254,6 +260,7 @@ class DataModelManagerSync(object):
         """
         alembic_config, migrations_dir = self.get_alembic_config()
         if migrations_dir is not None:
+            self.logger.info("Running alembic migration upgrade...")
             command.upgrade(config=alembic_config, revision='head')
         else:
             self.logger.info('No migrations to run...')

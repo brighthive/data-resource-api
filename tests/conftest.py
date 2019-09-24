@@ -4,7 +4,7 @@ import os
 import pytest
 import docker
 from data_resource_api import ConfigurationFactory
-# from data_resource_api.app.data_resource_manager import DataResourceManager
+from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 
 
@@ -73,34 +73,34 @@ class PostgreSQLContainer(object):
             self.container.stop()
 
 
-@pytest.fixture(scope='session')
-def client():
-    # From authserver
-    """Setup the Flask application and return an instance of its test client.
+# @pytest.fixture(scope='session')
+# def client():
+#     # From authserver
+#     """Setup the Flask application and return an instance of its test client.
 
-    Returns:
-        client (object): The Flask test client for the application.
+#     Returns:
+#         client (object): The Flask test client for the application.
 
-    """
-    drm = DataResourceManager()
-    app = drm.create_app()
+#     """
+#     drm = DataResourceManagerSync()
+#     app = drm.create_app()
 
-    # From authserver
-    # client = app.test_client()
-    # return client
+#     # From authserver
+#     # client = app.test_client()
+#     # return client
 
-    return app
+#     return app
 
 @pytest.fixture(scope='session', autouse=True)
 def app():
-    """Setup the PostgreSQL database instance and return the Flask application.
+    """Setup the PostgreSQL database instance and run migrations.
 
     Returns:
-        app (object): The Flask application.
+        None
 
     """
-    # drm = DataResourceManager()
-    app = drm.create_app()
+    data_resource_manager = DataResourceManagerSync()
+    app = data_resource_manager.create_app()
     postgres = PostgreSQLContainer()
     postgres.start_container()
 
@@ -108,21 +108,16 @@ def app():
 
     upgraded = False
     while not upgraded:
+        print("in loop")
         try:
             with app.app_context():
+                print("before run upgrade, app worked!")
                 data_model_manager.run_upgrade()
+                print("Ran upgrade!")
                 upgraded = True
         except Exception as e:
             print("Not upgraded, sleeping...")
             sleep(1)
 
-
-@pytest.fixture
-def environments():
-    return [
-        'DEVELOPMENT',
-        'TESTING',
-        'STAGING',
-        'SANDBOX',
-        'PRODUCTION'
-    ]
+    yield postgres
+    postgres.stop_container()

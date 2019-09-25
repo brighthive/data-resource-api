@@ -5,6 +5,8 @@ import json
 
 class TestStartup(object):
     def test_credentials(self, client):
+        ## Load json descriptor
+
         ## Get
         route = '/credentials'
         response = client.get(route)
@@ -37,3 +39,12 @@ class TestStartup(object):
 
         expect(response.status_code).to(equal(401))
         expect(body['message']).to(equal('Access Denied'))
+
+    def test_load_descriptor(self, client):
+        ## Get
+        route = '/test'
+        response = client.get(route)
+        body = json.loads(response.data)
+
+        expect(response.status_code).to(equal(200))
+        expect(body['test']).to(be_empty)

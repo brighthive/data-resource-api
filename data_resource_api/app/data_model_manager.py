@@ -293,6 +293,7 @@ class DataModelManagerSync(object):
         """
         self.logger.info('Checking data models')
         schema_dir = self.get_data_resource_schema_path()
+        
         if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
             schemas = os.listdir(schema_dir)
             for schema in schemas:

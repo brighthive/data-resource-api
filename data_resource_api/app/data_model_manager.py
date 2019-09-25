@@ -76,15 +76,17 @@ class DataModelManagerSync(object):
                 data = session.query(Checksum).all()
                 db_active = True
             except Exception as e:
-                print("exception", e.code)
+                # UndefinedTable
                 if e.code == 'f405':
-                    print('errorrrrr f405')
                     self.revision('checksum_and_logs')
                     self.upgrade()
                     db_active = True
-                else:
+                elif e.code == 'e3q8':
                     self.logger.info(
-                        'Waiting on database to become available.... {} - {}/{}'.format(data_resource_config.SQLALCHEMY_DATABASE_URI, retries, max_retries))
+                        'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
+                else:
+                    raise e
+                    
             retries += 1
             sleep(retry_wait)
         

@@ -6,9 +6,9 @@ import docker
 from data_resource_api import ConfigurationFactory
 from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
-
-
+from pathlib import Path
 from time import sleep
+
 # from flask_migrate import upgrade
 # from authserver import create_app
 # from authserver.utilities import PostgreSQLContainer
@@ -91,6 +91,20 @@ class PostgreSQLContainer(object):
 
 #     return app
 
+
+## We need to first delete any migrations
+def delete_migration_artifacts():
+    print('Deleting migration artifacts...')
+    rootdir = os.path.abspath('./migrations/versions')
+
+    for file in os.listdir(os.fsencode(rootdir)):
+        filename = os.fsdecode(file)
+        if filename.endswith(".py"):
+            os.remove(os.path.join(rootdir, filename))
+        else:
+            continue
+
+
 @pytest.fixture(scope='session', autouse=True)
 def app():
     """Setup the PostgreSQL database instance and run migrations.
@@ -99,6 +113,10 @@ def app():
         None
 
     """
+
+    delete_migration_artifacts()
+
+    ##
     data_resource_manager = DataResourceManagerSync()
     app = data_resource_manager.create_app()
     postgres = PostgreSQLContainer()
@@ -110,13 +128,10 @@ def app():
     counter = 1
     counter_max = 10
     while not upgraded and counter <= counter_max:
-        print("in loop")
         try:
             with app.app_context():
-                print("before run upgrade, app worked!")
                 data_model_manager.monitor_data_models()
                 data_model_manager.run_upgrade()
-                print("Ran upgrade!")
                 upgraded = True
         except Exception as e:
             print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")

@@ -63,7 +63,6 @@ class DataModelManagerSync(object):
             sleep(self.get_sleep_interval())
 
     def run_upgrade(self):
-        print('in run upgrade')
         db_active = False
         max_retries = 5
         retry_wait = 10
@@ -71,7 +70,6 @@ class DataModelManagerSync(object):
         while not db_active and retries <= max_retries:
             self.logger.info('Checking database availability...')
             try:
-                print('trying session')
                 session = Session()
                 data = session.query(Checksum).all()
                 db_active = True

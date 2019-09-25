@@ -73,23 +73,6 @@ class PostgreSQLContainer(object):
             self.container.stop()
 
 
-@pytest.fixture(scope='session')
-def client():
-    # From authserver
-    """Setup the Flask application and return an instance of its test client.
-
-    Returns:
-        client (object): The Flask test client for the application.
-
-    """
-    drm = DataResourceManagerSync()
-    app = drm.create_app()
-    client = app.test_client()
-
-    return client
-
-
-## We need to first delete any migrations
 def delete_migration_artifacts():
     print('Deleting migration artifacts...')
     rootdir = os.path.abspath('./migrations/versions')
@@ -103,17 +86,16 @@ def delete_migration_artifacts():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def app():
+def client():
     """Setup the PostgreSQL database instance and run migrations.
 
     Returns:
-        None
+        client (object): The Flask test client for the application.
 
     """
 
     delete_migration_artifacts()
 
-    ##
     data_resource_manager = DataResourceManagerSync()
     app = data_resource_manager.create_app()
     postgres = PostgreSQLContainer()
@@ -127,7 +109,15 @@ def app():
     while not upgraded and counter <= counter_max:
         try:
             with app.app_context():
+                # print("------------- running monitor")
+                # data_model_manager.monitor_data_models()
+                print("------------- running upgrade")
+                data_model_manager.run_upgrade()
+                print("------------- running monitor data resources")
+                data_resource_manager.monitor_data_resources()
+                print("------------- running monitor data models")
                 data_model_manager.monitor_data_models()
+                
                 data_model_manager.run_upgrade()
                 upgraded = True
         except Exception as e:
@@ -139,5 +129,5 @@ def app():
         print("Max fail reached; stopping postgres container")
         postgres.stop_container()
     else:
-        yield postgres
+        yield app.test_client()
         postgres.stop_container()

@@ -260,7 +260,6 @@ class DataModelManagerSync(object):
         """
         alembic_config, migrations_dir = self.get_alembic_config()
         if migrations_dir is not None:
-            self.logger.info("Running alembic migration upgrade...")
             command.upgrade(config=alembic_config, revision='head')
         else:
             self.logger.info('No migrations to run...')

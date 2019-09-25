@@ -9,10 +9,6 @@ from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
 
-# from flask_migrate import upgrade
-# from authserver import create_app
-# from authserver.utilities import PostgreSQLContainer
-# from authserver.config import ConfigurationFactory
 
 class PostgreSQLContainer(object):
     """A PostgreSQL Container Object.

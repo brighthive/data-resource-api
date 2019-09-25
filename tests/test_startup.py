@@ -14,11 +14,22 @@ class TestStartup(object):
         expect(body['credentials']).to(be_empty)
         expect(body['links']).to(be_empty)
         
-        ## Login
+        ## Login ?
 
         ## Post
-        # post_body = {}
-        # response = client.json_post(route, data=post_body)
+        post_body = {
+            "credential_name": "testtesttest"
+        }
+        response = client.post(route, json=post_body)
+        expect(response.status_code).to(equal(201))
+
+        ## Check for one item
+        response = client.get(route)
+        body = json.loads(response.data)
+
+        expect(response.status_code).to(equal(200))
+        expect(len(body['credentials'])).to(equal(1))
+        
 
     def test_programs(self, client):
         response = client.get('/programs')

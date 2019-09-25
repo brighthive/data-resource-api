@@ -1,16 +1,20 @@
-from expects import expect, be_an, raise_error, have_property, equal
+from expects import expect, be_an, raise_error, have_property, equal, be, be_empty
 from data_resource_api import ConfigurationFactory, InvalidConfigurationError
+import json
 
 
 class TestStartup(object):
-    """aa"""
+    def test_loads(self, client):
+        r1 = client.get('/credentials')
+        body = json.loads(r1.data)
+        print(body)
 
-    def test_loads(self):
-        """aa
+        expect(r1.status_code).to(be(200))
+        expect(body['credentials']).to(be_empty)
+        expect(body['links']).to(be_empty)
 
-        aa
+        r2 = client.get('/programs')
+        body = json.loads(r2.data)
 
-        """
-
-        expect(1).to(equal(1))
-        # client
+        expect(r2.status_code).to(be(200))
+        expect(body['message']).to(equal('Access Denied'))

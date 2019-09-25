@@ -73,23 +73,20 @@ class PostgreSQLContainer(object):
             self.container.stop()
 
 
-# @pytest.fixture(scope='session')
-# def client():
-#     # From authserver
-#     """Setup the Flask application and return an instance of its test client.
+@pytest.fixture(scope='session')
+def client():
+    # From authserver
+    """Setup the Flask application and return an instance of its test client.
 
-#     Returns:
-#         client (object): The Flask test client for the application.
+    Returns:
+        client (object): The Flask test client for the application.
 
-#     """
-#     drm = DataResourceManagerSync()
-#     app = drm.create_app()
+    """
+    drm = DataResourceManagerSync()
+    app = drm.create_app()
+    client = app.test_client()
 
-#     # From authserver
-#     # client = app.test_client()
-#     # return client
-
-#     return app
+    return client
 
 
 ## We need to first delete any migrations

@@ -294,56 +294,81 @@ class DataModelManagerSync(object):
         self.logger.info('Checking data models')
         schema_dir = self.get_data_resource_schema_path()
         
-        if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
-            schemas = os.listdir(schema_dir)
-            for schema in schemas:
-                if os.path.isdir(os.path.join(schema_dir, schema)):
-                    self.logger.error(
-                        'Cannot open a nested schema directory {}'.format(schema))
-                else:
-                    try:
-                        with open(os.path.join(schema_dir, schema), 'r') as fh:
-                            schema_dict = json.load(fh)
-                        schema_filename = schema
-                        table_name = schema_dict['datastore']['tablename']
-                        table_schema = schema_dict['datastore']['schema']
-                        api_schema = schema_dict['api']['methods'][0]
-                        model_checksum = md5(json.dumps(
-                            table_schema, sort_keys=True).encode('utf-8')).hexdigest()
-                        if self.data_model_exists(schema_filename):
-                            if self.data_model_changed(schema_filename, model_checksum):
-                                data_model_index = self.get_data_model_index(
-                                    schema_filename)
-                                data_model = self.orm_factory.create_orm_from_dict(
-                                    table_schema, table_name, api_schema)
-                                self.revision(table_name, create_table=False)
-                                self.upgrade()
-                                self.update_model_checksum(
-                                    table_name, model_checksum)
-                                del data_model
-                                self.data_model_descriptors[data_model_index].model_checksum = model_checksum
-                        else:
-                            data_model_descriptor = DataModelDescriptor(
-                                schema_filename, table_name, model_checksum)
-                            self.data_model_descriptors.append(
-                                data_model_descriptor)
-                            stored_checksum = self.get_model_checksum(
-                                table_name)
-                            data_model = self.orm_factory.create_orm_from_dict(
-                                table_schema, table_name, api_schema)
-                            if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
-                                self.revision(table_name)
-                                self.upgrade()
-                                self.add_model_checksum(
-                                    table_name, model_checksum)
-                            del data_model
-                    except Exception as e:
-                        self.logger.error(
-                            'Error loading data resource schema {} {}'.format(schema, e))
-        else:
+        if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
             self.logger.error(
                 'Unable to locate schema directory {}'.format(schema_dir))
+
+        schemas = os.listdir(schema_dir)
+        for schema in schemas:
+            if os.path.isdir(os.path.join(schema_dir, schema)):
+                self.logger.error(
+                    'Cannot open a nested schema directory {}'.format(schema))
+                return
+
+            try:
+                with open(os.path.join(schema_dir, schema), 'r') as fh:
+                    schema_dict = json.load(fh)
+                
+                schema_filename = schema
+            except Exception as e:
+                self.logger.error(
+                    'Error loading json from schema file {} {}'.format(schema, e))
+            
+            self.work_on_schema(schema_dict, schema_filename)
+
+            
         self.logger.info('Completed check of data models')
+
+
+    def work_on_schema(self, schema_dict: dict, schema_filename: str):
+        """
+        """
+        try:
+            table_name = schema_dict['datastore']['tablename']
+            table_schema = schema_dict['datastore']['schema']
+            api_schema = schema_dict['api']['methods'][0]
+
+            model_checksum = md5(
+                json.dumps(
+                    table_schema,
+                    sort_keys=True
+                ).encode('utf-8')
+            ).hexdigest()
+
+            if self.data_model_exists(schema_filename):
+                if not self.data_model_changed(schema_filename, model_checksum):
+                    return
+
+                data_model_index = self.get_data_model_index(
+                    schema_filename)
+                data_model = self.orm_factory.create_orm_from_dict(
+                    table_schema, table_name, api_schema)
+                self.revision(table_name, create_table=False)
+                self.upgrade()
+                self.update_model_checksum(
+                    table_name, model_checksum)
+                del data_model
+                self.data_model_descriptors[data_model_index].model_checksum = model_checksum
+
+            else:
+                data_model_descriptor = DataModelDescriptor(
+                    schema_filename, table_name, model_checksum)
+                self.data_model_descriptors.append(
+                    data_model_descriptor)
+                stored_checksum = self.get_model_checksum(
+                    table_name)
+                data_model = self.orm_factory.create_orm_from_dict(
+                    table_schema, table_name, api_schema)
+                if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
+                    self.revision(table_name)
+                    self.upgrade()
+                    self.add_model_checksum(
+                        table_name, model_checksum)
+                del data_model
+
+        except Exception as e:
+            self.logger.error(
+                f'Error loading data resource schema {schema_filename} {e}')
 
 
 class DataModelManager(Thread, DataModelManagerSync):

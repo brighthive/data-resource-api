@@ -210,3 +210,20 @@ OAUTH2_JWKS_URL
 OAUTH2_AUDIENCE
 OAUTH2_ALGORITHMS
 SECRET_MANAGER
+
+## Running tests
+
+For developers to run a test use the following,
+
+```bash
+pipenv run pytest
+```
+
+Or
+
+```bash
+pipenv shell
+pytest
+```
+
+

@@ -8,7 +8,7 @@ from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
-
+from tests.schemas import custom_descriptor
 
 class PostgreSQLContainer(object):
     """A PostgreSQL Container Object.
@@ -81,8 +81,8 @@ def delete_migration_artifacts():
             continue
 
 
-@pytest.fixture(scope='session', autouse=True)
-def client():
+@pytest.fixture(scope='module')
+def regular_client():
     """Setup the PostgreSQL database instance and run migrations.
 
     Returns:
@@ -113,6 +113,58 @@ def client():
                 data_resource_manager.monitor_data_resources()
                 print("------------- running monitor data models")
                 data_model_manager.monitor_data_models()
+                
+                data_model_manager.run_upgrade()
+                upgraded = True
+        except Exception as e:
+            print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")
+            counter += 1
+            sleep(1)
+
+    if counter > counter_max:
+        print("Max fail reached; stopping postgres container")
+        postgres.stop_container()
+    else:
+        yield app.test_client()
+        postgres.stop_container()
+
+
+@pytest.fixture(scope='module')
+def custom_client():
+    """Setup the PostgreSQL database instance and run migrations.
+
+    Returns:
+        client (object): The Flask test client for the application.
+
+    """
+
+    schema_dict = custom_descriptor
+
+    schema_filename = "custom_descriptor"
+
+    delete_migration_artifacts()
+
+    data_resource_manager = DataResourceManagerSync()
+    app = data_resource_manager.create_app()
+    postgres = PostgreSQLContainer()
+    postgres.start_container()
+
+    data_model_manager = DataModelManagerSync()
+
+    upgraded = False
+    counter = 1
+    counter_max = 10
+    while not upgraded and counter <= counter_max:
+        try:
+            with app.app_context():
+                # print("------------- running monitor")
+                # data_model_manager.monitor_data_models()
+                print("------------- running upgrade")
+                data_model_manager.run_upgrade()
+                print("------------- running monitor data resources")
+                data_resource_manager.work_on_schema(schema_dict, schema_filename)
+                print("------------- running monitor data models")
+                data_model_manager.work_on_schema(schema_dict, schema_filename)
                 
                 data_model_manager.run_upgrade()
                 upgraded = True

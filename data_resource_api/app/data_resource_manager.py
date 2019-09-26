@@ -263,6 +263,8 @@ class DataResourceManagerSync(object):
 
 
     def work_on_schema(self, schema_dict: dict, schema_file: str):
+        """
+        """
         try:
             data_resource_checksum = hashlib.md5(
                 json.dumps(

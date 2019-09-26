@@ -4,12 +4,12 @@ import json
 
 
 class TestStartup(object):
-    def test_credentials(self, client):
+    def test_credentials(self, regular_client):
         ## Load json descriptor
 
         ## Get
         route = '/credentials'
-        response = client.get(route)
+        response = regular_client.get(route)
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(200))
@@ -22,29 +22,20 @@ class TestStartup(object):
         post_body = {
             "credential_name": "testtesttest"
         }
-        response = client.post(route, json=post_body)
+        response = regular_client.post(route, json=post_body)
         expect(response.status_code).to(equal(201))
 
         ## Check for one item
-        response = client.get(route)
+        response = regular_client.get(route)
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(200))
         expect(len(body['credentials'])).to(equal(1))
         
 
-    def test_programs(self, client):
-        response = client.get('/programs')
+    def test_programs(self, regular_client):
+        response = regular_client.get('/programs')
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(401))
         expect(body['message']).to(equal('Access Denied'))
-
-    def test_load_descriptor(self, client):
-        ## Get
-        route = '/test'
-        response = client.get(route)
-        body = json.loads(response.data)
-
-        expect(response.status_code).to(equal(200))
-        expect(body['test']).to(be_empty)

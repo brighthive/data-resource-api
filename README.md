@@ -216,14 +216,6 @@ SECRET_MANAGER
 For developers to run a test use the following,
 
 ```bash
-pipenv run pytest
-```
-
-Or
-
-```bash
 pipenv shell
-pytest
+APP_ENV='TEST' pytest
 ```
-
-

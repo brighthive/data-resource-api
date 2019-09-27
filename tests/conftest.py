@@ -105,8 +105,6 @@ def regular_client():
     while not upgraded and counter <= counter_max:
         try:
             with app.app_context():
-                # print("------------- running monitor")
-                # data_model_manager.monitor_data_models()
                 print("------------- running upgrade")
                 data_model_manager.run_upgrade()
                 print("------------- running monitor data resources")
@@ -157,8 +155,6 @@ def custom_client():
     while not upgraded and counter <= counter_max:
         try:
             with app.app_context():
-                # print("------------- running monitor")
-                # data_model_manager.monitor_data_models()
                 print("------------- running upgrade")
                 data_model_manager.run_upgrade()
                 print("------------- running monitor data resources")

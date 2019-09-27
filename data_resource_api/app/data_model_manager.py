@@ -282,14 +282,11 @@ class DataModelManagerSync(object):
             self.logger.info('No migrations to run...')
 
     def monitor_data_models(self):
-        """Monitor data models for changes.
+        """Wraps monitor data models for changes.
 
         Note:
-            This method is the core worker for this class. It has the responsibility of
-            monitoring all data resource models and determining if they have changed. If
-            changes are detected, it also has the responsibility of building and applying
-            new Alembic migrations to meet these changes. The data models will then have
-            to be reconstructed by each individual worker.
+            This method wraps the core worker for this class. This method has the
+            responsbility of iterating through a directory to find schema files to load.
         """
         self.logger.info('Checking data models')
         schema_dir = self.get_data_resource_schema_path()
@@ -321,7 +318,14 @@ class DataModelManagerSync(object):
 
 
     def work_on_schema(self, schema_dict: dict, schema_filename: str):
-        """
+        """Operate on a schema dict for data model changes.
+
+        Note: 
+            This method is the core worker for this class. It has the responsibility of
+            monitoring all data resource models and determining if they have changed. If
+            changes are detected, it also has the responsibility of building and applying
+            new Alembic migrations to meet these changes. The data models will then have
+            to be reconstructed by each individual worker.
         """
         try:
             table_name = schema_dict['datastore']['tablename']

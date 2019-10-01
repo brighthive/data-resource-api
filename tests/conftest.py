@@ -46,6 +46,7 @@ class PostgreSQLContainer(object):
 
     def start_container(self):
         """Start PostgreSQL Container."""
+        self.stop_if_running()
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
         except Exception as e:
@@ -58,6 +59,16 @@ class PostgreSQLContainer(object):
             name=self.config.CONTAINER_NAME,
             environment=self.db_environment,
             ports=self.db_ports)
+    
+    def stop_if_running(self):
+        try:
+            running = self.docker_client.containers.get(self.config.CONTAINER_NAME)
+            print(f"Killing running container '{self.config.CONTAINER_NAME}'")
+            running.stop()
+        except Exception as e:
+            if "404 Client Error: Not Found" in str(e):
+                return
+            raise e
 
     def stop_container(self):
         """Stop PostgreSQL Container."""

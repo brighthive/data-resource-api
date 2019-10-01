@@ -47,6 +47,7 @@ class PostgreSQLContainer(object):
 
     def start_container(self):
         """Start PostgreSQL Container."""
+        self.stop_if_running()
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
         except Exception as e:
@@ -59,6 +60,16 @@ class PostgreSQLContainer(object):
             name=self.config.CONTAINER_NAME,
             environment=self.db_environment,
             ports=self.db_ports)
+    
+    def stop_if_running(self):
+        try:
+            running = self.docker_client.containers.get(self.config.CONTAINER_NAME)
+            print(f"Killing running container '{self.config.CONTAINER_NAME}'")
+            running.stop()
+        except Exception as e:
+            if "404 Client Error: Not Found" in str(e):
+                return
+            raise e
 
     def stop_container(self):
         """Stop PostgreSQL Container."""
@@ -68,7 +79,6 @@ class PostgreSQLContainer(object):
 
         if self.container is not None:
             self.container.stop()
-
 
 def delete_migration_artifacts():
     print('Deleting migration artifacts...')
@@ -82,150 +92,95 @@ def delete_migration_artifacts():
             continue
 
 
+class UpgradeFail(Exception): pass
+
+
+class Client():
+    def __init__(self, schema_dicts=None):
+        if schema_dicts is not None and type(schema_dicts) != list:
+            schema_dicts = [schema_dicts]
+
+        self.schema_dicts = schema_dicts
+
+    def run_and_return_test_client(self):
+        delete_migration_artifacts()
+
+        self.initalize_objects()
+        
+        try:
+            self.upgrade_loop()
+            return self.app.test_client()
+        except UpgradeFail:
+            print("Failed to upgrade database.")
+
+    def initalize_objects(self):
+        self.data_resource_manager = DataResourceManagerSync()
+        self.app = self.data_resource_manager.create_app()
+        self.postgres = PostgreSQLContainer()
+        self.postgres.start_container()
+        self.data_model_manager = DataModelManagerSync()
+
+    def upgrade_loop(self):
+        upgraded = False
+        self.counter = 1
+        self.counter_max = 10
+        while not upgraded and self.counter <= self.counter_max:
+            try:
+                with self.app.app_context():
+                    print("------------- running upgrade")
+                    self.data_model_manager.run_upgrade()
+
+                    if self.schema_dicts is None:
+                        print("------------- running monitor data resources")
+                        self.data_resource_manager.monitor_data_resources()
+                        print("------------- running monitor data models")
+                        self.data_model_manager.monitor_data_models()
+                    else:
+                        for schema_dict in self.schema_dicts:
+                            print("------------- running monitor data resources")
+                            self.data_resource_manager.work_on_schema(schema_dict, "custom_schema")
+                            print("------------- running monitor data models")
+                            self.data_model_manager.work_on_schema(schema_dict, "custom_schema")
+                    
+                    self.data_model_manager.run_upgrade()
+                    upgraded = True
+                    return True
+
+            except Exception as e:
+                print(f"Not upgraded, sleeping... {self.counter}/{self.counter_max} time(s)")
+                self.counter += 1
+                sleep(1)
+        
+        if self.counter > self.counter_max:
+            print("Max fail reached; stopping postgres container")
+            self.postgres.stop_container()
+            raise UpgradeFail
+
+    def stop_container(self):
+        self.postgres.stop_container()
+
+
 @pytest.fixture(scope='module')
 def regular_client():
     """Setup the PostgreSQL database instance and run migrations.
 
     Returns:
         client (object): The Flask test client for the application.
-
     """
-
-    delete_migration_artifacts()
-
-    data_resource_manager = DataResourceManagerSync()
-    app = data_resource_manager.create_app()
-    postgres = PostgreSQLContainer()
-    postgres.start_container()
-
-    data_model_manager = DataModelManagerSync()
-
-    upgraded = False
-    counter = 1
-    counter_max = 10
-    while not upgraded and counter <= counter_max:
-        try:
-            with app.app_context():
-                print("------------- running upgrade")
-                data_model_manager.run_upgrade()
-                print("------------- running monitor data resources")
-                data_resource_manager.monitor_data_resources()
-                print("------------- running monitor data models")
-                data_model_manager.monitor_data_models()
-                
-                data_model_manager.run_upgrade()
-                upgraded = True
-        except Exception as e:
-            print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")
-            counter += 1
-            sleep(1)
-
-    if counter > counter_max:
-        print("Max fail reached; stopping postgres container")
-        postgres.stop_container()
-    else:
-        yield app.test_client()
-        postgres.stop_container()
-
-
-@pytest.fixture(scope='module')
-def custom_client():
-    """Setup the PostgreSQL database instance and run migrations.
-
-    Returns:
-        client (object): The Flask test client for the application.
-
-    """
-
-    schema_dicts = custom_descriptor
-
-    schema_filename = "custom_descriptor"
-
-    delete_migration_artifacts()
-
-    data_resource_manager = DataResourceManagerSync()
-    app = data_resource_manager.create_app()
-    postgres = PostgreSQLContainer()
-    postgres.start_container()
-
-    data_model_manager = DataModelManagerSync()
-
-    upgraded = False
-    counter = 1
-    counter_max = 10
-    while not upgraded and counter <= counter_max:
-        try:
-            with app.app_context():
-                print("------------- running upgrade")
-                data_model_manager.run_upgrade()
-                for schema_dict in schema_dicts:
-                    print("------------- running monitor data resources")
-                    data_resource_manager.work_on_schema(schema_dict, schema_filename)
-                    print("------------- running monitor data models")
-                    data_model_manager.work_on_schema(schema_dict, schema_filename)
-                
-                data_model_manager.run_upgrade()
-                upgraded = True
-        except Exception as e:
-            print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")
-            counter += 1
-            sleep(1)
-
-    if counter > counter_max:
-        print("Max fail reached; stopping postgres container")
-        postgres.stop_container()
-    else:
-        yield app.test_client()
-        postgres.stop_container()
+    client = Client()
+    yield client.run_and_return_test_client()
+    client.stop_container()
 
 
 @pytest.fixture(scope='module')
 def frameworks_skills_client():
-    """Setup the PostgreSQL database instance and run migrations.
+    client = Client(framework_skills_descriptors)
+    yield client.run_and_return_test_client()
+    client.stop_container()
 
-    Returns:
-        client (object): The Flask test client for the application.
 
-    """
-
-    schema_dicts = framework_skills_descriptors
-
-    schema_filename = "custom_descriptor"
-
-    delete_migration_artifacts()
-
-    data_resource_manager = DataResourceManagerSync()
-    app = data_resource_manager.create_app()
-    postgres = PostgreSQLContainer()
-    postgres.start_container()
-
-    data_model_manager = DataModelManagerSync()
-
-    upgraded = False
-    counter = 1
-    counter_max = 10
-    while not upgraded and counter <= counter_max:
-        try:
-            with app.app_context():
-                print("------------- running upgrade")
-                data_model_manager.run_upgrade()
-                for schema_dict in schema_dicts:
-                    print("------------- running monitor data resources")
-                    data_resource_manager.work_on_schema(schema_dict, schema_filename)
-
-                    print("------------- running monitor data models")
-                    data_model_manager.work_on_schema(schema_dict, schema_filename)
-                
-                data_model_manager.run_upgrade()
-                upgraded = True
-        except Exception as e:
-            print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")
-            counter += 1
-            sleep(1)
-
-    if counter > counter_max:
-        print("Max fail reached; stopping postgres container")
-        postgres.stop_container()
-    else:
-        yield app.test_client()
-        postgres.stop_container()
+# @pytest.fixture(scope='module')
+# def test_client():
+#     client = Client(custom_descriptor)
+#     yield client.run_and_return_test_client()
+#     client.stop_container()

@@ -16,6 +16,7 @@ alembic = "*"
 brighthive-authlib = "*"
 pip = "*"
 gevent = "*"
+pytest-env = "*"
 
 [dev-packages]
 pytest = "*"

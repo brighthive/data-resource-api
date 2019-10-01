@@ -220,8 +220,7 @@ For developers to run a test use the following,
 pipenv install --dev
 ```
 
-2. Run the tests with the follow
+2. Run the tests with the following command,
 ```bash
-pipenv shell
-APP_ENV='TEST' pytest
+pipenv run pytest -c pytest.ini
 ```

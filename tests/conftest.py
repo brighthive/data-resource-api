@@ -8,7 +8,7 @@ from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
-from tests.schemas import custom_descriptor, framework_skills_descriptors
+from tests.schemas import frameworks_descriptor, skills_descriptor
 
 class PostgreSQLContainer(object):
     """A PostgreSQL Container Object.
@@ -174,7 +174,7 @@ def regular_client():
 
 @pytest.fixture(scope='module')
 def frameworks_skills_client():
-    client = Client(framework_skills_descriptors)
+    client = Client([frameworks_descriptor, skills_descriptor])
     yield client.run_and_return_test_client()
     client.stop_container()
 

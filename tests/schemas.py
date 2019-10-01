@@ -37,8 +37,7 @@ custom_descriptor = [{
   }
 ]
 
-framework_skills_descriptors=[
-  {
+frameworks_descriptor = {
     "api": {
       "resource": "frameworks",
       "methods": [
@@ -79,8 +78,8 @@ framework_skills_descriptors=[
         "primaryKey": "id"
       }
     }
-  },
-  {
+  }
+skills_descriptor=  {
     "api": {
       "resource": "skills",
       "methods": [
@@ -141,4 +140,3 @@ framework_skills_descriptors=[
       }
     }
   }
-  ]

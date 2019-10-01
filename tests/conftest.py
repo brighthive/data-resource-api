@@ -1,4 +1,4 @@
-"""Pytest Fixtures"""
+"""Pytest Fixtusres"""
 
 import os
 import pytest
@@ -8,7 +8,7 @@ from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
-from tests.schemas import custom_descriptor
+from tests.schemas import custom_descriptor, framework_skills_descriptors
 
 class PostgreSQLContainer(object):
     """A PostgreSQL Container Object.
@@ -19,9 +19,10 @@ class PostgreSQLContainer(object):
     Class Attributes:
         config (object): A Configuration Factory object.
         container (object): The Docker container object.
-        docker_client (object): Docker client.
-        db_environment (list): Database environment configuration variables.
-        db_ports (dict): Dictionary of database port mappings.
+        for schema_dict in schema_dicts:
+            docker_client (object): Docker client.
+            db_environment (list): Database environment configuration variables.
+            db_ports (dict): Dictionary of database port mappings.
 
     """
 
@@ -136,7 +137,7 @@ def custom_client():
 
     """
 
-    schema_dict = custom_descriptor
+    schema_dicts = custom_descriptor
 
     schema_filename = "custom_descriptor"
 
@@ -157,10 +158,63 @@ def custom_client():
             with app.app_context():
                 print("------------- running upgrade")
                 data_model_manager.run_upgrade()
-                print("------------- running monitor data resources")
-                data_resource_manager.work_on_schema(schema_dict, schema_filename)
-                print("------------- running monitor data models")
-                data_model_manager.work_on_schema(schema_dict, schema_filename)
+                for schema_dict in schema_dicts:
+                    print("------------- running monitor data resources")
+                    data_resource_manager.work_on_schema(schema_dict, schema_filename)
+                    print("------------- running monitor data models")
+                    data_model_manager.work_on_schema(schema_dict, schema_filename)
+                
+                data_model_manager.run_upgrade()
+                upgraded = True
+        except Exception as e:
+            print(f"Not upgraded, sleeping... {counter}/{counter_max} time(s)")
+            counter += 1
+            sleep(1)
+
+    if counter > counter_max:
+        print("Max fail reached; stopping postgres container")
+        postgres.stop_container()
+    else:
+        yield app.test_client()
+        postgres.stop_container()
+
+
+@pytest.fixture(scope='module')
+def frameworks_skills_client():
+    """Setup the PostgreSQL database instance and run migrations.
+
+    Returns:
+        client (object): The Flask test client for the application.
+
+    """
+
+    schema_dicts = framework_skills_descriptors
+
+    schema_filename = "custom_descriptor"
+
+    delete_migration_artifacts()
+
+    data_resource_manager = DataResourceManagerSync()
+    app = data_resource_manager.create_app()
+    postgres = PostgreSQLContainer()
+    postgres.start_container()
+
+    data_model_manager = DataModelManagerSync()
+
+    upgraded = False
+    counter = 1
+    counter_max = 10
+    while not upgraded and counter <= counter_max:
+        try:
+            with app.app_context():
+                print("------------- running upgrade")
+                data_model_manager.run_upgrade()
+                for schema_dict in schema_dicts:
+                    print("------------- running monitor data resources")
+                    data_resource_manager.work_on_schema(schema_dict, schema_filename)
+
+                    print("------------- running monitor data models")
+                    data_model_manager.work_on_schema(schema_dict, schema_filename)
                 
                 data_model_manager.run_upgrade()
                 upgraded = True

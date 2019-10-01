@@ -215,6 +215,12 @@ SECRET_MANAGER
 
 For developers to run a test use the following,
 
+1. First install the requirements
+```bash
+pipenv install --dev
+```
+
+2. Run the tests with the follow
 ```bash
 pipenv shell
 APP_ENV='TEST' pytest

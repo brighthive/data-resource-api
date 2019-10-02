@@ -148,6 +148,20 @@ class ORMFactory(object):
         except Exception:
             return String
 
+    def create_required_table(self, table_name):
+                print(f"Creating table '{table_name}' because required for junc")
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore', category=exc.SAWarning)
+                        table = type(table_name, (Base,), {
+                            '__tablename__': table_name,
+                            '__table_args__': {'extend_existing': True},
+                            'id': Column(Integer, primary_key=True)
+                        })
+                        return table
+                except Exception as e:
+                    print(f"Error on create required table for junc '{table_name}'")
+
     def create_orm_from_dict(self, table_schema: dict, model_name: str, api_schema: dict):
         """Create a SQLAlchemy model from a Frictionless Table Schema spec.
 
@@ -170,15 +184,12 @@ class ORMFactory(object):
                 foreign_keys = []
 
             join_tables = []
-            required_tables_for_junc = []
 
             if 'custom' in api_schema:
                 for custom_resource in api_schema['custom']:
                     custom_table = custom_resource['resource'].split('/')
                     custom_table_name = f'{custom_table[1]}_{custom_table[2]}'
                     join_tables.append(custom_table_name)
-                    required_tables_for_junc.append(custom_table[1])
-                    required_tables_for_junc.append(custom_table[2])
             
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)
@@ -192,18 +203,7 @@ class ORMFactory(object):
             print(f'tables: {Base.metadata.tables.keys()}')
             
             # create required tables for junction
-            for table in required_tables_for_junc:
-                print(f"Creating table '{table}' because required for junc")
-                try:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('ignore', category=exc.SAWarning)
-                        type(table, (Base,), {
-                            '__tablename__': table,
-                            '__table_args__': {'extend_existing': True},
-                            'id': Column(Integer, primary_key=True)
-                        })
-                except Exception as e:
-                    print(f"Error on create required table for junc '{table}'")
+            
 
             ## create junc table orm
 
@@ -213,17 +213,23 @@ class ORMFactory(object):
             print(join_tables)
             for join_table in join_tables:
                 print(f"Creating junc table '{join_table}'")
+                tables = join_table.split('_')
+                assert(len(tables)==2)
+
+                table_one = self.create_required_table(tables[0])
+                table_two = self.create_required_table(tables[1])
+
                 try:
-                    tables = join_table.split('_')
                     print(tables)
                     with warnings.catch_warnings(): ## this isnt rignht
                         warnings.simplefilter('ignore', category=exc.SAWarning)
-                        type(join_table, (Base,), {
+                        lol = type(join_table, (Base,), {
                             '__tablename__': join_table,
                             '__table_args__': {'extend_existing': True},
                             f'{tables[0]}_id': Column(Integer, ForeignKey(f'{tables[0]}.id'), primary_key=True),
                             f'{tables[1]}_id': Column(Integer, ForeignKey(f'{tables[1]}.id'), primary_key=True)
                         })
+                        print(vars(lol))
                 except Exception as e:
                     print(f"Error on create junc table '{join_table}'")
                     print(e)

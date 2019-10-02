@@ -12,7 +12,7 @@ from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandl
 
 class VersionedResource(Resource):
     __slots__ = ['data_resource_name',
-                 'data_model', 'table_schema', 'api_schema', 'restricted_fields']
+                 'data_model', 'table_schema', 'api_schema', 'restricted_fields', 'child']
 
     def __init__(self):
         Resource.__init__(self)
@@ -31,8 +31,26 @@ class VersionedResource(Resource):
             return V1_0_0_ResourceHandler()
 
     def get(self, id=None):
-        ## check if parent/id/child
+        ## check if parent/<id>/child
             ## get do many-to-many lookup
+        print("$$$$$$$$$$$in get$$$$$$$$$$$")
+        print(request.path)
+
+        def is_many_to_many(path: str):
+            split_count = len(path.split('/'))
+            print(split_count)
+            if split_count != 4:
+                return False
+            return True
+        
+        if is_many_to_many(request.path):
+            print("Executing many to many query")
+            child = request.path.split('/')[3]
+            print(f'child: {child}')
+            return self.get_resource_handler(request.headers).get_one_many(id, self.data_model, self.data_resource_name, self.table_schema, child)
+        
+        print("$$$$$$$$$$$end$$$$$$$$$$$")
+
             
         if self.api_schema['get']['enabled']:
             if request.path.endswith('/query'):

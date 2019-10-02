@@ -51,7 +51,26 @@ frameworks_descriptor = {
             "enabled": True,
             "secured": False,
             "grants": []
-          }
+          },
+          "custom": [
+            {
+              "resource": "/frameworks/skills",
+              "methods": [
+                {
+                  "get": {
+                    "enabled": True,
+                    "secured": False,
+                    "grants": []
+                  }
+                  # "post": {
+                  #   "enabled": True,
+                  #   "secured": False,
+                  #   "grants": []
+                  # },
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -93,26 +112,7 @@ skills_descriptor=  {
             "enabled": True,
             "secured": False,
             "grants": []
-          },
-          "custom": [
-            {
-              "resource": "/frameworks/skills",
-              "methods": [
-                {
-                  "get": {
-                    "enabled": True,
-                    "secured": False,
-                    "grants": []
-                  }
-                  # "post": {
-                  #   "enabled": True,
-                  #   "secured": False,
-                  #   "grants": []
-                  # },
-                }
-              ]
-            }
-          ]
+          }
         }
       ]
     },

@@ -35,7 +35,7 @@
               {
                 "get": {
                   "enabled": true,
-                  "secured": true,
+                  "secured": false,
                   "grants": ["get:users"]
                 }
               }

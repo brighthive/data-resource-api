@@ -51,6 +51,7 @@ class DataResourceFactory(object):
                 print(custom_table)
                 many_endpoint = f'/{custom_table[1]}/<id>/{custom_table[2]}'
                 print(many_endpoint)
+                "framework/<id>/skills -> framework(1).skills"
                 resources.append(many_endpoint)
         print("!!!!!!!!!end!!!!!!!!!!!!")
 
@@ -71,5 +72,7 @@ class DataResourceFactory(object):
                 resource,
                 endpoint=f'{endpoint_name}_ep_{idx}'
             )
-
+        print("################")
+        print(vars(new_api))
+        print(vars(api))
         return new_api

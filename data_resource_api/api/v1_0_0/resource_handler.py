@@ -326,6 +326,27 @@ class ResourceHandler(object):
         except Exception:
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
+    def get_one_many(self, id, data_model, data_resource_name, table_schema, child):
+        print(data_model)
+        print(vars(data_model))
+        print(child)
+        # print(vars(child))
+        try:
+            session = Session()
+            parent = session.query(data_model).filter(
+                getattr(data_model, primary_key) == id).first()
+            
+            print(parent)
+            print(vars(parent))
+
+            print(parent[child])
+            
+            response = self.build_json_from_object(result)
+            return response, 200
+        except Exception as e:
+            print(e)
+            return {'error': 'asdf'}, 404
+
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Wrapper method for update one method.

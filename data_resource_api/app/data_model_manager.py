@@ -331,6 +331,7 @@ class DataModelManagerSync(object):
             table_name = schema_dict['datastore']['tablename']
             table_schema = schema_dict['datastore']['schema']
             api_schema = schema_dict['api']['methods'][0]
+            print(api_schema)
 
             model_checksum = md5(
                 json.dumps(

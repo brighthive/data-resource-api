@@ -6,7 +6,7 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 
 import warnings
 from tableschema import Schema
-from sqlalchemy import Column, ForeignKey, MetaData, String, exc
+from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Integer, PrimaryKeyConstraint
 from data_resource_api.db import Base
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 
@@ -51,7 +51,7 @@ class ORMFactory(object):
                 field = foreign_key['reference']['fields']
                 if not isinstance(field, list):
                     field = [field]
-                foreign_key_reference = '{}.{}'.format(table, field[0])
+                foreign_key_reference = f'{table}.{field[0]}'
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore', category=exc.SAWarning)
@@ -61,15 +61,15 @@ class ORMFactory(object):
                             'id': Column(self.get_sqlalchemy_type(field_type), primary_key=True)
                         })
                 except Exception as e:
-                    return False, None
+                    return False, None # why would it not be a foreign key when an error occurs????
                 return True, foreign_key_reference
         return False, None
 
-    def create_sqlalchemy_fields(self, fields: dict, primary_key, foreign_keys=[]):
+    def create_sqlalchemy_fields(self, descriptor_fields: dict, primary_key, foreign_keys=[]):
         """Build SQLAlchemy fields to be added to new table object.
 
         Args:
-            fields (dict):
+            fields (dict): schema_dict['datastore']['schema']['fields']
             primary_key (str): The primary key field.
             foreign_keys (list): Collection of foreign key fields.
 
@@ -77,31 +77,61 @@ class ORMFactory(object):
             dict: SQLAlchemy fields to append to the new database object.
 
         """
+        def is_required(descriptor_field):
+            has_required_key_and_true = ('required' in descriptor_field.keys() and descriptor_field['required']) 
+            has_required_in_constraints = (
+                'constraints' in descriptor_field.keys() 
+                and 'required' in descriptor_field['constraints'].keys() 
+                and descriptor_field['constraints']['required']
+            )
+            return has_required_key_and_true or has_required_in_constraints
+
         sqlalchemy_fields = {}
+
         if isinstance(primary_key, str):
             primary_key = [primary_key]
-        for field in fields:
-            if ('required' in field.keys() and field['required']) or \
-                ('constraints' in field.keys() and 'required' in field['constraints'].keys() and field['constraints']['required']):
+
+        for descriptor_field in descriptor_fields:
+            if is_required(descriptor_field):
                 nullable = False
             else:
                 nullable = True
-            if field['name'] in primary_key:
-                sqlalchemy_fields[field['name']] = Column(
-                    self.get_sqlalchemy_type(field['type']), primary_key=True)
-            else:
-                is_foreign_key, reference_table = self.evaluate_foreign_key(
-                    foreign_keys, field['name'], field['type'])
-                if not is_foreign_key:
-                    sqlalchemy_fields[field['name']] = Column(
-                        self.get_sqlalchemy_type(field['type']), nullable=nullable)
-                else:
-                    try:
-                        sqlalchemy_fields[field['name']] = Column(
-                            self.get_sqlalchemy_type(
-                                field['type']), ForeignKey(reference_table, onupdate='CASCADE', ondelete='CASCADE'))
-                    except Exception as e:
-                        print('An exception occured {}'.format(e))
+            
+            # If this is the primary key
+            if descriptor_field['name'] in primary_key:
+                sqlalchemy_fields[descriptor_field['name']] = Column(
+                    self.get_sqlalchemy_type(descriptor_field['type']),
+                    primary_key=True
+                )
+                continue
+
+            # Otherwise check if its a foreign key
+            is_foreign_key, reference_table = self.evaluate_foreign_key(
+                foreign_keys,
+                descriptor_field['name'],
+                descriptor_field['type']
+            )
+            if is_foreign_key: 
+                try:
+                    sqlalchemy_fields[descriptor_field['name']] = Column(
+                        self.get_sqlalchemy_type(descriptor_field['type']),
+                        ForeignKey(
+                            reference_table,
+                            onupdate='CASCADE',
+                            ondelete='CASCADE'
+                        )
+                    )
+                except Exception as e:
+                    print(f'An exception occured {e}')
+                
+                continue
+            
+            # It's a regular descriptor_field
+            sqlalchemy_fields[descriptor_field['name']] = Column(
+                self.get_sqlalchemy_type(descriptor_field['type']),
+                nullable=nullable
+            )
+
         return sqlalchemy_fields
 
     def get_sqlalchemy_type(self, data_type: str):
@@ -122,7 +152,7 @@ class ORMFactory(object):
         """Create a SQLAlchemy model from a Frictionless Table Schema spec.
 
         Args:
-            table_schema (dict): The Frictionless Table Schema as a dict.
+            table_schema (dict): The Frictionless Table Schema as a dict. schema_dict['datastore']['schema']
             model_name (str): Name of the ORM model (i.e. table)
             api_schema (dict): The API schema to identify custom endpoints.
 
@@ -138,19 +168,69 @@ class ORMFactory(object):
                 foreign_keys = table_schema['foreignKeys']
             else:
                 foreign_keys = []
+
             join_tables = []
+            required_tables_for_junc = []
+
             if 'custom' in api_schema:
                 for custom_resource in api_schema['custom']:
                     custom_table = custom_resource['resource'].split('/')
-                    custom_table_name = '{}_{}'.format(
-                        custom_table[1], custom_table[2])
+                    custom_table_name = f'{custom_table[1]}_{custom_table[2]}'
                     join_tables.append(custom_table_name)
+                    required_tables_for_junc.append(custom_table[1])
+                    required_tables_for_junc.append(custom_table[2])
+            
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)
+
             fields.update({
                 '__tablename__': model_name,
                 '__table_args__': {'extend_existing': True}
             })
+
+            print("@@@@@@@@@@@@create junc orm@@@@@@@@@@@@@@")
+            print(f'tables: {Base.metadata.tables.keys()}')
+            
+            # create required tables for junction
+            for table in required_tables_for_junc:
+                print(f"Creating table '{table}' because required for junc")
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore', category=exc.SAWarning)
+                        type(table, (Base,), {
+                            '__tablename__': table,
+                            '__table_args__': {'extend_existing': True},
+                            'id': Column(Integer, primary_key=True)
+                        })
+                except Exception as e:
+                    print(f"Error on create required table for junc '{table}'")
+
+            ## create junc table orm
+
+            ## check engine.tablenames or base
+            
+            print(f'tables: {Base.metadata.tables.keys()}')
+            print(join_tables)
+            for join_table in join_tables:
+                print(f"Creating junc table '{join_table}'")
+                try:
+                    tables = join_table.split('_')
+                    print(tables)
+                    with warnings.catch_warnings(): ## this isnt rignht
+                        warnings.simplefilter('ignore', category=exc.SAWarning)
+                        type(join_table, (Base,), {
+                            '__tablename__': join_table,
+                            '__table_args__': {'extend_existing': True},
+                            f'{tables[0]}_id': Column(Integer, ForeignKey(f'{tables[0]}.id'), primary_key=True),
+                            f'{tables[1]}_id': Column(Integer, ForeignKey(f'{tables[1]}.id'), primary_key=True)
+                        })
+                except Exception as e:
+                    print(f"Error on create junc table '{join_table}'")
+                    print(e)
+                
+            print(f'tables: {Base.metadata.tables.keys()}')
+            print("@@@@@@@@@@@@end@@@@@@@@@@@@@@")
+
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)

@@ -31,6 +31,9 @@ class VersionedResource(Resource):
             return V1_0_0_ResourceHandler()
 
     def get(self, id=None):
+        ## check if parent/id/child
+            ## get do many-to-many lookup
+            
         if self.api_schema['get']['enabled']:
             if request.path.endswith('/query'):
                 return {'error': 'Method not allowed.'}, 405

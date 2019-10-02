@@ -37,7 +37,7 @@ class TestStartup(object):
         
         ## Get m:n
         def get_many_route():
-            route = '/framework/1/skills'
+            route = '/frameworks/1/skills'
             response = frameworks_skills_client.get(route)
             body = json.loads(response.data)
 
@@ -48,7 +48,7 @@ class TestStartup(object):
 
         ## Put skills on the framework
         def post_two_skills_to_framework():
-            route = '/framework/1/skills'
+            route = '/frameworks/1/skills'
             post_body = [
                 {"skills_text": "skill 1"},
                 {"skills_text": "skill 2"}

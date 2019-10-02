@@ -300,6 +300,7 @@ class DataResourceManagerSync(object):
                             table_schema, table_name, api_schema)
                         data_resource.model_checksum = self.get_model_checksum(
                             table_name)
+
                         data_resource.data_resource_object.data_model = data_resource.data_model_object
                         data_resource.data_resource_object.table_schema = table_schema
                         data_resource.data_resource_object.api_schema = api_schema

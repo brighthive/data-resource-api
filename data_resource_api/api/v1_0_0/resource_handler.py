@@ -328,24 +328,14 @@ class ResourceHandler(object):
 
     def get_one_many(self, id, data_model, data_resource_name, table_schema, child):
         print("^^^^^^^^one to many func^^^^^^^^^^^^^^^")
-        print(data_model)
-        print(vars(data_model))
-        print(child)
-        # print(vars(child))
         try:
             primary_key = table_schema['primaryKey']
             session = Session()
             parent = session.query(data_model).filter(
                 getattr(data_model, primary_key) == id).first()
             
-            ## join to join table and return results
-
-            print(parent)
-            print(vars(parent))
-
-            print(parent[child])
             print("^^^^^^^^end^^^^^^^^^^^^^^^")
-            response = self.build_json_from_object(result)
+            response = self.build_json_from_object(parent)
             return response, 200
         except Exception as e:
             print(e)

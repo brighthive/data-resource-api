@@ -211,6 +211,7 @@ class ORMFactory(object):
                 tables = join_table.split('_')
                 assert(len(tables)==2)
 
+                
                 self.create_required_table(tables[0], tables[1], join_table)
                 self.create_required_table(tables[1], tables[0], join_table)
 

@@ -375,6 +375,7 @@ class DataModelManagerSync(object):
             self.logger.error(
                 f'Error loading data resource schema {schema_filename} {e}')
 
+        print(self.data_model_descriptors)
 
 class DataModelManager(Thread, DataModelManagerSync):
     def __init__(self):

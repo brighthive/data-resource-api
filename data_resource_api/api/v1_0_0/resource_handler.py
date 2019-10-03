@@ -327,6 +327,7 @@ class ResourceHandler(object):
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
     def get_one_many(self, id, data_model, data_resource_name, table_schema, child):
+        print("^^^^^^^^one to many func^^^^^^^^^^^^^^^")
         print(data_model)
         print(vars(data_model))
         print(child)
@@ -343,7 +344,7 @@ class ResourceHandler(object):
             print(vars(parent))
 
             print(parent[child])
-            
+            print("^^^^^^^^end^^^^^^^^^^^^^^^")
             response = self.build_json_from_object(result)
             return response, 200
         except Exception as e:

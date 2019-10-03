@@ -160,7 +160,7 @@ class ORMFactory(object):
                             'id': Column(Integer, primary_key=True),
                             f'{other_table}': relationship(other_table, secondary=junc_table, back_populates=table_name)
                         })
-                        # print(vars(table))
+                        print(vars(table))
                         return
                 except Exception as e:
                     print(f"Error on create required table for junc '{table_name}'")
@@ -205,15 +205,6 @@ class ORMFactory(object):
 
             print("@@@@@@@@@@@@create junc orm@@@@@@@@@@@@@@")
             print(f'tables: {Base.metadata.tables.keys()}')
-            
-            # create required tables for junction
-            
-
-            ## create junc table orm
-
-            ## check engine.tablenames or base
-            
-            print(f'tables: {Base.metadata.tables.keys()}')
             print(join_tables)
             for join_table in join_tables:
                 print(f"Creating junc table '{join_table}'")
@@ -245,6 +236,8 @@ class ORMFactory(object):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)
                     orm_class = type(model_name, (Base,), fields)
+                    print("This is the returned object")
+                    print(vars(orm_class))
             except Exception as e:
                 orm_class = None
         return orm_class

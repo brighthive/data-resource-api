@@ -7,6 +7,7 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 import warnings
 from tableschema import Schema
 from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Integer, PrimaryKeyConstraint
+from sqlalchemy.orm import relationship
 from data_resource_api.db import Base
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 
@@ -148,19 +149,22 @@ class ORMFactory(object):
         except Exception:
             return String
 
-    def create_required_table(self, table_name):
-                print(f"Creating table '{table_name}' because required for junc")
+    def create_required_table(self, table_name, other_table, junc_table):
+                print(f"Creating table '{table_name}' because required for junc '{junc_table}''")
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore', category=exc.SAWarning)
                         table = type(table_name, (Base,), {
                             '__tablename__': table_name,
                             '__table_args__': {'extend_existing': True},
-                            'id': Column(Integer, primary_key=True)
+                            'id': Column(Integer, primary_key=True),
+                            f'{other_table}': relationship(other_table, secondary=junc_table, back_populates=table_name)
                         })
-                        return table
+                        # print(vars(table))
+                        return
                 except Exception as e:
                     print(f"Error on create required table for junc '{table_name}'")
+                    print(e)
 
     def create_orm_from_dict(self, table_schema: dict, model_name: str, api_schema: dict):
         """Create a SQLAlchemy model from a Frictionless Table Schema spec.
@@ -216,8 +220,8 @@ class ORMFactory(object):
                 tables = join_table.split('_')
                 assert(len(tables)==2)
 
-                table_one = self.create_required_table(tables[0])
-                table_two = self.create_required_table(tables[1])
+                self.create_required_table(tables[0], tables[1], join_table)
+                self.create_required_table(tables[1], tables[0], join_table)
 
                 try:
                     print(tables)

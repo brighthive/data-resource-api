@@ -332,10 +332,13 @@ class ResourceHandler(object):
         print(child)
         # print(vars(child))
         try:
+            primary_key = table_schema['primaryKey']
             session = Session()
             parent = session.query(data_model).filter(
                 getattr(data_model, primary_key) == id).first()
             
+            ## join to join table and return results
+
             print(parent)
             print(vars(parent))
 

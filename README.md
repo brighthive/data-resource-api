@@ -2,7 +2,7 @@
 
 An elegant, opinionated framework for deploying BrightHive Data Resources with zero coding.
 
-## What is a Data Resource
+## The "Data Resource" and its related elements
 
 [BrightHive](https://brighthive.io) is in the business of building **Data Trusts**, which are *legal, technical, and governance frameworks that enable networks of organizations to securely and responsibly share and collaborate with data, generating new insights and increasing their combined impact.*
 
@@ -11,7 +11,7 @@ An elegant, opinionated framework for deploying BrightHive Data Resources with z
 From the technical perspective, a BrightHive Data Resource is an entity comprised of the following elements:
 
 - **Data Model** - The data model consists of one or more database tables and associated Object Relational Mapping (ORM) objects for communicating with these tables.
-- **RESTful API** - Data managed by Data Resources are accessed via RESTful API endpoints. These endpoints support standard operations (i.e **GET**, **POST**, **PUT**, **PATCH**, **DELETE**).
+- **RESTful API** - Data managed by Data Resources are accessed via RESTful API endpoints. These endpoints support standard operations (i.e. **GET**, **POST**, **PUT**, **PATCH**, **DELETE**).
 - **Data Resource Schemas** - Data Resource Schemas are JSON documents that define the data model, API endpoints, and security constraints placed on the specific Data Resource. These schemas are what allow for new Data Resources to be created without new code being written.
 
 ## Get started
@@ -57,11 +57,11 @@ data-resource-api_1   | 2019-06-21 21:31:21,413 - data-resource-manager - INFO -
 data-resource-api_1   | 2019-06-21 21:31:21,414 - data-resource-manager - INFO - Data Resource Manager Sleeping for 60 seconds...
 ```
 
-## Data and endpoints 
+## Customize your JSON schema 
 
 The Data Resource API auto-magically instantiates data stores and corresponding endpoints without any coding. 
 
-Each JSON file in the `schema` directory delineates a resource, namely: its RESTful paths ("api"), and its data model ("datastore"). Create a new resource by adding another JSON file to the `schema` directory. (Visit the `schema` direcotry for example JSON files.)
+Each JSON file in the `schema` directory delineates a resource, namely: its RESTful paths ("api"), and its data model ("datastore"). Create a new resource by adding another JSON file to the `schema` directory. (Visit the `schema` directory for example JSON files.) 
 
 ### Enable or disable methods
 
@@ -90,7 +90,7 @@ A resource JSON blob defines RESTful methods. These can be enabled or disabled.
 
 ### Toggle authentication
 
-The Data Resource API makes use of [BrightHive authlib](https://github.com/brighthive/authlib) for adding authentication to endpoints. Authentication can be toggled on or off – on a per method basis. 
+The Data Resource API makes use of [BrightHive authlib](https://github.com/brighthive/authlib) for adding authentication to endpoints. Authentication can be toggled on or off – on a per method basis. 
 
 ```JavaScript
 {
@@ -188,25 +188,57 @@ Second, define the foreign key in the `foreignKeys` array:
 }
 ```
 
-### Configuration Parameters
+### Hide fields
+
+Sometimes, a data resource has fields that contain important information (e.g., a source URL, a UUID) that should not be visible in the API. Hide these fields by adding the field `name` to the list of `restricted_fields`.
+
+```JavaScript
+"datastore": {
+  "tablename": "programs",
+  "restricted_fields" : ["location_id"],
+...
+```
+
+## Configuration
+
+The following parameters can be adjusted to serve testing, development, or particular deployment needs. 
 
 RELATIVE_PATH
+
 ABSOLUTE_PATH
+
 ROOT_PATH
+
 MIGRATION_HOME
+
 DATA_RESOURCE_SLEEP_INTERVAL
+
 DATA_MODEL_SLEEP_INTERVAL
+
 SQLALCHEMY_TRACK_MODIFICATIONS
+
 PROPAGATE_EXCEPTIONS
+
 POSTGRES_USER
+
 POSTGRES_PASSWORD
+
 POSTGRES_DATABASE
+
 POSTGRES_HOSTNAME
+
 POSTGRES_PORT
+
 SQLALCHEMY_DATABASE_URI
+
 OAUTH2_PROVIDER
+
 OAUTH2_URL
+
 OAUTH2_JWKS_URL
+
 OAUTH2_AUDIENCE
+
 OAUTH2_ALGORITHMS
+
 SECRET_MANAGER

@@ -10,6 +10,7 @@ from tableschema import Table, Schema, validate
 from brighthive_authlib import token_required
 from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
+from data_resource_api.db.orm_lookup import get_class_by_tablename
 
 
 class ResourceHandler(object):
@@ -328,11 +329,15 @@ class ResourceHandler(object):
 
     def get_one_many(self, id, data_model, data_resource_name, table_schema, child):
         print("^^^^^^^^one to many func^^^^^^^^^^^^^^^")
+        orm = get_class_by_tablename(child + '_rel')
+        print(vars(orm))
+        # print(vars(data_model))
+        # print(data_model[child])
         try:
             primary_key = table_schema['primaryKey']
             session = Session()
-            parent = session.query(data_model).filter(
-                getattr(data_model, primary_key) == id).first()
+            parent = session.query(data_model, orm).filter(
+                getattr(data_model, primary_key) == id).all()
             
             print("^^^^^^^^end^^^^^^^^^^^^^^^")
             response = self.build_json_from_object(parent)

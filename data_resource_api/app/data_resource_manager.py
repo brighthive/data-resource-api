@@ -61,7 +61,7 @@ class AvailableServicesResource(Resource):
         return {'endpoints': self.endpoints}, 200
 
 
-class DataResourceManager(Thread):
+class DataResourceManagerSync(object):
     """Data Resource Manager.
 
     Attributes:
@@ -71,7 +71,6 @@ class DataResourceManager(Thread):
     """
 
     def __init__(self):
-        Thread.__init__(self)
         self.data_resources: DataResource = []
         self.app_config = ConfigurationFactory.from_env()
         self.app = None
@@ -240,66 +239,98 @@ class DataResourceManager(Thread):
         """Monitor all data resources.
         """
         self.logger.info('Checking data resources...')
+        
+        # Get a configured schema dir
         schema_dir = self.get_data_resource_schema_path()
-        if os.path.exists(schema_dir) and os.path.isdir(schema_dir):
-            schemas = os.listdir(schema_dir)
-            for schema in schemas:
-                schema_file = os.path.join(schema_dir, schema)
-                if os.path.isfile(schema_file):
-                    with open(os.path.join(schema_dir, schema), 'r') as fh:
-                        schema_dict = json.load(fh)
-                    try:
-                        data_resource_checksum = hashlib.md5(json.dumps(
-                            schema_dict, sort_keys=True).encode('utf-8')).hexdigest()
-                        data_resource_name = schema_dict['api']['resource']
-                        api_schema = schema_dict['api']['methods'][0]
-                        table_name = schema_dict['datastore']['tablename']
-                        table_schema = schema_dict['datastore']['schema']
-                        try:
-                            restricted_fields = schema_dict['datastore']['restricted_fields']
-                        except Exception:
-                            restricted_fields = []
-                        if self.data_resource_exists(data_resource_name):
-                            model = self.get_model_checksum(table_name)
-                            data_resource_index = self.get_data_resource_index(
-                                data_resource_name)
-                            # determine if api changed
-                            try:
-                                if self.data_resource_changed(data_resource_name, data_resource_checksum):
-                                    data_resource = self.data_resources[data_resource_index]
-                                    data_resource.checksum = data_resource_checksum
-                                    data_resource.data_resource_methods = api_schema
-                                    data_resource.data_model_name = table_name
-                                    data_resource.data_model_schema = table_schema
-                                    data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
-                                        table_schema, table_name, api_schema)
-                                    data_resource.model_checksum = self.get_model_checksum(
-                                        table_name)
-                                    data_resource.data_resource_object.data_model = data_resource.data_model_object
-                                    data_resource.data_resource_object.table_schema = table_schema
-                                    data_resource.data_resource_object.api_schema = api_schema
-                                    data_resource.data_resource_object.restricted_fields = restricted_fields
-                                    self.data_resources[data_resource_index] = data_resource
-                            except Exception as e:
-                                self.logger.error(
-                                    'Error checking data resource {}'.format(e))
-                        else:
-                            data_resource = DataResource()
-                            data_resource.checksum = data_resource_checksum
-                            data_resource.data_resource_name = data_resource_name
-                            data_resource.data_resource_methods = api_schema
-                            data_resource.data_model_name = table_name
-                            data_resource.data_model_schema = table_schema
-                            data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
-                                table_schema, table_name, api_schema)
-                            data_resource.model_checksum = self.get_model_checksum(
-                                table_name)
-                            data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
-                                api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
-                            self.data_resources.append(data_resource)
-                    except Exception as e:
-                        self.logger.error(
-                            'Error loading schema {} {}'.format(schema_file, e))
-        else:
+        # Check that the path exists and that it is a directory
+        if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
             self.logger.error('Schema directory does not exist.')
+            return
+
+        schemas = os.listdir(schema_dir)
+        for schema in schemas:
+            schema_file = os.path.join(schema_dir, schema)
+
+            if not os.path.isfile(schema_file):
+                return
+
+            with open(os.path.join(schema_dir, schema), 'r') as fh:
+                schema_dict = json.load(fh)
+
+            self.work_on_schema(schema_dict, schema_file)
+
         self.logger.info('Completed check of data resources')
+
+
+    def work_on_schema(self, schema_dict: dict, schema_file: str):
+        """Does data resource changes based on a given schema.
+        """
+        try:
+            data_resource_checksum = hashlib.md5(
+                json.dumps(
+                    schema_dict,
+                    sort_keys=True
+                ).encode('utf-8')
+            ).hexdigest()
+
+            data_resource_name = schema_dict['api']['resource']
+            api_schema = schema_dict['api']['methods'][0]
+            table_name = schema_dict['datastore']['tablename']
+            table_schema = schema_dict['datastore']['schema']
+
+            try:
+                restricted_fields = schema_dict['datastore']['restricted_fields']
+            except Exception:
+                restricted_fields = []
+
+            if self.data_resource_exists(data_resource_name):
+
+                # determine if api changed
+                model = self.get_model_checksum(table_name)
+                data_resource_index = self.get_data_resource_index(
+                    data_resource_name)
+                try:
+                    if self.data_resource_changed(data_resource_name, data_resource_checksum):
+                        data_resource = self.data_resources[data_resource_index]
+                        data_resource.checksum = data_resource_checksum
+                        data_resource.data_resource_methods = api_schema
+                        data_resource.data_model_name = table_name
+                        data_resource.data_model_schema = table_schema
+                        data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
+                            table_schema, table_name, api_schema)
+                        data_resource.model_checksum = self.get_model_checksum(
+                            table_name)
+                        data_resource.data_resource_object.data_model = data_resource.data_model_object
+                        data_resource.data_resource_object.table_schema = table_schema
+                        data_resource.data_resource_object.api_schema = api_schema
+                        data_resource.data_resource_object.restricted_fields = restricted_fields
+                        self.data_resources[data_resource_index] = data_resource
+                except Exception as e:
+                    self.logger.error(
+                        'Error checking data resource {}'.format(e))
+            else:
+                data_resource = DataResource()
+                data_resource.checksum = data_resource_checksum
+                data_resource.data_resource_name = data_resource_name
+                data_resource.data_resource_methods = api_schema
+                data_resource.data_model_name = table_name
+                data_resource.data_model_schema = table_schema
+                data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
+                    table_schema, table_name, api_schema)
+                data_resource.model_checksum = self.get_model_checksum(
+                    table_name)
+                data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
+                    api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
+                self.data_resources.append(data_resource)
+                
+        except Exception as e:
+            self.logger.error(
+                'Error loading schema {} {}'.format(schema_file, e))
+
+class DataResourceManager(Thread, DataResourceManagerSync):
+    def __init__(self):
+        Thread.__init__(self)
+        DataResourceManagerSync.__init__(self)
+
+    def run(self):
+        DataResourceManagerSync.run(self)

@@ -242,3 +242,18 @@ OAUTH2_AUDIENCE
 OAUTH2_ALGORITHMS
 
 SECRET_MANAGER
+
+=======
+## Running tests
+
+For developers to run a test use the following,
+
+1. First install the requirements
+```bash
+pipenv install --dev
+```
+
+2. Run the tests with the following command,
+```bash
+pipenv run pytest -c pytest.ini
+```

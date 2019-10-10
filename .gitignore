@@ -1,6 +1,9 @@
 # vscode settings
 .vscode/
 
+# pyCharm settings
+.idea/
+
 # python artifacts
 **/*.py[abc]
 **/__pycache__/

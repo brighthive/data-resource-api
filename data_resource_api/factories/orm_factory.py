@@ -6,7 +6,7 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 
 import warnings
 from tableschema import Schema
-from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Integer, PrimaryKeyConstraint
+from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Integer, PrimaryKeyConstraint, Table
 from sqlalchemy.orm import relationship
 from data_resource_api.db import Base
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
@@ -151,6 +151,7 @@ class ORMFactory(object):
 
     def create_required_table(self, table_name, other_table, junc_table):
                 print(f"Creating table '{table_name}' because required for junc '{junc_table}''")
+                
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore', category=exc.SAWarning)
@@ -158,7 +159,7 @@ class ORMFactory(object):
                             '__tablename__': table_name,
                             '__table_args__': {'extend_existing': True},
                             'id': Column(Integer, primary_key=True),
-                            f'{other_table}': relationship(other_table, secondary=junc_table, back_populates=table_name)
+                            # f'{other_table}': relationship(other_table, secondary=junc_table, back_populates=table_name)
                         })
                         print(vars(table))
                         return
@@ -204,41 +205,81 @@ class ORMFactory(object):
             })
 
             print("@@@@@@@@@@@@create junc orm@@@@@@@@@@@@@@")
-            print(f'tables: {Base.metadata.tables.keys()}')
-            print(join_tables)
+            print(f'tables before: {Base.metadata.tables.keys()}')
             for join_table in join_tables:
                 print(f"Creating junc table '{join_table}'")
                 tables = join_table.split('_')
                 assert(len(tables)==2)
 
-                
-                self.create_required_table(tables[0], tables[1], join_table)
-                self.create_required_table(tables[1], tables[0], join_table)
-
                 try:
-                    print(tables)
-                    with warnings.catch_warnings(): ## this isnt rignht
-                        warnings.simplefilter('ignore', category=exc.SAWarning)
-                        lol = type(join_table, (Base,), {
-                            '__tablename__': join_table,
-                            '__table_args__': {'extend_existing': True},
-                            f'{tables[0]}_id': Column(Integer, ForeignKey(f'{tables[0]}.id'), primary_key=True),
-                            f'{tables[1]}_id': Column(Integer, ForeignKey(f'{tables[1]}.id'), primary_key=True)
-                        })
-                        print(vars(lol))
+                    association_table = Table(join_table, Base.metadata,
+                        Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id')),
+                        Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id')),
+                        extend_existing=True
+                    )
                 except Exception as e:
-                    print(f"Error on create junc table '{join_table}'")
+                    print(f"Error on create junc table '{join_table}'; {str(e)}")
+                    raise e
+
+                other_table = ''
+                if model_name == tables[0]:
+                    other_table = tables[1]
+                else:
+                    other_table = tables[0]
+
+                ## this_table
+                ### take the fields we generated, add relationship, and either
+                #### build the object using them 
+                #### pass the field on to be created below
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore', category=exc.SAWarning)
+                        type(other_table, (Base,), {
+                            '__tablename__': other_table,
+                            '__table_args__': {'extend_existing': True},
+                            'id': Column(Integer, primary_key=True),
+                            f'{model_name}': relationship(
+                                model_name,
+                                secondary=association_table,
+                                back_populates=other_table,
+                                lazy='joined'
+                                )
+                        })
+                except Exception as e:
+                    print(f"Error on create required table for junc '{table_name}'")
                     print(e)
+
+                fields.update({
+                    f'{other_table}': relationship(
+                        other_table,
+                        secondary=association_table,
+                        back_populates=model_name,
+                        lazy='joined'
+                        )
+                })
+
+                print(other_table, model_name)
+
+                ## other_table
+                ### check if it exists,
+                #### add relationship
+                ### else create
+                # if does_tablename_orm_exist(other_table):
+                #     print("this is not implemented yet $@#@$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$")
+                #     raise ValueError("This is not implemented yet")
+                # #     # table = get_orm_by_tablename(other_table)
+                # else:
+                #     self.create_required_table(other_table, model_name, association_table)
+
                 
-            print(f'tables: {Base.metadata.tables.keys()}')
+            print(f'tables after: {Base.metadata.tables.keys()}')
             print("@@@@@@@@@@@@end@@@@@@@@@@@@@@")
 
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)
                     orm_class = type(model_name, (Base,), fields)
-                    print("This is the returned object")
-                    print(vars(orm_class))
+                    print(f"This is the returned object: {vars(orm_class)}")
             except Exception as e:
                 orm_class = None
         return orm_class

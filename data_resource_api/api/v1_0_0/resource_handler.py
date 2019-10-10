@@ -10,7 +10,8 @@ from tableschema import Table, Schema, validate
 from brighthive_authlib import token_required
 from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
-from data_resource_api.db.orm_lookup import get_class_by_tablename
+from data_resource_api.db.orm_lookup import get_orm_by_tablename, print_all_orm, duplicates_in_orm, find_duplicates_in_orm
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 
 class ResourceHandler(object):
@@ -328,19 +329,37 @@ class ResourceHandler(object):
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
     def get_one_many(self, id, data_model, data_resource_name, table_schema, child):
-        print("^^^^^^^^one to many func^^^^^^^^^^^^^^^")
-        orm = get_class_by_tablename(child + '_rel')
-        print(vars(orm))
+        print("^^^^^^^^^^^^^^^one to many func^^^^^^^^^^^^^^^")
+        # orm = get_class_by_tablename(child)
+        # print(vars(orm))
         # print(vars(data_model))
         # print(data_model[child])
+        print("-------All orm---------")
+        print_all_orm()
+        print("--------Duplicates--------")
+        if duplicates_in_orm():
+            for table in find_duplicates_in_orm():
+                print(table)
+        print("----------------")
+
         try:
             primary_key = table_schema['primaryKey']
             session = Session()
-            parent = session.query(data_model, orm).filter(
-                getattr(data_model, primary_key) == id).all()
+            try:
+                parent = session.query(data_model).filter(
+                    getattr(data_model, primary_key) == id).one()
+
+            except MultipleResultsFound:
+                return {'error': f"Multiple results found for '{id}' but was expecting one result."}, 500
+
+            except NoResultFound:
+                return {'error': f"Resource with id '{id}' not found."}, 404
             
+            # It can also be accomplished with a dynamic attribute field name as shown here
+            children = getattr(parent, child)
+        
             print("^^^^^^^^end^^^^^^^^^^^^^^^")
-            response = self.build_json_from_object(parent)
+            response = self.build_json_from_object(children)
             return response, 200
         except Exception as e:
             print(e)

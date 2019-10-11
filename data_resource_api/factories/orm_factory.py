@@ -9,6 +9,7 @@ from tableschema import Schema
 from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Integer, PrimaryKeyConstraint, Table
 from sqlalchemy.orm import relationship
 from data_resource_api.db import Base
+from data_resource_api.db.orm_lookup import print_all_orm, does_tablename_orm_exist
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 
 
@@ -211,6 +212,12 @@ class ORMFactory(object):
                 tables = join_table.split('_')
                 assert(len(tables)==2)
 
+                for table in tables:
+                    if does_tablename_orm_exist(table):
+                        print(f'Table \'{table}\' does exist: {vars(get_orm_by_tablename(table))}')
+                    else:
+                        print(f'Table \'{table}\' does not exist yet.')
+
                 try:
                     association_table = Table(join_table, Base.metadata,
                         Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id')),
@@ -241,8 +248,7 @@ class ORMFactory(object):
                             f'{model_name}': relationship(
                                 model_name,
                                 secondary=association_table,
-                                back_populates=other_table,
-                                lazy='joined'
+                                back_populates=other_table
                                 )
                         })
                 except Exception as e:
@@ -253,12 +259,11 @@ class ORMFactory(object):
                     f'{other_table}': relationship(
                         other_table,
                         secondary=association_table,
-                        back_populates=model_name,
-                        lazy='joined'
+                        back_populates=model_name
                         )
                 })
 
-                print(other_table, model_name)
+                print(fields)
 
                 ## other_table
                 ### check if it exists,
@@ -282,4 +287,6 @@ class ORMFactory(object):
                     print(f"This is the returned object: {vars(orm_class)}")
             except Exception as e:
                 orm_class = None
+        
+        print_all_orm()
         return orm_class

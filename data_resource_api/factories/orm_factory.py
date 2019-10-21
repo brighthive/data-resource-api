@@ -9,7 +9,7 @@ from tableschema import Schema
 from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Integer, PrimaryKeyConstraint, Table
 from sqlalchemy.orm import relationship
 from data_resource_api.db import Base
-from data_resource_api.db.orm_lookup import print_all_orm, does_tablename_orm_exist
+from data_resource_api.db.orm_lookup import print_all_orm, does_tablename_orm_exist, get_orm_by_tablename
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 
 
@@ -180,7 +180,7 @@ class ORMFactory(object):
             object: The SQLAlchemy ORM class.
 
         """
-
+        print(f"create_orm_from_dict on '{model_name}'")
         orm_class = None
         schema = Schema(table_schema)
         if schema.valid:
@@ -205,8 +205,10 @@ class ORMFactory(object):
                 '__table_args__': {'extend_existing': True}
             })
 
-            print("@@@@@@@@@@@@create junc orm@@@@@@@@@@@@@@")
-            print(f'tables before: {Base.metadata.tables.keys()}')
+            if len(join_tables) != 0:
+                print("@@@@@@@@@@@@create junc orm@@@@@@@@@@@@@@")
+                print(f'tables before: {Base.metadata.tables.keys()}')
+
             for join_table in join_tables:
                 print(f"Creating junc table '{join_table}'")
                 tables = join_table.split('_')
@@ -214,7 +216,8 @@ class ORMFactory(object):
 
                 for table in tables:
                     if does_tablename_orm_exist(table):
-                        print(f'Table \'{table}\' does exist: {vars(get_orm_by_tablename(table))}')
+                        # print(f'Table \'{table}\' does exist: {vars(get_orm_by_tablename(table))}')
+                        print(f'Table \'{table}\' does exist.')
                     else:
                         print(f'Table \'{table}\' does not exist yet.')
 
@@ -263,30 +266,34 @@ class ORMFactory(object):
                         )
                 })
 
-                print(fields)
+                # print(fields)
 
                 ## other_table
                 ### check if it exists,
                 #### add relationship
                 ### else create
-                # if does_tablename_orm_exist(other_table):
-                #     print("this is not implemented yet $@#@$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$")
+                if does_tablename_orm_exist(other_table):
+                    print("table exists we have to add property o noooo this is not implemented yet $@#@$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$@#$")
                 #     raise ValueError("This is not implemented yet")
                 # #     # table = get_orm_by_tablename(other_table)
-                # else:
+                else:
+                    print("table does not exist yesssssssss no implemented")
                 #     self.create_required_table(other_table, model_name, association_table)
 
-                
-            print(f'tables after: {Base.metadata.tables.keys()}')
-            print("@@@@@@@@@@@@end@@@@@@@@@@@@@@")
+            if len(join_tables) != 0:
+                print(f'tables after: {Base.metadata.tables.keys()}')
+                print("@@@@@@@@@@@@end@@@@@@@@@@@@@@")
+
+            print("The following are all orm objects currently--")
+            print_all_orm()
+            print(f"Trying to create '{model_name}'")
+            print("----------end of orm objects-----------")
 
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)
                     orm_class = type(model_name, (Base,), fields)
-                    print(f"This is the returned object: {vars(orm_class)}")
             except Exception as e:
                 orm_class = None
         
-        print_all_orm()
         return orm_class

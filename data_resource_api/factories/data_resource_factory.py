@@ -44,15 +44,15 @@ class DataResourceFactory(object):
 
         ## If we have a many to many
             ## resources.append(f'/{endpoint_name}/<id>/{child_name}')
-        print("!!!!!!!!!!create API many-to-many resources!!!!!!!!!!!")
+        # print("!!!!!!!!!!create API many-to-many resources!!!!!!!!!!!")
         if 'custom' in api_schema:
             for custom_resource in api_schema['custom']:
                 custom_table = custom_resource['resource'].split('/')
-                print(custom_table)
+                # print(custom_table)
                 many_endpoint = f'/{custom_table[1]}/<id>/{custom_table[2]}'
-                print(many_endpoint)
+                # print(many_endpoint)
                 resources.append(many_endpoint)
-        print("!!!!!!!!!end!!!!!!!!!!!!")
+        # print("!!!!!!!!!end!!!!!!!!!!!!")
 
         new_api = type(
             endpoint_name,
@@ -71,8 +71,8 @@ class DataResourceFactory(object):
                 resource,
                 endpoint=f'{endpoint_name}_ep_{idx}'
             )
-        print("########api data########")
-        print(vars(new_api))
-        print(vars(api))
-        print("########end########")
+        # print("########api data########")
+        # print(vars(new_api))
+        # print(vars(api))
+        # print("########end########")
         return new_api

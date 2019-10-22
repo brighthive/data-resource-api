@@ -9,6 +9,8 @@ from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
 from tests.schemas import frameworks_descriptor, skills_descriptor
+from data_resource_api.app.junc_holder import JuncHolder
+
 
 class PostgreSQLContainer(object):
     """A PostgreSQL Container Object.

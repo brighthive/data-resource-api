@@ -1,4 +1,4 @@
-"""Pytest Fixtures"""
+"""Pytest Fixtusres"""
 
 import os
 import pytest
@@ -8,7 +8,8 @@ from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
-from tests.schemas import custom_descriptor
+from tests.schemas import frameworks_descriptor, skills_descriptor
+
 
 class PostgreSQLContainer(object):
     """A PostgreSQL Container Object.
@@ -19,9 +20,10 @@ class PostgreSQLContainer(object):
     Class Attributes:
         config (object): A Configuration Factory object.
         container (object): The Docker container object.
-        docker_client (object): Docker client.
-        db_environment (list): Database environment configuration variables.
-        db_ports (dict): Dictionary of database port mappings.
+        for schema_dict in schema_dicts:
+            docker_client (object): Docker client.
+            db_environment (list): Database environment configuration variables.
+            db_ports (dict): Dictionary of database port mappings.
 
     """
 
@@ -165,7 +167,6 @@ def regular_client():
 
     Returns:
         client (object): The Flask test client for the application.
-
     """
     client = Client()
     yield client.run_and_return_test_client()
@@ -173,13 +174,14 @@ def regular_client():
 
 
 @pytest.fixture(scope='module')
-def custom_client():
-    """Setup the PostgreSQL database instance and run migrations.
-
-    Returns:
-        client (object): The Flask test client for the application.
-
-    """
-    client = Client(custom_descriptor)
+def frameworks_skills_client():
+    client = Client([frameworks_descriptor, skills_descriptor])
     yield client.run_and_return_test_client()
     client.stop_container()
+
+
+# @pytest.fixture(scope='module')
+# def test_client():
+#     client = Client(custom_descriptor)
+#     yield client.run_and_return_test_client()
+#     client.stop_container()

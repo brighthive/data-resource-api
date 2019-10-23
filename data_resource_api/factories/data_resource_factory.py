@@ -37,13 +37,26 @@ class DataResourceFactory(object):
         resources = ['/{}'.format(endpoint_name),
                      '/{}/<id>'.format(endpoint_name),
                      '/{}/query'.format(endpoint_name)]
+
+        if 'custom' in api_schema:
+            for custom_resource in api_schema['custom']:
+                custom_table = custom_resource['resource'].split('/')
+                resources.append(f'/{custom_table[1]}/<id>/{custom_table[2]}')
+                resources.append(
+                    f'/{custom_table[1]}/<id>/{custom_table[2]}/<child_id>'
+                ) # DELETE route
+
         new_api = type(endpoint_name, (VersionedResource,),
                        {'data_resource_name': table_name,
                         'data_model': table_obj,
                         'table_schema': table_schema,
                         'api_schema': api_schema,
                         'restricted_fields': restricted_fields})
+
         for idx, resource in enumerate(resources):
-            api.add_resource(new_api, resource,
-                             endpoint='{}_ep_{}'.format(endpoint_name, idx))
+            api.add_resource(
+                new_api,
+                resource,
+                endpoint=f'{endpoint_name}_ep_{idx}'
+            )
         return new_api

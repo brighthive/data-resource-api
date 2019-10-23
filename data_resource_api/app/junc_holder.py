@@ -10,6 +10,11 @@ class JuncHolder:
         JuncHolder.static_lookup[table_name] = table
 
     @staticmethod
+    def lookup_full_table(table_name):
+        table_one, table_two = table_name.split('_')
+        return JuncHolder.lookup_table(table_one, table_two)
+
+    @staticmethod
     def lookup_table(table_one, table_two):
         table_name_one = f'{table_one}_{table_two}'
         table = None

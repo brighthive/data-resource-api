@@ -24,5 +24,25 @@ class TestJuncHolder(object):
     def test_error_no_underscore(self):
         with pytest.raises(ValueError):
             JuncHolder.add_table("parentchild", None)
+    
 
+    def test_use_full(self):
+        JuncHolder.reset()
+
+        test_table = TestTable("parent1_child")
+        JuncHolder.add_table("parent1_child", test_table)
+
+        table_one = JuncHolder.lookup_full_table("parent1_child")
+        table_two = JuncHolder.lookup_full_table("child_parent1")
+
+        expect(table_one.__tablename__).to(equal("parent1_child"))
+        expect(table_two.__tablename__).to(equal("parent1_child"))
+
+    def test_full_error_two_underscore(self):
+        with pytest.raises(ValueError):
+            JuncHolder.lookup_full_table("parent_and_child")
+
+    def test_full_error_no_underscore(self):
+        with pytest.raises(ValueError):
+            JuncHolder.lookup_full_table("parentchild")
     

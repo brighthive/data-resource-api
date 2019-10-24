@@ -33,7 +33,7 @@ class DataResourceFactory(object):
             table_name (str): Name of the data model (i.e. table) associated with the endpoint.
 
         """
-        new_api = None
+        flask_restful_resource = None
         resources = ['/{}'.format(endpoint_name),
                      '/{}/<id>'.format(endpoint_name),
                      '/{}/query'.format(endpoint_name)]
@@ -46,7 +46,7 @@ class DataResourceFactory(object):
                     f'/{custom_table[1]}/<id>/{custom_table[2]}/<child_id>'
                 ) # DELETE route
 
-        new_api = type(endpoint_name, (VersionedResource,),
+        flask_restful_resource = type(endpoint_name, (VersionedResource,),
                        {'data_resource_name': table_name,
                         'data_model': table_obj,
                         'table_schema': table_schema,
@@ -55,8 +55,8 @@ class DataResourceFactory(object):
 
         for idx, resource in enumerate(resources):
             api.add_resource(
-                new_api,
+                flask_restful_resource,
                 resource,
                 endpoint=f'{endpoint_name}_ep_{idx}'
             )
-        return new_api
+        return flask_restful_resource

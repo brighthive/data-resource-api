@@ -10,6 +10,7 @@ from tableschema import Table, Schema, validate
 from brighthive_authlib import token_required
 from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
+from data_resource_api.app.junc_holder import JuncHolder
 
 
 class ResourceHandler(object):
@@ -257,18 +258,39 @@ class ResourceHandler(object):
         schema = Schema(table_schema)
         errors = []
         accepted_fields = []
-        if validate(table_schema):
-            for field in table_schema['fields']:
-                accepted_fields.append(field['name'])
-                if field['required']:
-                    if not field['name'] in request_obj.keys():
-                        errors.append(
-                            'Required field \'{}\' is missing'.format(field['name']))
-            for field in request_obj.keys():
-                if field not in accepted_fields:
-                    errors.append('Unknown field \'{}\' found'.format(field))
-        else:
+
+        if not validate(table_schema):
             return {'error': 'Data schema validation error.'}, 400
+
+        # Check for required fields
+        for field in table_schema['fields']:
+            accepted_fields.append(field['name'])
+
+            if field['required']:
+                if not field['name'] in request_obj.keys():
+                    errors.append(
+                        'Required field \'{}\' is missing'.format(field['name'])
+                    )
+        
+        valid_fields = []
+        many_query = []
+
+        for field in request_obj.keys():
+            if field in accepted_fields:
+                valid_fields.append(field)
+            else:
+                print("Junc table lookup")
+                print(field, data_resource_name)
+                junc = JuncHolder.lookup_table(field, data_resource_name)
+                print(junc)
+                print("----------")
+                if JuncHolder.does_table_exist(field, data_resource_name):
+                    many_query.append([junc, field, data_resource_name, request_obj[field]])
+                else:
+                    errors.append('Unknown field \'{}\' found'.format(field))
+        
+        print(valid_fields)
+        print(many_query)
 
         if len(errors) > 0:
             return {'message': 'Invalid request body.', 'errors': errors}, 400
@@ -276,8 +298,11 @@ class ResourceHandler(object):
             try:
                 session = Session()
                 new_object = data_model()
-                for key, value in request_obj.items():
-                    setattr(new_object, key, value)
+                for field in valid_fields:
+                    value = request_obj[field]
+                    setattr(new_object, field, value)
+                # for key, value in request_obj.items():
+                #     setattr(new_object, key, value)
                 session.add(new_object)
                 session.commit()
                 id = getattr(new_object, table_schema['primaryKey'])

@@ -285,7 +285,11 @@ class ResourceHandler(object):
                 print(junc)
                 print("----------")
                 if JuncHolder.does_table_exist(field, data_resource_name):
-                    many_query.append([junc, field, data_resource_name, request_obj[field]])
+                    values = request_obj[field]
+                    if not isinstance(values, list):
+                        values = [values]
+
+                    many_query.append([junc, field, data_resource_name, values])
                 else:
                     errors.append('Unknown field \'{}\' found'.format(field))
         
@@ -305,12 +309,38 @@ class ResourceHandler(object):
                 #     setattr(new_object, key, value)
                 session.add(new_object)
                 session.commit()
-                id = getattr(new_object, table_schema['primaryKey'])
-                return {'message': 'Successfully added new resource.', 'id': id}, 201
+                id_value = getattr(new_object, table_schema['primaryKey'])
+
+                # process the many_query
+                for table, field, data_resource_name, values in many_query:
+                    self.process_many_query(id_value, table, field, data_resource_name, values)
+#
+                return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
                 return {'error': 'Failed to create new resource.'}, 400
             finally:
                 session.close()
+
+    def process_many_query(self, id_value: int, table: object, field: str, data_resource_name: str, values: list):
+        """Will find the junc table and add the values manually
+
+        Args:
+            id_value (int): Newly created resource of type data_resource_name
+            table (object): This is the junction table
+            field (str): This is the field name
+            data_resource_name (str): This is the resource type (table name) of the given resource
+            values (list): This holds the primary keys for the relationship
+        """
+        relationship_id = f'{field}_id'
+        parent_id = f'{data_resource_name}_id'
+
+        for value in values:
+            # append to junc table
+            # {
+            #     relationship_id: value,
+            #     parent_id: id_value
+            # }
+            pass
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):

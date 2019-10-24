@@ -33,6 +33,18 @@ class TestStartup(object):
         expect(len(body['credentials'])).to(equal(1))
         
 
+    def test_error_on_nonexistant_field(self, regular_client):
+        route = '/credentials'
+        post_body = {
+            "credential_name": "test credential",
+            "doesnotexist": "doesnotexist data"
+        }
+        response = regular_client.post(route, json=post_body)
+        body = json.loads(response.data)
+        
+        expect(response.status_code).to(equal(400))
+
+
     def test_programs(self, regular_client):
         response = regular_client.get('/programs')
         body = json.loads(response.data)

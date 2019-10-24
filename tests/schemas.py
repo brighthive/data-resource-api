@@ -126,7 +126,7 @@ skills_descriptor=  {
             "title": "skill ID",
             "description": "skill Desc",
             "type": "integer",
-            "required": True
+            "required": False
           },
           {
             "name": "text",

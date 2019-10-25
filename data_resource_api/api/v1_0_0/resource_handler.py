@@ -280,16 +280,16 @@ class ResourceHandler(object):
                 valid_fields.append(field)
             else:
                 print("Junc table lookup")
-                print(field, data_resource_name)
+                print(f"Look up table with: '{field}' & '{data_resource_name}'")
                 junc = JuncHolder.lookup_table(field, data_resource_name)
-                print(junc)
+                print(f'Found table \'{junc}\'')
                 print("----------")
                 if JuncHolder.does_table_exist(field, data_resource_name):
                     values = request_obj[field]
                     if not isinstance(values, list):
                         values = [values]
                     table_name = JuncHolder.get_table_name(field, data_resource_name)
-                    many_query.append([table_name, field, data_resource_name, values])
+                    many_query.append([table_name, field, data_resource_name, values, junc])
                 else:
                     errors.append('Unknown field \'{}\' found'.format(field))
         
@@ -312,8 +312,8 @@ class ResourceHandler(object):
                 id_value = getattr(new_object, table_schema['primaryKey'])
 
                 # process the many_query
-                for table_name, field, data_resource_name, values in many_query:
-                    self.process_many_query(session, id_value, table_name, field, data_resource_name, values)
+                for table_name, field, data_resource_name, values, table in many_query:
+                    self.process_many_query(session, table, id_value, table_name, field, data_resource_name, values)
 #
                 return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
@@ -321,7 +321,7 @@ class ResourceHandler(object):
             finally:
                 session.close()
 
-    def process_many_query(self, session: object, id_value: int, table_name: str, field: str, data_resource_name: str, values: list):
+    def process_many_query(self, session: object, table, id_value: int, table_name: str, field: str, data_resource_name: str, values: list):
         """Will find the junc table and add the values manually
 
         Args:  
@@ -344,12 +344,20 @@ class ResourceHandler(object):
                 #     'parent_val': id_value,
                 #     'rel_val': value
                 # })
-                session.execute(
-                    f"INSERT INTO {table_name} ({parent_column}, {relationship_column}) VALUES ({id_value}, {value});"
-                )
+                # session.execute(
+                #     f"INSERT INTO {table_name} ({parent_column}, {relationship_column}) VALUES ({id_value}, {value});"
+                # )
+                # session.commit()
+                cols = {f'{parent_column}':id_value, f'{relationship_column}': value}
+                insert = table.insert().values(**cols)
+                session.execute(insert)
                 session.commit()
             except Exception as e:
                 raise e
+        
+        # rs = session.execute(f"SELECT * FROM {table_name}")
+        # for row in rs:
+        #     print(row)
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):

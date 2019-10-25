@@ -38,17 +38,19 @@ class TestStartup(object):
             
             print(body)
             expect(response.status_code).to(equal(201))
+            # expect(body['frameworks']['skills']).to(equal([1,2]))
 
 
         ## Check for one item
-        def check_for_one_framework():
-            route = '/frameworks'
+        def check_for_skills_on_framework():
+            route = '/frameworks/1/skills'
             response = frameworks_skills_client.get(route)
             body = json.loads(response.data)
             
             print(body)
             expect(response.status_code).to(equal(200))
             expect(len(body['frameworks'])).to(equal(1))
+            expect(body['frameworks']['skills']).to(equal([1,2]))
         
         
         ## Get m:n
@@ -88,7 +90,7 @@ class TestStartup(object):
         post_a_skill("skill1")
         post_a_skill("skill2")
         post_a_framework([1,2])
-        check_for_one_framework()
+        # check_for_skills_on_framework()
         # get_many_route()
         # post_two_skills_to_framework()
         # verify_skills_count()

@@ -60,3 +60,15 @@ class TestJuncHolder(object):
         expect(value_one).to(equal(True))
         expect(value_two).to(equal(True))
         expect(does_not_exist).to(equal(False))
+
+    def test_get_correct_table_name(self):
+        JuncHolder.reset()
+
+        test_table = TestTable("parent_child")
+        JuncHolder.add_table("parent_child", test_table)
+
+        value_one = JuncHolder.get_table_name("parent", "child")
+        value_two = JuncHolder.get_table_name("child", "parent")
+
+        expect(value_one).to(equal("parent_child"))
+        expect(value_two).to(equal("parent_child"))

@@ -288,8 +288,8 @@ class ResourceHandler(object):
                     values = request_obj[field]
                     if not isinstance(values, list):
                         values = [values]
-
-                    many_query.append([junc, field, data_resource_name, values])
+                    table_name = JuncHolder.get_table_name(field, data_resource_name)
+                    many_query.append([table_name, field, data_resource_name, values])
                 else:
                     errors.append('Unknown field \'{}\' found'.format(field))
         
@@ -312,35 +312,44 @@ class ResourceHandler(object):
                 id_value = getattr(new_object, table_schema['primaryKey'])
 
                 # process the many_query
-                for table, field, data_resource_name, values in many_query:
-                    self.process_many_query(id_value, table, field, data_resource_name, values)
+                for table_name, field, data_resource_name, values in many_query:
+                    self.process_many_query(session, id_value, table_name, field, data_resource_name, values)
 #
                 return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
-                return {'error': 'Failed to create new resource.'}, 400
+                return {'error': f'Failed to create new resource. {e}'}, 400
             finally:
                 session.close()
 
-    def process_many_query(self, id_value: int, table: object, field: str, data_resource_name: str, values: list):
+    def process_many_query(self, session: object, id_value: int, table_name: str, field: str, data_resource_name: str, values: list):
         """Will find the junc table and add the values manually
 
-        Args:
+        Args:  
+            session (object): sqlalchemy session object
             id_value (int): Newly created resource of type data_resource_name
-            table (object): This is the junction table
+            table (str): This is the junction table name
             field (str): This is the field name
             data_resource_name (str): This is the resource type (table name) of the given resource
             values (list): This holds the primary keys for the relationship
         """
-        relationship_id = f'{field}_id'
-        parent_id = f'{data_resource_name}_id'
+        parent_column = f'{data_resource_name}_id'
+        relationship_column = f'{field}_id'
 
         for value in values:
-            # append to junc table
-            # {
-            #     relationship_id: value,
-            #     parent_id: id_value
-            # }
-            pass
+            try:
+                # session.execute("INSERT INTO :junc_table (:parent, :rel) VALUES (:parent_val, :rel_val);", {
+                #     'junc_table': table_name,
+                #     'parent': parent_column,
+                #     'rel': relationship_column,
+                #     'parent_val': id_value,
+                #     'rel_val': value
+                # })
+                session.execute(
+                    f"INSERT INTO {table_name} ({parent_column}, {relationship_column}) VALUES ({id_value}, {value});"
+                )
+                session.commit()
+            except Exception as e:
+                raise e
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):

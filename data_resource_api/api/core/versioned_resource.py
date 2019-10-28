@@ -32,8 +32,10 @@ class VersionedResourceParent(Resource):
 
 class VersionedResourceMany(VersionedResourceParent):
     def get(self, id=None):
-        print("Got many to many route")
-        return {'id': id}, 200
+        ## route should be parent/<id>/child
+        paths = request.path.split('/')
+        parent, child = paths[1], paths[3]
+        return self.get_resource_handler(request.headers).get_many_one(id, parent, child)
 
 class VersionedResource(VersionedResourceParent):
     def get(self, id=None):

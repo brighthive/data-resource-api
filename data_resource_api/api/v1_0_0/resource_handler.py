@@ -398,6 +398,35 @@ class ResourceHandler(object):
         except Exception:
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
 
+    def get_many_one(self, id: int, parent: str, child: str):
+        """Retrieve the many to many relationship data of a parent and child.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+        """
+        
+        join_table = JuncHolder.lookup_table(parent, child) # this will error the other way around
+        
+        # This should not be reachable
+        # if join_table is None:
+        #     return {'error': f"relationship '{child}' of '{parent}' not found."}
+
+        session = Session()
+        args = {f'{parent}_id': id}
+        query = session.query(join_table).filter_by(**args).all()
+        # select_st = select(join_table).where(**args)
+        # rs = session.execute(select_st)
+
+        children = [value[1] for value in query]
+        
+        return {
+            f'{parent}': {
+                f'{child}': children
+                }
+            }, 200
+
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Wrapper method for update one method.

@@ -157,9 +157,7 @@ class ORMFactory(object):
             })
 
             for join_table in join_tables:
-                print(f"Creating junc table '{join_table}'")
                 tables = join_table.split('_')
-                assert(len(tables)==2)
 
                 if JuncHolder.lookup_full_table(join_table):
                     continue
@@ -172,7 +170,6 @@ class ORMFactory(object):
                     )
                 except Exception as e:
                     print(f"Error on create junc table '{join_table}'; {str(e)}")
-                    raise e
 
                 JuncHolder.add_table(join_table, association_table)
 

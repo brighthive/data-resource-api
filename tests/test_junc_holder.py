@@ -45,21 +45,7 @@ class TestJuncHolder(object):
     def test_full_error_no_underscore(self):
         with pytest.raises(ValueError):
             JuncHolder.lookup_full_table("parentchild")
-    
-    
-    def test_lookup_bool(self):
-        JuncHolder.reset()
 
-        test_table = TestTable("parent_child")
-        JuncHolder.add_table("parent2_child", test_table)
-
-        value_one = JuncHolder.does_table_exist("parent2", "child")
-        value_two = JuncHolder.does_table_exist("child", "parent2")
-        does_not_exist = JuncHolder.does_table_exist("asdf", "qwer")
-
-        expect(value_one).to(equal(True))
-        expect(value_two).to(equal(True))
-        expect(does_not_exist).to(equal(False))
 
     def test_get_correct_table_name(self):
         JuncHolder.reset()

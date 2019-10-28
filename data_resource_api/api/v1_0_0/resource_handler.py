@@ -279,22 +279,16 @@ class ResourceHandler(object):
             if field in accepted_fields:
                 valid_fields.append(field)
             else:
-                print("Junc table lookup")
-                print(f"Look up table with: '{field}' & '{data_resource_name}'")
-                junc = JuncHolder.lookup_table(field, data_resource_name)
-                print(f'Found table \'{junc}\'')
-                print("----------")
-                if JuncHolder.does_table_exist(field, data_resource_name):
+                junc_table = JuncHolder.lookup_table(field, data_resource_name)
+
+                if junc_table is not None:
                     values = request_obj[field]
                     if not isinstance(values, list):
                         values = [values]
                     table_name = JuncHolder.get_table_name(field, data_resource_name)
-                    many_query.append([table_name, field, data_resource_name, values, junc])
+                    many_query.append([table_name, field, data_resource_name, values, junc_table])
                 else:
-                    errors.append('Unknown field \'{}\' found'.format(field))
-        
-        print(valid_fields)
-        print(many_query)
+                    errors.append(f"Unknown field '{field}' found")
 
         if len(errors) > 0:
             return {'message': 'Invalid request body.', 'errors': errors}, 400
@@ -305,8 +299,6 @@ class ResourceHandler(object):
                 for field in valid_fields:
                     value = request_obj[field]
                     setattr(new_object, field, value)
-                # for key, value in request_obj.items():
-                #     setattr(new_object, key, value)
                 session.add(new_object)
                 session.commit()
                 id_value = getattr(new_object, table_schema['primaryKey'])
@@ -314,10 +306,10 @@ class ResourceHandler(object):
                 # process the many_query
                 for table_name, field, data_resource_name, values, table in many_query:
                     self.process_many_query(session, table, id_value, table_name, field, data_resource_name, values)
-#
+
                 return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
-                return {'error': f'Failed to create new resource. {e}'}, 400
+                return {'error': 'Failed to create new resource.'}, 400
             finally:
                 session.close()
 
@@ -337,27 +329,12 @@ class ResourceHandler(object):
 
         for value in values:
             try:
-                # session.execute("INSERT INTO :junc_table (:parent, :rel) VALUES (:parent_val, :rel_val);", {
-                #     'junc_table': table_name,
-                #     'parent': parent_column,
-                #     'rel': relationship_column,
-                #     'parent_val': id_value,
-                #     'rel_val': value
-                # })
-                # session.execute(
-                #     f"INSERT INTO {table_name} ({parent_column}, {relationship_column}) VALUES ({id_value}, {value});"
-                # )
-                # session.commit()
                 cols = {f'{parent_column}':id_value, f'{relationship_column}': value}
                 insert = table.insert().values(**cols)
                 session.execute(insert)
                 session.commit()
             except Exception as e:
                 raise e
-        
-        # rs = session.execute(f"SELECT * FROM {table_name}")
-        # for row in rs:
-        #     print(row)
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
@@ -407,7 +384,7 @@ class ResourceHandler(object):
             child (str): Type of child
         """
         
-        join_table = JuncHolder.lookup_table(parent, child) # this will error the other way around
+        join_table = JuncHolder.lookup_table(parent, child)
         
         # This should not be reachable
         # if join_table is None:
@@ -416,11 +393,9 @@ class ResourceHandler(object):
         session = Session()
         args = {f'{parent}_id': id}
         query = session.query(join_table).filter_by(**args).all()
-        # select_st = select(join_table).where(**args)
-        # rs = session.execute(select_st)
 
         children = [value[1] for value in query]
-        
+
         return {
             f'{parent}': {
                 f'{child}': children

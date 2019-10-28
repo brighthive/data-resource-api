@@ -9,7 +9,7 @@ from flask_restful import Resource
 from flask import request
 from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandler
 
-class VersionResourceParent(Resource):
+class VersionedResourceParent(Resource):
     __slots__ = ['data_resource_name',
                  'data_model', 'table_schema', 'api_schema', 'restricted_fields']
 
@@ -30,10 +30,12 @@ class VersionResourceParent(Resource):
             return V1_0_0_ResourceHandler()
 
 
-class VersionResourceMany(VersionResourceParent):
-    pass
+class VersionedResourceMany(VersionedResourceParent):
+    def get(self, id=None):
+        print("Got many to many route")
+        return {'id': id}, 200
 
-class VersionedResource(VersionResourceParent):
+class VersionedResource(VersionedResourceParent):
     def get(self, id=None):
         if self.api_schema['get']['enabled']:
             if request.path.endswith('/query'):

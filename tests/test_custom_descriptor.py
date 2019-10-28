@@ -90,7 +90,7 @@ class TestStartup(object):
         post_a_skill("skill1")
         post_a_skill("skill2")
         post_a_framework([1,2])
-        # check_for_skills_on_framework()
+        check_for_skills_on_framework()
         # get_many_route()
         # post_two_skills_to_framework()
         # verify_skills_count()

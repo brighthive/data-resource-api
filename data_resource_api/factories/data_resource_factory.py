@@ -7,7 +7,7 @@ This module contains a factory object for creating API resources.
 import hashlib
 import json
 from data_resource_api.config import ConfigurationFactory
-from data_resource_api.api import VersionedResource
+from data_resource_api.api import VersionedResource, VersionedResourceMany
 
 
 class DataResourceFactory(object):
@@ -34,17 +34,9 @@ class DataResourceFactory(object):
 
         """
         flask_restful_resource = None
-        resources = ['/{}'.format(endpoint_name),
-                     '/{}/<id>'.format(endpoint_name),
-                     '/{}/query'.format(endpoint_name)]
-
-        if 'custom' in api_schema:
-            for custom_resource in api_schema['custom']:
-                custom_table = custom_resource['resource'].split('/')
-                resources.append(f'/{custom_table[1]}/<id>/{custom_table[2]}')
-                resources.append(
-                    f'/{custom_table[1]}/<id>/{custom_table[2]}/<child_id>'
-                ) # DELETE route
+        resources = [f'/{endpoint_name}',
+                     f'/{endpoint_name}/<int:id>',
+                     f'/{endpoint_name}/query']
 
         flask_restful_resource = type(endpoint_name, (VersionedResource,),
                        {'data_resource_name': table_name,
@@ -59,4 +51,31 @@ class DataResourceFactory(object):
                 resource,
                 endpoint=f'{endpoint_name}_ep_{idx}'
             )
-        return flask_restful_resource
+
+        
+        many_resources = []
+
+        if 'custom' in api_schema:
+            for custom_resource in api_schema['custom']:
+                custom_table = custom_resource['resource'].split('/')
+                # many_resources.append(
+                #     f'/{custom_table[1]}/<id>/{custom_table[2]}/<child_id>'
+                # ) # DELETE route
+                many_resources.append(f'/{custom_table[1]}/<int:id>/{custom_table[2]}')
+
+        flask_restful_many_resource = type(f'{endpoint_name}Many', (VersionedResourceMany,),
+                       {'data_resource_name': table_name,
+                        'data_model': table_obj,
+                        'table_schema': table_schema,
+                        'api_schema': api_schema,
+                        'restricted_fields': restricted_fields})
+
+        for idx, resource in enumerate(many_resources):
+            print(resource)
+            api.add_resource(
+                flask_restful_many_resource,
+                resource,
+                endpoint=f'many_{endpoint_name}_ep_{idx}'
+            )
+
+        return None

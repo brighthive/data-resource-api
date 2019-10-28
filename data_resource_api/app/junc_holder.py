@@ -24,7 +24,7 @@ class JuncHolder:
         except KeyError:
             pass
 
-        if table: return table
+        if table is not None: return table
 
         table_name_two = f'{table_two}_{table_one}'
 
@@ -46,7 +46,7 @@ class JuncHolder:
         except KeyError:
             pass
 
-        if table: return True
+        if table is not None: return True
 
         table_name_two = f'{table_two}_{table_one}'
 
@@ -67,7 +67,7 @@ class JuncHolder:
         except KeyError:
             pass
 
-        if table: return table_name_one
+        if table is not None: return table_name_one
 
         table_name_two = f'{table_two}_{table_one}'
 

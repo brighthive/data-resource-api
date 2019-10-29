@@ -119,10 +119,11 @@ class DataResourceManagerSync(object):
             dict, int: The error message and associated error code.
 
         """
+        self.logger.exception("Encountered an error while processing a request:")
         if isinstance(e, OAuth2ProviderError):
             return json.dumps({'message': 'Access Denied'}), 401
         else:
-            return json.dumps({'error': 'exception is {}'.format(e)})
+            return json.dumps({'error': f'exception is {e}'})
             # try:
             #     error_code = str(e).split(':')[0][:3].strip()
             #     error_text = str(e).split(':')[0][3:].strip()
@@ -231,7 +232,7 @@ class DataResourceManagerSync(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception as e:
-            self.logger.error('Error retrieving checksum {}'.format(e))
+            self.logger.exception('Error retrieving checksum {}'.format(e))
         session.close()
         return checksum
 
@@ -244,7 +245,7 @@ class DataResourceManagerSync(object):
         schema_dir = self.get_data_resource_schema_path()
         # Check that the path exists and that it is a directory
         if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
-            self.logger.error('Schema directory does not exist.')
+            self.logger.exception('Schema directory does not exist.')
             return
 
         schemas = os.listdir(schema_dir)
@@ -306,7 +307,7 @@ class DataResourceManagerSync(object):
                         data_resource.data_resource_object.restricted_fields = restricted_fields
                         self.data_resources[data_resource_index] = data_resource
                 except Exception as e:
-                    self.logger.error(
+                    self.logger.exception(
                         'Error checking data resource {}'.format(e))
             else:
                 data_resource = DataResource()
@@ -324,7 +325,7 @@ class DataResourceManagerSync(object):
                 self.data_resources.append(data_resource)
                 
         except Exception as e:
-            self.logger.error(
+            self.logger.exception(
                 'Error loading schema {} {}'.format(schema_file, e))
 
 class DataResourceManager(Thread, DataResourceManagerSync):

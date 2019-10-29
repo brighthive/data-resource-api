@@ -159,7 +159,7 @@ class ORMFactory(object):
             for join_table in join_tables:
                 tables = join_table.split('_')
 
-                if JuncHolder.lookup_full_table(join_table):
+                if JuncHolder.lookup_full_table(join_table) is not None:
                     continue
 
                 try:

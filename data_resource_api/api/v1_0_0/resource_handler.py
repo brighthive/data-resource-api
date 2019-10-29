@@ -398,11 +398,7 @@ class ResourceHandler(object):
 
         children = [value[1] for value in query]
 
-        return {
-            f'{parent}': {
-                f'{child}': children
-                }
-            }, 200
+        return {f'{child}': children}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):

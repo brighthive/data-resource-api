@@ -285,8 +285,7 @@ class ResourceHandler(object):
                     values = request_obj[field]
                     if not isinstance(values, list):
                         values = [values]
-                    table_name = JuncHolder.get_table_name(field, data_resource_name)
-                    many_query.append([table_name, field, values, junc_table])
+                    many_query.append([field, values, junc_table])
                 else:
                     errors.append(f"Unknown field '{field}' found")
 
@@ -304,7 +303,7 @@ class ResourceHandler(object):
                 id_value = getattr(new_object, table_schema['primaryKey'])
 
                 # process the many_query
-                for table_name, field, values, table in many_query:
+                for field, values, table in many_query:
                     self.process_many_query(session, table, id_value, field, data_resource_name, values)
 
                 return {'message': 'Successfully added new resource.', 'id': id_value}, 201

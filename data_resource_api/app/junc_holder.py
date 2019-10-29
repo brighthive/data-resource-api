@@ -36,26 +36,5 @@ class JuncHolder:
         return table
 
     @staticmethod
-    def get_table_name(table_one, table_two):
-        table_name_one = f'{table_one}_{table_two}'
-        table = None
-
-        try:
-            table = JuncHolder.static_lookup[table_name_one]
-        except KeyError:
-            pass
-
-        if table is not None: return table_name_one
-
-        table_name_two = f'{table_two}_{table_one}'
-
-        try:
-            table = JuncHolder.static_lookup[table_name_two]
-        except KeyError:
-            raise RuntimeError("Junc table not found.")
-        
-        return table_name_two
-
-    @staticmethod
     def reset():
         static_lookup = {}

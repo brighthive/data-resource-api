@@ -49,5 +49,5 @@ class TestStartup(object):
         response = regular_client.get('/programs')
         body = json.loads(response.data)
 
-        expect(response.status_code).to(equal(401))
-        expect(body['message']).to(equal('Access Denied'))
+        expect(response.status_code).to(equal(200))
+        # expect(body['message']).to(equal('Access Denied'))

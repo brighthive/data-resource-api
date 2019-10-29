@@ -40,8 +40,7 @@ class TestStartup(object):
             
             print(body)
             expect(response.status_code).to(equal(200))
-            expect(len(body['frameworks'])).to(equal(1))
-            expect(body['frameworks']['skills']).to(equal([1,2]))
+            expect(body['skills']).to(equal([1,2]))
                      
         get_all_frameworks()
         post_a_skill("skill1")
@@ -79,7 +78,7 @@ class TestStartup(object):
             body = json.loads(response.data)
             
             expect(response.status_code).to(equal(200))
-            expect(len(body['frameworks']['skills'])).to(equal(0))
+            expect(len(body['skills'])).to(equal(0))
 
         framework_id = post_a_framework()
         get_wrong_relationship(framework_id)

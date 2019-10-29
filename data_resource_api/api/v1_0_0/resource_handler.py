@@ -286,7 +286,7 @@ class ResourceHandler(object):
                     if not isinstance(values, list):
                         values = [values]
                     table_name = JuncHolder.get_table_name(field, data_resource_name)
-                    many_query.append([table_name, field, data_resource_name, values, junc_table])
+                    many_query.append([table_name, field, values, junc_table])
                 else:
                     errors.append(f"Unknown field '{field}' found")
 
@@ -304,8 +304,8 @@ class ResourceHandler(object):
                 id_value = getattr(new_object, table_schema['primaryKey'])
 
                 # process the many_query
-                for table_name, field, data_resource_name, values, table in many_query:
-                    self.process_many_query(session, table, id_value, table_name, field, data_resource_name, values)
+                for table_name, field, values, table in many_query:
+                    self.process_many_query(session, table, id_value, field, data_resource_name, values)
 
                 return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
@@ -313,23 +313,26 @@ class ResourceHandler(object):
             finally:
                 session.close()
 
-    def process_many_query(self, session: object, table, id_value: int, table_name: str, field: str, data_resource_name: str, values: list):
-        """Will find the junc table and add the values manually
+    def process_many_query(self, session: object, table, id_value: int, field: str, data_resource_name: str, values: list):
+        """Iterates over values and adds the items to the junction table
 
         Args:  
             session (object): sqlalchemy session object
             id_value (int): Newly created resource of type data_resource_name
-            table (str): This is the junction table name
             field (str): This is the field name
             data_resource_name (str): This is the resource type (table name) of the given resource
-            values (list): This holds the primary keys for the relationship
+            values (list): Holds data to be inserted into the junction table
         """
         parent_column = f'{data_resource_name}_id'
         relationship_column = f'{field}_id'
 
         for value in values:
             try:
-                cols = {f'{parent_column}':id_value, f'{relationship_column}': value}
+                cols = {
+                    f'{parent_column}':id_value,
+                    f'{relationship_column}': value
+                }
+
                 insert = table.insert().values(**cols)
                 session.execute(insert)
                 session.commit()
@@ -391,8 +394,8 @@ class ResourceHandler(object):
         #     return {'error': f"relationship '{child}' of '{parent}' not found."}
 
         session = Session()
-        args = {f'{parent}_id': id}
-        query = session.query(join_table).filter_by(**args).all()
+        cols = {f'{parent}_id': id}
+        query = session.query(join_table).filter_by(**cols).all()
 
         children = [value[1] for value in query]
 

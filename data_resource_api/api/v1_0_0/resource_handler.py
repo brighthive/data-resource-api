@@ -11,9 +11,13 @@ from brighthive_authlib import token_required
 from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.logging import LogFactory
 
 
 class ResourceHandler(object):
+    def __init__(self):
+        self.logger = LogFactory.get_console_logger('data-model-manager')
+
     def build_json_from_object(self, obj: object, restricted_fields: dict = []):
         resp = {key: str(value) if value is not None else '' for key, value in obj.__dict__.items(
         ) if not key.startswith('_') and not callable(key) and key not in restricted_fields}
@@ -112,16 +116,6 @@ class ResourceHandler(object):
 
         return is_valid
 
-    def error_message(error_text: str, status_code=400):
-        """Generate an error message with a status code.
-        Args:
-            error_text (str): Error text to return with the message body.
-            status_code (int): HTTP status code to return.
-        Return
-            dict, int: Error message and HTTP status code.
-        """
-        return {'error': error_text}, status_code
-
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_all_secure(self, data_model, data_resource_name, restricted_fields, offset=0, limit=1):
         """Wrapper method for get_all method.
@@ -167,8 +161,8 @@ class ResourceHandler(object):
                 links = self.build_links(
                     data_resource_name, offset, limit, row_count)
             response['links'] = links
-        except Exception as e:
-            print('exception to be logged {}'.format(e))
+        except Exception:
+            self.logger.exception()
         session.close()
         return response, 200
 

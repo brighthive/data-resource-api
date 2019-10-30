@@ -157,21 +157,7 @@ class ORMFactory(object):
             })
 
             for join_table in join_tables:
-                tables = join_table.split('_')
-
-                if JuncHolder.lookup_full_table(join_table) is not None:
-                    continue
-
-                try:
-                    association_table = Table(join_table, Base.metadata,
-                        Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id')),
-                        Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id')),
-                        extend_existing=True
-                    )
-                except Exception as e:
-                    print(f"Error on create junc table '{join_table}'; {str(e)}")
-
-                JuncHolder.add_table(join_table, association_table)
+                self.process_join_table(join_table)
 
             try:
                 with warnings.catch_warnings():
@@ -181,3 +167,26 @@ class ORMFactory(object):
                 orm_class = None
 
         return orm_class
+
+    def process_join_table(self, join_table: str):
+        """Handles the creation of an association table.
+
+        Args:
+            join_table (str): String name of the association table
+        """
+        tables = join_table.split('_')
+
+        if JuncHolder.lookup_full_table(join_table) is not None:
+            return
+
+        try:
+            association_table = Table(join_table, Base.metadata,
+                Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id')),
+                Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id')),
+                extend_existing=True
+            )
+        except Exception as e:
+            print(f"Error on create junc table '{join_table}'; {str(e)}")
+
+        JuncHolder.add_table(join_table, association_table)
+        

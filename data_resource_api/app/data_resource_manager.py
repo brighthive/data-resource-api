@@ -17,21 +17,7 @@ from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Base, Session, Checksum
 from data_resource_api.logging import LogFactory
-
-
-class ApiError(Exception):
-    def __init__(self, message, status_code=400, payload=None):
-        Exception.__init__(self)
-        self.message = message
-        self.status_code = status_code
-        self.payload = payload or ()
-
-    def get_response(self):
-        logger = LogFactory.get_console_logger('data-resource-manager')
-        logger.exception()
-        resp = dict(self.payload)
-        resp['message'] = self.message
-        return jsonify(resp), self.status_code
+from data_resource_api.app.exception_handler import handle_errors
 
 
 class DataResource(object):
@@ -115,30 +101,9 @@ class DataResourceManagerSync(object):
         self.api = Api(self.app)
         self.api.add_resource(self.available_services,
                               '/', endpoint='all_services_ep')
-        self.app.register_error_handler(Exception, self.handle_errors)
+        self.app.register_error_handler(Exception, handle_errors)
 
         return self.app
-
-    def handle_errors(self, e):
-        """Flask App Error Handler
-
-        A generic error handler for Flask applications.
-
-        Note:
-            This error handler is essentially to ensure that OAuth 2.0 authorization errors
-            are handled in an appropriate fashion. The application configuration used when
-            building the application must set the PROPOGATE_EXPECTIONS environment variable to
-            True in order for the exception to be propogated.
-
-        Return:
-            dict, int: The error message and associated error code.
-
-        """
-        self.logger.exception("Encountered an error while processing a request:")
-        if isinstance(e, OAuth2ProviderError):
-            return json.dumps({'message': 'Access Denied'}), 401
-
-        return e.get_response()
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.

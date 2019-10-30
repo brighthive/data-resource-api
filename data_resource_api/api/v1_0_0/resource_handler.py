@@ -12,6 +12,7 @@ from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
+from data_resource_api.app.exception_handler import ApiError
 
 
 class ResourceHandler(object):

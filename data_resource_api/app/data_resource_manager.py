@@ -4,14 +4,12 @@ The Data Resource Manager manages the lifecycles of all data resources. It is re
 creating the Flask application that sits at the front of the data resource.
 
 """
-
 import os
 import json
 import hashlib
 from threading import Thread
 from time import sleep
 from flask import Flask
-from brighthive_authlib import OAuth2ProviderError
 from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory

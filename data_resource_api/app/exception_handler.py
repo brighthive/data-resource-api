@@ -1,25 +1,34 @@
 import json
 from brighthive_authlib import OAuth2ProviderError
 from data_resource_api.logging import LogFactory
+from flask import jsonify
 from werkzeug.exceptions import NotFound
 
 
 class ApiError(Exception):
-    def __init__(self, message, status_code=400, payload=None):
+    def __init__(self, message, status_code=400):
         Exception.__init__(self)
         self.message = message
         self.status_code = status_code
-        self.payload = payload or ()
 
     def get_message(self):
-        logger = LogFactory.get_console_logger('data-resource-manager')
-        logger.exception()
-        resp = dict(self.payload)
-        resp['message'] = self.message
+        resp = {}
+        resp['error'] = self.message
         return jsonify(resp)
 
     def get_status_code(self):
         return self.status_code
+
+
+class ApiErrorLog(ApiError):
+    pass
+
+
+class MethodNotAllowed(ApiError):
+    def __init__(self):
+        message = "Method not allowed"
+        status_code = 405
+        ApiError.__init__(self, message, status_code)
 
 
 def handle_errors(e):
@@ -37,15 +46,19 @@ def handle_errors(e):
         dict, int: The error message and associated error code.
 
     """
-    logger = LogFactory.get_console_logger('data-model-manager')
-    logger.exception("Encountered an error while processing a request:")
     if isinstance(e, OAuth2ProviderError):
         return json.dumps({'message': 'Access Denied'}), 401
 
     if isinstance(e, NotFound):
         return json.dumps({'error': 'Location not found'}), 404
-
+    
     if isinstance(e, ApiError):
+        return e.get_message(), e.get_status_code()
+
+    logger = LogFactory.get_console_logger('data-model-manager')
+    logger.exception("Encountered an error while processing a request.")
+
+    if isinstance(e, ApiErrorLog):
         return e.get_message(), e.get_status_code()
 
     return e.get_response()

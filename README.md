@@ -199,6 +199,33 @@ Sometimes, a data resource has fields that contain important information (e.g., 
 ...
 ```
 
+### Many to many
+
+To create a many to many resource add the relationship to the API section.
+
+```JavaScript
+{
+  "api": {
+    "resource": "programs",
+    "methods": [
+      {
+        "custom": [
+          {
+            "resource": "/programs/credentials"
+          }
+        ]
+      }
+    ]
+  },
+  ...
+```
+
+This will generate a many to many relationship.
+
+To add a resource you would POST and in the body include the child field as a parameter.
+
+To query the relationship you have to go to `/programs/1/credentials`. The relatinoship will not currently show up if you simply query `/programs/1`.
+
 ## Configuration
 
 The following parameters can be adjusted to serve testing, development, or particular deployment needs. 

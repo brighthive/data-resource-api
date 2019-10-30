@@ -10,6 +10,7 @@ from tableschema import Table, Schema, validate
 from brighthive_authlib import token_required
 from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
+from data_resource_api.app.junc_holder import JuncHolder
 
 
 class ResourceHandler(object):
@@ -257,18 +258,36 @@ class ResourceHandler(object):
         schema = Schema(table_schema)
         errors = []
         accepted_fields = []
-        if validate(table_schema):
-            for field in table_schema['fields']:
-                accepted_fields.append(field['name'])
-                if field['required']:
-                    if not field['name'] in request_obj.keys():
-                        errors.append(
-                            'Required field \'{}\' is missing'.format(field['name']))
-            for field in request_obj.keys():
-                if field not in accepted_fields:
-                    errors.append('Unknown field \'{}\' found'.format(field))
-        else:
+
+        if not validate(table_schema):
             return {'error': 'Data schema validation error.'}, 400
+
+        # Check for required fields
+        for field in table_schema['fields']:
+            accepted_fields.append(field['name'])
+
+            if field['required']:
+                if not field['name'] in request_obj.keys():
+                    errors.append(
+                        'Required field \'{}\' is missing'.format(field['name'])
+                    )
+
+        valid_fields = []
+        many_query = []
+
+        for field in request_obj.keys():
+            if field in accepted_fields:
+                valid_fields.append(field)
+            else:
+                junc_table = JuncHolder.lookup_table(field, data_resource_name)
+
+                if junc_table is not None:
+                    values = request_obj[field]
+                    if not isinstance(values, list):
+                        values = [values]
+                    many_query.append([field, values, junc_table])
+                else:
+                    errors.append(f"Unknown field '{field}' found")
 
         if len(errors) > 0:
             return {'message': 'Invalid request body.', 'errors': errors}, 400
@@ -276,16 +295,48 @@ class ResourceHandler(object):
             try:
                 session = Session()
                 new_object = data_model()
-                for key, value in request_obj.items():
-                    setattr(new_object, key, value)
+                for field in valid_fields:
+                    value = request_obj[field]
+                    setattr(new_object, field, value)
                 session.add(new_object)
                 session.commit()
-                id = getattr(new_object, table_schema['primaryKey'])
-                return {'message': 'Successfully added new resource.', 'id': id}, 201
+                id_value = getattr(new_object, table_schema['primaryKey'])
+
+                # process the many_query
+                for field, values, table in many_query:
+                    try:
+                        self.process_many_query(session, table, id_value, field, data_resource_name, values)
+                    except Exception as e:
+                        return {'error': 'Failed to handle many to many relationship.'}, 400
+
+                return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
                 return {'error': 'Failed to create new resource.'}, 400
             finally:
                 session.close()
+
+    def process_many_query(self, session: object, table, id_value: int, field: str, data_resource_name: str, values: list):
+        """Iterates over values and adds the items to the junction table
+
+        Args:
+            session (object): sqlalchemy session object
+            id_value (int): Newly created resource of type data_resource_name
+            field (str): This is the field name
+            data_resource_name (str): This is the resource type (table name) of the given resource
+            values (list): Holds data to be inserted into the junction table
+        """
+        parent_column = f'{data_resource_name}_id'
+        relationship_column = f'{field}_id'
+
+        for value in values:
+            cols = {
+                f'{parent_column}': id_value,
+                f'{relationship_column}': value
+            }
+
+            insert = table.insert().values(**cols)
+            session.execute(insert)
+            session.commit()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
@@ -325,6 +376,29 @@ class ResourceHandler(object):
             return response, 200
         except Exception:
             return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
+
+    def get_many_one(self, id: int, parent: str, child: str):
+        """Retrieve the many to many relationship data of a parent and child.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+        """
+
+        join_table = JuncHolder.lookup_table(parent, child)
+
+        # This should not be reachable
+        # if join_table is None:
+        #     return {'error': f"relationship '{child}' of '{parent}' not found."}
+
+        session = Session()
+        cols = {f'{parent}_id': id}
+        query = session.query(join_table).filter_by(**cols).all()
+
+        children = [value[1] for value in query]
+
+        return {f'{child}': children}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):

@@ -6,9 +6,10 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 
 import warnings
 from tableschema import Schema
-from sqlalchemy import Column, ForeignKey, MetaData, String, exc
+from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Table, Integer
 from data_resource_api.db import Base
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
+from data_resource_api.app.junc_holder import JuncHolder
 
 
 class ORMFactory(object):
@@ -138,23 +139,54 @@ class ORMFactory(object):
                 foreign_keys = table_schema['foreignKeys']
             else:
                 foreign_keys = []
+
             join_tables = []
+
             if 'custom' in api_schema:
                 for custom_resource in api_schema['custom']:
                     custom_table = custom_resource['resource'].split('/')
-                    custom_table_name = '{}_{}'.format(
-                        custom_table[1], custom_table[2])
+                    custom_table_name = f'{custom_table[1]}_{custom_table[2]}'
                     join_tables.append(custom_table_name)
+
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)
+
             fields.update({
                 '__tablename__': model_name,
                 '__table_args__': {'extend_existing': True}
             })
+
+            for join_table in join_tables:
+                self.process_join_table(join_table)
+
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)
                     orm_class = type(model_name, (Base,), fields)
             except Exception as e:
                 orm_class = None
+
         return orm_class
+
+    def process_join_table(self, join_table: str):
+        """Handles the creation of an association table.
+
+        Args:
+            join_table (str): String name of the association table
+        """
+        tables = join_table.split('_')
+
+        if JuncHolder.lookup_full_table(join_table) is not None:
+            return
+
+        try:
+            association_table = Table(join_table, Base.metadata,
+                Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id')),
+                Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id')),
+                extend_existing=True
+            )
+        except Exception as e:
+            print(f"Error on create junc table '{join_table}'; {str(e)}")
+
+        JuncHolder.add_table(join_table, association_table)
+        

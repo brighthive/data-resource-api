@@ -271,7 +271,7 @@ class ResourceHandler(object):
                     errors.append(
                         'Required field \'{}\' is missing'.format(field['name'])
                     )
-        
+
         valid_fields = []
         many_query = []
 
@@ -304,7 +304,10 @@ class ResourceHandler(object):
 
                 # process the many_query
                 for field, values, table in many_query:
-                    self.process_many_query(session, table, id_value, field, data_resource_name, values)
+                    try:
+                        self.process_many_query(session, table, id_value, field, data_resource_name, values)
+                    except Exception as e:
+                        return {'error': 'Failed to handle many to many relationship.'}, 400
 
                 return {'message': 'Successfully added new resource.', 'id': id_value}, 201
             except Exception as e:
@@ -315,7 +318,7 @@ class ResourceHandler(object):
     def process_many_query(self, session: object, table, id_value: int, field: str, data_resource_name: str, values: list):
         """Iterates over values and adds the items to the junction table
 
-        Args:  
+        Args:
             session (object): sqlalchemy session object
             id_value (int): Newly created resource of type data_resource_name
             field (str): This is the field name
@@ -326,17 +329,14 @@ class ResourceHandler(object):
         relationship_column = f'{field}_id'
 
         for value in values:
-            try:
-                cols = {
-                    f'{parent_column}':id_value,
-                    f'{relationship_column}': value
-                }
+            cols = {
+                f'{parent_column}': id_value,
+                f'{relationship_column}': value
+            }
 
-                insert = table.insert().values(**cols)
-                session.execute(insert)
-                session.commit()
-            except Exception as e:
-                raise e
+            insert = table.insert().values(**cols)
+            session.execute(insert)
+            session.commit()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
@@ -385,9 +385,9 @@ class ResourceHandler(object):
             parent (str): Type of parent
             child (str): Type of child
         """
-        
+
         join_table = JuncHolder.lookup_table(parent, child)
-        
+
         # This should not be reachable
         # if join_table is None:
         #     return {'error': f"relationship '{child}' of '{parent}' not found."}

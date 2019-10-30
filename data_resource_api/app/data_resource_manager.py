@@ -262,7 +262,6 @@ class DataResourceManagerSync(object):
 
         self.logger.info('Completed check of data resources')
 
-
     def work_on_schema(self, schema_dict: dict, schema_file: str):
         """Does data resource changes based on a given schema.
         """
@@ -327,6 +326,7 @@ class DataResourceManagerSync(object):
         except Exception as e:
             self.logger.exception(
                 'Error loading schema {} {}'.format(schema_file, e))
+
 
 class DataResourceManager(Thread, DataResourceManagerSync):
     def __init__(self):

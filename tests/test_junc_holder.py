@@ -2,9 +2,11 @@ from data_resource_api.app.junc_holder import JuncHolder
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
 import pytest
 
+
 class TestTable:
     def __init__(self, table_name):
         self.__tablename__ = table_name
+
 
 class TestJuncHolder(object):
     def test_use(self):
@@ -24,7 +26,6 @@ class TestJuncHolder(object):
     def test_error_no_underscore(self):
         with pytest.raises(ValueError):
             JuncHolder.add_table("parentchild", None)
-    
 
     def test_use_full(self):
         JuncHolder.reset()

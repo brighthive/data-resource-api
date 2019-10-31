@@ -4,7 +4,7 @@
     "methods": [
       {
         "get": {
-          "enabled": false,
+          "enabled": true,
           "secured": false,
           "grants": ["get:users"]
         },

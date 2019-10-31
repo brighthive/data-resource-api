@@ -45,7 +45,7 @@ class MethodNotAllowed(ApiError):
 
 
 class InternalServerError(ApiErrorLog):
-    def __init__(self, status_code=400):
+    def __init__(self, status_code=500):
         message = "Internal Server Error"
         ApiError.__init__(self, message, status_code)
 

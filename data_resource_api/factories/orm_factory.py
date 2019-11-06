@@ -145,7 +145,7 @@ class ORMFactory(object):
             if 'custom' in api_schema:
                 for custom_resource in api_schema['custom']:
                     custom_table = custom_resource['resource'].split('/')
-                    custom_table_name = f'{custom_table[1]}_{custom_table[2]}'
+                    custom_table_name = f'{custom_table[1]}/{custom_table[2]}'
                     join_tables.append(custom_table_name)
 
             fields = self.create_sqlalchemy_fields(
@@ -174,7 +174,7 @@ class ORMFactory(object):
         Args:
             join_table (str): String name of the association table
         """
-        tables = join_table.split('_')
+        tables = join_table.split('/')
 
         if JuncHolder.lookup_full_table(join_table) is not None:
             return

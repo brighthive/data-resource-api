@@ -332,7 +332,7 @@ class ResourceHandler(object):
                 session.execute(insert)
                 session.commit()
 
-        except Exception as e:
+        except Exception:
             raise InternalServerError()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())

@@ -83,7 +83,7 @@ class DataModelManagerSync(object):
                     self.logger.info(
                         'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
                 else:
-                    self.logger.exception()
+                    self.logger.exception(f'Error occured upgrading database.')
 
             retries += 1
             sleep(retry_wait)

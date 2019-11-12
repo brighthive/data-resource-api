@@ -12,7 +12,7 @@ from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
-from data_resource_api.app.exception_handler import ApiError, ApiErrorLog, InternalServerError
+from data_resource_api.app.exception_handler import ApiError, ApiUnhandledError, InternalServerError
 
 
 class ResourceHandler(object):
@@ -195,7 +195,7 @@ class ResourceHandler(object):
                     errors.append(
                         'Unknown or restricted field \'{}\' found.'.format(field))
             if len(errors) > 0:
-                raise ApiErrorLog('Invalid request body.', 400, errors)
+                raise ApiUnhandledError('Invalid request body.', 400, errors)
             else:
                 try:
                     session = Session()
@@ -210,7 +210,7 @@ class ResourceHandler(object):
                     else:
                         return response, 200
                 except Exception as e:
-                    raise ApiErrorLog('Failed to create new resource.', 400)
+                    raise ApiUnhandledError('Failed to create new resource.', 400)
                 finally:
                     session.close()
         else:
@@ -304,7 +304,7 @@ class ResourceHandler(object):
 
             return {'message': 'Successfully added new resource.', 'id': id_value}, 201
         except Exception as e:
-            raise ApiErrorLog('Failed to create new resource.', 400)
+            raise ApiUnhandledError('Failed to create new resource.', 400)
         finally:
             session.close()
 
@@ -372,7 +372,7 @@ class ResourceHandler(object):
             response = self.build_json_from_object(result)
             return response, 200
         except Exception:
-            raise ApiErrorLog(f"Resource with id '{id}' not found.", 404)
+            raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
     def get_many_one(self, id: int, parent: str, child: str):
         """Retrieve the many to many relationship data of a parent and child.
@@ -438,9 +438,9 @@ class ResourceHandler(object):
             data_obj = session.query(data_model).filter(
                 getattr(data_model, primary_key) == id).first()
             if data_obj is None:
-                raise ApiErrorLog(f"Resource with id '{id}' not found.", 404)
+                raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
         except Exception as e:
-            raise ApiErrorLog(f"Resource with id '{id}' not found.", 404)
+            raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
         schema = Schema(table_schema)
         errors = []

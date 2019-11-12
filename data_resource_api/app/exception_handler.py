@@ -16,7 +16,7 @@ class DRApiError(Exception):
         resp = {}
         resp['error'] = self.message
 
-        if len(self.errors) != 0:
+        if self.errors:
             resp['errors'] = self.errors
 
         return jsonify(resp)
@@ -31,7 +31,7 @@ class ApiError(DRApiError):
     pass
 
 
-class ApiErrorLog(DRApiError):
+class ApiUnhandledError(DRApiError):
     """Returns an error message to client and logs the exception.
     """
     pass
@@ -44,7 +44,7 @@ class MethodNotAllowed(ApiError):
         ApiError.__init__(self, message, status_code)
 
 
-class InternalServerError(ApiErrorLog):
+class InternalServerError(ApiUnhandledError):
     def __init__(self, status_code=500):
         message = "Internal Server Error"
         ApiError.__init__(self, message, status_code)
@@ -86,7 +86,7 @@ def handle_errors(e):
     logger = LogFactory.get_console_logger('data-model-manager')
     logger.exception("Encountered an error while processing a request.")
 
-    if isinstance(e, ApiErrorLog):
+    if isinstance(e, ApiUnhandledError):
         return e.get_message(), e.get_status_code()
 
     return e.get_response()

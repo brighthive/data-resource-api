@@ -4,19 +4,18 @@ The Data Resource Manager manages the lifecycles of all data resources. It is re
 creating the Flask application that sits at the front of the data resource.
 
 """
-
 import os
 import json
 import hashlib
 from threading import Thread
 from time import sleep
 from flask import Flask
-from brighthive_authlib import OAuth2ProviderError
 from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Base, Session, Checksum
 from data_resource_api.logging import LogFactory
+from data_resource_api.app.exception_handler import handle_errors
 
 
 class DataResource(object):
@@ -100,39 +99,9 @@ class DataResourceManagerSync(object):
         self.api = Api(self.app)
         self.api.add_resource(self.available_services,
                               '/', endpoint='all_services_ep')
-        self.app.register_error_handler(Exception, self.handle_errors)
+        self.app.register_error_handler(Exception, handle_errors)
 
         return self.app
-
-    def handle_errors(self, e):
-        """Flask App Error Handler
-
-        A generic error handler for Flask applications.
-
-        Note:
-            This error handler is essentially to ensure that OAuth 2.0 authorization errors
-            are handled in an appropriate fashion. The application configuration used when
-            building the application must set the PROPOGATE_EXPECTIONS environment variable to
-            True in order for the exception to be propogated.
-
-        Return:
-            dict, int: The error message and associated error code.
-
-        """
-        self.logger.exception("Encountered an error while processing a request:")
-        if isinstance(e, OAuth2ProviderError):
-            return json.dumps({'message': 'Access Denied'}), 401
-        else:
-            return json.dumps({'error': f'exception is {e}'})
-            # try:
-            #     error_code = str(e).split(':')[0][:3].strip()
-            #     error_text = str(e).split(':')[0][3:].strip()
-            #     if isinstance(error_code, int):
-            #         return json.dumps({'error': error_text}), error_code
-            #     else:
-            #         raise Exception
-            # except Exception as e:
-            #     return json.dumps({'error': 'An unknown error occured {}'.format(e.__dict__)}), 400
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.
@@ -232,7 +201,7 @@ class DataResourceManagerSync(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception as e:
-            self.logger.exception('Error retrieving checksum {}'.format(e))
+            self.logger.exception('Error retrieving checksum')
         session.close()
         return checksum
 
@@ -240,7 +209,7 @@ class DataResourceManagerSync(object):
         """Monitor all data resources.
         """
         self.logger.info('Checking data resources...')
-        
+
         # Get a configured schema dir
         schema_dir = self.get_data_resource_schema_path()
         # Check that the path exists and that it is a directory
@@ -280,7 +249,7 @@ class DataResourceManagerSync(object):
 
             try:
                 restricted_fields = schema_dict['datastore']['restricted_fields']
-            except Exception:
+            except KeyError:
                 restricted_fields = []
 
             if self.data_resource_exists(data_resource_name):
@@ -307,7 +276,7 @@ class DataResourceManagerSync(object):
                         self.data_resources[data_resource_index] = data_resource
                 except Exception as e:
                     self.logger.exception(
-                        'Error checking data resource {}'.format(e))
+                        'Error checking data resource')
             else:
                 data_resource = DataResource()
                 data_resource.checksum = data_resource_checksum
@@ -322,10 +291,9 @@ class DataResourceManagerSync(object):
                 data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
                     api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
                 self.data_resources.append(data_resource)
-                
+
         except Exception as e:
-            self.logger.exception(
-                'Error loading schema {} {}'.format(schema_file, e))
+            self.logger.exception(f"Error loading schema '{schema_file}'")
 
 
 class DataResourceManager(Thread, DataResourceManagerSync):

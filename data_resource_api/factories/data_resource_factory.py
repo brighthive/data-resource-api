@@ -38,12 +38,12 @@ class DataResourceFactory(object):
                      f'/{endpoint_name}/<int:id>',
                      f'/{endpoint_name}/query']
 
-        flask_restful_resource = type(endpoint_name, (VersionedResource,),
-                       {'data_resource_name': table_name,
-                        'data_model': table_obj,
-                        'table_schema': table_schema,
-                        'api_schema': api_schema,
-                        'restricted_fields': restricted_fields})
+        flask_restful_resource = type(endpoint_name, (VersionedResource,), {
+            'data_resource_name': table_name,
+            'data_model': table_obj,
+            'table_schema': table_schema,
+            'api_schema': api_schema,
+            'restricted_fields': restricted_fields})
 
         for idx, resource in enumerate(resources):
             api.add_resource(
@@ -52,7 +52,6 @@ class DataResourceFactory(object):
                 endpoint=f'{endpoint_name}_ep_{idx}'
             )
 
-        
         many_resources = []
 
         if 'custom' in api_schema:
@@ -63,12 +62,12 @@ class DataResourceFactory(object):
                 # ) # DELETE route
                 many_resources.append(f'/{custom_table[1]}/<int:id>/{custom_table[2]}')
 
-        flask_restful_many_resource = type(f'{endpoint_name}Many', (VersionedResourceMany,),
-                       {'data_resource_name': table_name,
-                        'data_model': table_obj,
-                        'table_schema': table_schema,
-                        'api_schema': api_schema,
-                        'restricted_fields': restricted_fields})
+        flask_restful_many_resource = type(f'{endpoint_name}Many', (VersionedResourceMany,), {
+            'data_resource_name': table_name,
+            'data_model': table_obj,
+            'table_schema': table_schema,
+            'api_schema': api_schema,
+            'restricted_fields': restricted_fields})
 
         for idx, resource in enumerate(many_resources):
             print(resource)

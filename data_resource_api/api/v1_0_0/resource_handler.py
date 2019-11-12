@@ -11,9 +11,14 @@ from brighthive_authlib import token_required
 from data_resource_api import ConfigurationFactory
 from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.logging import LogFactory
+from data_resource_api.app.exception_handler import ApiError, ApiUnhandledError, InternalServerError
 
 
 class ResourceHandler(object):
+    def __init__(self):
+        self.logger = LogFactory.get_console_logger('data-model-manager')
+
     def build_json_from_object(self, obj: object, restricted_fields: dict = []):
         resp = {key: str(value) if value is not None else '' for key, value in obj.__dict__.items(
         ) if not key.startswith('_') and not callable(key) and key not in restricted_fields}
@@ -112,16 +117,6 @@ class ResourceHandler(object):
 
         return is_valid
 
-    def error_message(error_text: str, status_code=400):
-        """Generate an error message with a status code.
-        Args:
-            error_text (str): Error text to return with the message body.
-            status_code (int): HTTP status code to return.
-        Return
-            dict, int: Error message and HTTP status code.
-        """
-        return {'error': error_text}, status_code
-
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_all_secure(self, data_model, data_resource_name, restricted_fields, offset=0, limit=1):
         """Wrapper method for get_all method.
@@ -167,8 +162,9 @@ class ResourceHandler(object):
                 links = self.build_links(
                     data_resource_name, offset, limit, row_count)
             response['links'] = links
-        except Exception as e:
-            print('exception to be logged {}'.format(e))
+        except Exception:
+            raise InternalServerError()
+
         session.close()
         return response, 200
 
@@ -183,7 +179,7 @@ class ResourceHandler(object):
         try:
             request_obj = request_obj.json
         except Exception:
-            return {'error': 'No request body found.'}, 400
+            raise ApiError('No request body found.', 400)
 
         errors = []
         schema = Schema(table_schema)
@@ -199,7 +195,7 @@ class ResourceHandler(object):
                     errors.append(
                         'Unknown or restricted field \'{}\' found.'.format(field))
             if len(errors) > 0:
-                return {'message': 'Invalid request body.', 'errors': errors}, 400
+                raise ApiUnhandledError('Invalid request body.', 400, errors)
             else:
                 try:
                     session = Session()
@@ -214,11 +210,11 @@ class ResourceHandler(object):
                     else:
                         return response, 200
                 except Exception as e:
-                    return {'error': 'Failed to create new resource.'}, 400
+                    raise ApiUnhandledError('Failed to create new resource.', 400)
                 finally:
                     session.close()
         else:
-            return {'error': 'Data schema validation error.'}, 400
+            raise SchemaValidationFailure()
 
         return {'message': 'querying data resource'}, 200
 
@@ -253,14 +249,14 @@ class ResourceHandler(object):
         try:
             request_obj = request_obj.json
         except Exception:
-            return {'error': 'No request body found.'}, 400
+            raise ApiError('No request body found.', 400)
 
         schema = Schema(table_schema)
         errors = []
         accepted_fields = []
 
         if not validate(table_schema):
-            return {'error': 'Data schema validation error.'}, 400
+            raise SchemaValidationFailure()
 
         # Check for required fields
         for field in table_schema['fields']:
@@ -269,7 +265,7 @@ class ResourceHandler(object):
             if field['required']:
                 if not field['name'] in request_obj.keys():
                     errors.append(
-                        'Required field \'{}\' is missing'.format(field['name'])
+                        f"Required field '{field['name']}' is missing."
                     )
 
         valid_fields = []
@@ -287,33 +283,30 @@ class ResourceHandler(object):
                         values = [values]
                     many_query.append([field, values, junc_table])
                 else:
-                    errors.append(f"Unknown field '{field}' found")
+                    errors.append(f"Unknown field '{field}' found.")
 
         if len(errors) > 0:
-            return {'message': 'Invalid request body.', 'errors': errors}, 400
-        else:
-            try:
-                session = Session()
-                new_object = data_model()
-                for field in valid_fields:
-                    value = request_obj[field]
-                    setattr(new_object, field, value)
-                session.add(new_object)
-                session.commit()
-                id_value = getattr(new_object, table_schema['primaryKey'])
+            raise ApiError('Invalid request body.', 400, errors)
 
-                # process the many_query
-                for field, values, table in many_query:
-                    try:
-                        self.process_many_query(session, table, id_value, field, data_resource_name, values)
-                    except Exception as e:
-                        return {'error': 'Failed to handle many to many relationship.'}, 400
+        try:
+            session = Session()
+            new_object = data_model()
+            for field in valid_fields:
+                value = request_obj[field]
+                setattr(new_object, field, value)
+            session.add(new_object)
+            session.commit()
+            id_value = getattr(new_object, table_schema['primaryKey'])
 
-                return {'message': 'Successfully added new resource.', 'id': id_value}, 201
-            except Exception as e:
-                return {'error': 'Failed to create new resource.'}, 400
-            finally:
-                session.close()
+            # process the many_query
+            for field, values, table in many_query:
+                self.process_many_query(session, table, id_value, field, data_resource_name, values)
+
+            return {'message': 'Successfully added new resource.', 'id': id_value}, 201
+        except Exception as e:
+            raise ApiUnhandledError('Failed to create new resource.', 400)
+        finally:
+            session.close()
 
     def process_many_query(self, session: object, table, id_value: int, field: str, data_resource_name: str, values: list):
         """Iterates over values and adds the items to the junction table
@@ -328,15 +321,19 @@ class ResourceHandler(object):
         parent_column = f'{data_resource_name}_id'
         relationship_column = f'{field}_id'
 
-        for value in values:
-            cols = {
-                f'{parent_column}': id_value,
-                f'{relationship_column}': value
-            }
+        try:
+            for value in values:
+                cols = {
+                    f'{parent_column}': id_value,
+                    f'{relationship_column}': value
+                }
 
-            insert = table.insert().values(**cols)
-            session.execute(insert)
-            session.commit()
+                insert = table.insert().values(**cols)
+                session.execute(insert)
+                session.commit()
+
+        except Exception:
+            raise InternalServerError()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
@@ -375,7 +372,7 @@ class ResourceHandler(object):
             response = self.build_json_from_object(result)
             return response, 200
         except Exception:
-            return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
+            raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
     def get_many_one(self, id: int, parent: str, child: str):
         """Retrieve the many to many relationship data of a parent and child.
@@ -385,18 +382,19 @@ class ResourceHandler(object):
             parent (str): Type of parent
             child (str): Type of child
         """
-
         join_table = JuncHolder.lookup_table(parent, child)
 
         # This should not be reachable
         # if join_table is None:
         #     return {'error': f"relationship '{child}' of '{parent}' not found."}
+        try:
+            session = Session()
+            cols = {f'{parent}_id': id}
+            query = session.query(join_table).filter_by(**cols).all()
 
-        session = Session()
-        cols = {f'{parent}_id': id}
-        query = session.query(join_table).filter_by(**cols).all()
-
-        children = [value[1] for value in query]
+            children = [value[1] for value in query]
+        except Exception:
+            raise InternalServerError()
 
         return {f'{child}': children}, 200
 
@@ -432,7 +430,7 @@ class ResourceHandler(object):
         try:
             request_obj = request_obj.json
         except Exception:
-            return {'error': 'No request body found.'}, 400
+            raise ApiError('No request body found.', 400)
 
         try:
             primary_key = table_schema['primaryKey']
@@ -440,9 +438,9 @@ class ResourceHandler(object):
             data_obj = session.query(data_model).filter(
                 getattr(data_model, primary_key) == id).first()
             if data_obj is None:
-                return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
+                raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
         except Exception as e:
-            return {'error': 'Resource with id \'{}\' not found.'.format(id)}, 404
+            raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
         schema = Schema(table_schema)
         errors = []
@@ -452,30 +450,32 @@ class ResourceHandler(object):
                 accepted_fields.append(field['name'])
             for field in request_obj.keys():
                 if field not in accepted_fields:
-                    errors.append('Unknown field \'{}\' found'.format(field))
+                    errors.append(f"Unknown field '{field}' found.")
                 elif field in restricted_fields:
                     errors.append(
-                        'Cannot update restricted field \'{}\''.format(field))
+                        f"Cannot update restricted field '{field}'.")
         else:
-            return {'error': 'Data schema validation error.'}, 400
+            raise ApiError('Data schema validation error.', 400)
 
         if len(errors) > 0:
-            return {'message': 'Invalid request body.', 'errors': errors}, 400
-        else:
-            if mode == 'PATCH':
-                for key, value in request_obj.items():
-                    setattr(data_obj, key, value)
-                session.commit()
-            elif mode == 'PUT':
-                for field in table_schema['fields']:
-                    if field['required'] and field['name'] not in request_obj.keys():
-                        errors.append('Required field \'{}\' is missing'.format(field['name']))
-                if len(errors) > 0:
-                    return {'message': 'Invalid request body.', 'errors': errors}, 400
-                for key, value in request_obj.items():
-                    setattr(data_obj, key, value)
-                session.commit()
-            return {'message': 'Successfully updated resource \'{}\''.format(id)}, 201
+            raise ApiError('Invalid request body.', 400, errors)
+
+        if mode == 'PATCH':
+            for key, value in request_obj.items():
+                setattr(data_obj, key, value)
+            session.commit()
+        elif mode == 'PUT':
+            for field in table_schema['fields']:
+                if field['required'] and field['name'] not in request_obj.keys():
+                    errors.append(f"Required field '{field['name']}' is missing.")
+
+            if len(errors) > 0:
+                raise ApiError('Invalid request body.', 400, errors)
+
+            for key, value in request_obj.items():
+                setattr(data_obj, key, value)
+            session.commit()
+        return {'message': f"Successfully updated resource '{id}'."}, 201
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def delete_one_secure(self, id, data_resource):

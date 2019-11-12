@@ -65,9 +65,9 @@ class TestStartup(object):
             response = frameworks_skills_client.get(route)
             body = json.loads(response.data)
 
-            expect(response.status_code).to(equal(200))  # should be 404
+            expect(response.status_code).to(equal(404))
 
-            error_message = "exception is 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."
+            error_message = "Location not found"
             expect(body['error']).to(equal(error_message))
 
         def get_nonexistant_relationship(framework_id: int):

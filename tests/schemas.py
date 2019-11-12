@@ -98,7 +98,8 @@ frameworks_descriptor = {
       }
     }
   }
-skills_descriptor=  {
+
+skills_descriptor = {
     "api": {
       "resource": "skills",
       "methods": [

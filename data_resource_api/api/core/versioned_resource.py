@@ -8,6 +8,8 @@ the API version number in the request header.
 from flask_restful import Resource
 from flask import request
 from data_resource_api.api.v1_0_0 import ResourceHandler as V1_0_0_ResourceHandler
+from data_resource_api.app.exception_handler import MethodNotAllowed
+
 
 class VersionedResourceParent(Resource):
     __slots__ = ['data_resource_name',
@@ -19,7 +21,7 @@ class VersionedResourceParent(Resource):
     def get_api_version(self, headers):
         try:
             api_version = headers['X-Api-Version']
-        except Exception:
+        except KeyError:
             api_version = '1.0.0'
         return api_version
 
@@ -32,16 +34,17 @@ class VersionedResourceParent(Resource):
 
 class VersionedResourceMany(VersionedResourceParent):
     def get(self, id=None):
-        ## route should be parent/<id>/child
+        # route should be parent/<id>/child
         paths = request.path.split('/')
         parent, child = paths[1], paths[3]
         return self.get_resource_handler(request.headers).get_many_one(id, parent, child)
+
 
 class VersionedResource(VersionedResourceParent):
     def get(self, id=None):
         if self.api_schema['get']['enabled']:
             if request.path.endswith('/query'):
-                return {'error': 'Method not allowed.'}, 405
+                raise MethodNotAllowed()
             offset = 0
             limit = 20
             try:
@@ -65,7 +68,7 @@ class VersionedResource(VersionedResourceParent):
                 else:
                     return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name, self.table_schema)
         else:
-            return {'error': 'Method not allowed.'}, 405
+            raise MethodNotAllowed()
 
     def post(self):
         if self.api_schema['post']['enabled']:
@@ -80,37 +83,37 @@ class VersionedResource(VersionedResourceParent):
                 else:
                     return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
         else:
-            return {'error': 'Method not allowed.'}, 405
+            raise MethodNotAllowed()
 
     def put(self, id):
         if self.api_schema['put']['enabled']:
             if request.path.endswith('/query'):
-                return {'error': 'Method not allowed.'}, 405
+                raise MethodNotAllowed()
             if self.api_schema['put']['secured']:
                 return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
             else:
                 return self.get_resource_handler(request.headers).update_one(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
         else:
-            return {'error': 'Method not allowed.'}, 405
+            raise MethodNotAllowed()
 
     def patch(self, id):
         if self.api_schema['patch']['enabled']:
             if request.path.endswith('/query'):
-                return {'error': 'Method not allowed.'}, 405
+                raise MethodNotAllowed()
             if self.api_schema['patch']['secured']:
                 return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
             else:
                 return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
         else:
-            return {'error': 'Method not allowed.'}, 405
+            raise MethodNotAllowed()
 
     def delete(self, id):
         if self.api_schema['delete']['enabled']:
             if request.path.endswith('/query'):
-                return {'error': 'Method not allowed.'}, 405
+                raise MethodNotAllowed()
             if self.api_schema['delete']['secured']:
                 return {'message': 'delete secure'}
             else:
                 return {'message': 'delete'}
         else:
-            return {'error': 'Method not allowed.'}, 405
+            raise MethodNotAllowed()

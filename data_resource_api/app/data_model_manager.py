@@ -83,11 +83,11 @@ class DataModelManagerSync(object):
                     self.logger.info(
                         'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
                 else:
-                    self.logger.exception(f'Error {e}')
-                    
+                    self.logger.exception(f'Error occured upgrading database.')
+
             retries += 1
             sleep(retry_wait)
-        
+
         self.logger.info('Upgrade loop exited')
 
     def get_sleep_interval(self):
@@ -187,7 +187,7 @@ class DataModelManagerSync(object):
             session.add(checksum)
             session.commit()
         except Exception as e:
-            self.logger.exception('Error adding checksum {}'.format(e))
+            self.logger.exception('Error adding checksum')
         session.close()
 
     def update_model_checksum(self, table_name: str, model_checksum: str):
@@ -210,7 +210,7 @@ class DataModelManagerSync(object):
             session.commit()
             updated = True
         except Exception as e:
-            self.logger.exception('Error updating checksum {}'.format(e))
+            self.logger.exception('Error updating checksum')
         session.close()
         return updated
 
@@ -230,7 +230,7 @@ class DataModelManagerSync(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception as e:
-            self.logger.exception('Error retrieving checksum {}'.format(e))
+            self.logger.exception('Error retrieving checksum')
         session.close()
         return checksum
 
@@ -290,37 +290,35 @@ class DataModelManagerSync(object):
         """
         self.logger.info('Checking data models')
         schema_dir = self.get_data_resource_schema_path()
-        
+
         if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
             self.logger.exception(
-                'Unable to locate schema directory {}'.format(schema_dir))
+                f"Unable to locate schema directory '{schema_dir}'")
 
         schemas = os.listdir(schema_dir)
         for schema in schemas:
             if os.path.isdir(os.path.join(schema_dir, schema)):
                 self.logger.exception(
-                    'Cannot open a nested schema directory {}'.format(schema))
+                    f"Cannot open a nested schema directory '{schema}'")
                 return
 
             try:
                 with open(os.path.join(schema_dir, schema), 'r') as fh:
                     schema_dict = json.load(fh)
-                
+
                 schema_filename = schema
             except Exception as e:
                 self.logger.exception(
-                    'Error loading json from schema file {} {}'.format(schema, e))
-            
+                    f"Error loading json from schema file '{schema}'")
+
             self.work_on_schema(schema_dict, schema_filename)
 
-            
         self.logger.info('Completed check of data models')
-
 
     def work_on_schema(self, schema_dict: dict, schema_filename: str):
         """Operate on a schema dict for data model changes.
 
-        Note: 
+        Note:
             This method is the core worker for this class. It has the responsibility of
             monitoring all data resource models and determining if they have changed. If
             changes are detected, it also has the responsibility of building and applying
@@ -372,7 +370,7 @@ class DataModelManagerSync(object):
 
         except Exception as e:
             self.logger.exception(
-                f'Error loading data resource schema {schema_filename} {e}')
+                f"Error loading data resource schema '{schema_filename}'")
 
 
 class DataModelManager(Thread, DataModelManagerSync):
@@ -382,4 +380,3 @@ class DataModelManager(Thread, DataModelManagerSync):
 
     def run(self):
         DataModelManagerSync.run(self)
-

@@ -55,7 +55,7 @@ class ApiHelper:
         body = json.loads(response.data)
 
         print(body)
-        expect(response.status_code).to(equal(201))
+        expect(response.status_code).to(equal(200))
 
         return body['id']
 

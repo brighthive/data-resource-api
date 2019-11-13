@@ -398,6 +398,76 @@ class ResourceHandler(object):
 
         return {f'{child}': children}, 200
 
+    def put_many_one(self, id: int, parent: str, child: str, values):
+        """put data for a many to many relationship of a parent and child.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+        """
+        join_table = JuncHolder.lookup_table(parent, child)
+        try:
+            session = Session()
+            junc_table = JuncHolder.lookup_table(parent, child)
+
+            # delete all relations
+            # if junc_table is not None:
+            parent_col = getattr(junc_table.c, f'{parent}_id')
+            del_st = junc_table.delete().where(
+                parent_col == id)
+
+            self.logger.info(del_st.compile)
+            res = session.execute(del_st)
+
+            # put the items
+            many_query = []
+
+            if junc_table is not None:
+                if not isinstance(values, list):
+                    values = [values]
+                many_query.append([child, values, junc_table])
+
+            for field, values, table in many_query:
+                self.process_many_query(session, table, id, field, parent, values)
+
+        except Exception:
+            raise InternalServerError()
+
+        return self.get_many_one(id, parent, child)
+        # return {f'{child}': children}, 200
+
+    # def patch_many_one(self, id: int, parent: str, child: str, values):
+    #     """put data for a many to many relationship of a parent and child.
+
+    #     Args:
+    #         id (int): Given ID of type parent
+    #         parent (str): Type of parent
+    #         child (str): Type of child
+    #     """
+    #     join_table = JuncHolder.lookup_table(parent, child)
+    #     try:
+    #         session = Session()
+
+    #         # put the items
+    #         many_query = []
+    #         junc_table = JuncHolder.lookup_table(parent, child)
+
+    #         if junc_table is not None:
+    #             if not isinstance(values, list):
+    #                 values = [values]
+    #             many_query.append([child, values, junc_table])
+
+    #         for field, values, table in many_query:
+    #             # TODO this should only insert when it doesnt already exist
+    #             self.process_many_query(session, table, id, field, parent, values)
+
+    #     except Exception:
+    #         raise InternalServerError()
+
+    #     return self.get_many_one(id, parent, child)
+    #     # return {f'{child}': children}, 200
+
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Wrapper method for update one method.

@@ -57,10 +57,20 @@ class ApiHelper:
         print(body)
         expect(response.status_code).to(equal(200))
 
-        return body['id']
+    @staticmethod
+    def patch_a_framework_skill(c, framework_id: int, skills: list):
+        route = f'/frameworks/{framework_id}/skills'
+        patch_body = {
+            "skills": skills
+        }
+        response = c.patch(route, json=patch_body)
+        body = json.loads(response.data)
+
+        print(body)
+        expect(response.status_code).to(equal(200))
 
     @staticmethod
-    def check_for_skills_on_framework(c, framework_id, skills_list):
+    def check_for_skills_on_framework(c, framework_id, skills_list: list):
         route = f'/frameworks/{framework_id}/skills'
         response = c.get(route)
         body = json.loads(response.data)
@@ -117,4 +127,16 @@ class TestStartup(object):
 
         framework_id = ApiHelper.post_a_framework(c, skills_list)
         ApiHelper.put_a_framework_skill(c, framework_id, [skill_3])
-        ApiHelper.check_for_skills_on_framework(c, [skill_3])
+        ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_3])
+
+    def test_mn_patch(self, frameworks_skills_client):
+        c = frameworks_skills_client
+
+        skill_1 = ApiHelper.post_a_skill(c, "skill1")
+        skill_2 = ApiHelper.post_a_skill(c, "skill2")
+        skills_list = [skill_1, skill_2]
+        skill_3 = ApiHelper.post_a_skill(c, "skill3")
+
+        framework_id = ApiHelper.post_a_framework(c, skills_list)
+        ApiHelper.patch_a_framework_skill(c, framework_id, [skill_3])
+        ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_1, skill_2, skill_3])

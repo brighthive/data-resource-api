@@ -180,13 +180,14 @@ class ORMFactory(object):
             return
 
         try:
-            association_table = Table(join_table, Base.metadata,
-                Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id')),
-                Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id')),
+            association_table = Table(
+                join_table,
+                Base.metadata,
+                Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id'), primary_key=True),
+                Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id'), primary_key=True),
                 extend_existing=True
             )
         except Exception as e:
             print(f"Error on create junc table '{join_table}'; {str(e)}")
 
         JuncHolder.add_table(join_table, association_table)
-        

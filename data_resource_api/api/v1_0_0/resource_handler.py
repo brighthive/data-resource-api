@@ -417,7 +417,6 @@ class ResourceHandler(object):
             del_st = junc_table.delete().where(
                 parent_col == id)
 
-            self.logger.info(del_st.compile)
             res = session.execute(del_st)
 
             # put the items

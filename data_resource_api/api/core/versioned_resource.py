@@ -46,12 +46,12 @@ class VersionedResourceMany(VersionedResourceParent):
         value = request.json[child]
         return self.get_resource_handler(request.headers).put_many_one(id, parent, child, value)
 
-    # def patch(self, id=None):
-    #     # Replaces all data
-    #     paths = request.path.split('/')
-    #     parent, child = paths[1], paths[3]
-    #     value = request.json[child]
-    #     return self.get_resource_handler(request.headers).patch_many_one(id, parent, child, value)
+    def patch(self, id=None):
+        # Replaces all data
+        paths = request.path.split('/')
+        parent, child = paths[1], paths[3]
+        value = request.json[child]
+        return self.get_resource_handler(request.headers).patch_many_one(id, parent, child, value)
 
 
 class VersionedResource(VersionedResourceParent):

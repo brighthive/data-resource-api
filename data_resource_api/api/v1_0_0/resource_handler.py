@@ -13,6 +13,7 @@ from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
 from data_resource_api.app.exception_handler import ApiError, ApiUnhandledError, InternalServerError
+import psycopg2
 
 
 class ResourceHandler(object):
@@ -321,8 +322,8 @@ class ResourceHandler(object):
         parent_column = f'{data_resource_name}_id'
         relationship_column = f'{field}_id'
 
-        try:
-            for value in values:
+        for value in values:
+            try:
                 cols = {
                     f'{parent_column}': id_value,
                     f'{relationship_column}': value
@@ -332,8 +333,14 @@ class ResourceHandler(object):
                 session.execute(insert)
                 session.commit()
 
-        except Exception:
-            raise InternalServerError()
+            except Exception as e:
+                self.logger.info(type(e).__name__)
+                self.logger.info(e.__class__.__name__)
+                # psycopg2.errors.UniqueViolation
+                if e.code == 'gkpj':
+                    session.rollback()
+                else:
+                    raise InternalServerError()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
@@ -436,36 +443,36 @@ class ResourceHandler(object):
         return self.get_many_one(id, parent, child)
         # return {f'{child}': children}, 200
 
-    # def patch_many_one(self, id: int, parent: str, child: str, values):
-    #     """put data for a many to many relationship of a parent and child.
+    def patch_many_one(self, id: int, parent: str, child: str, values):
+        """put data for a many to many relationship of a parent and child.
 
-    #     Args:
-    #         id (int): Given ID of type parent
-    #         parent (str): Type of parent
-    #         child (str): Type of child
-    #     """
-    #     join_table = JuncHolder.lookup_table(parent, child)
-    #     try:
-    #         session = Session()
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+        """
+        join_table = JuncHolder.lookup_table(parent, child)
+        try:
+            session = Session()
 
-    #         # put the items
-    #         many_query = []
-    #         junc_table = JuncHolder.lookup_table(parent, child)
+            # put the items
+            many_query = []
+            junc_table = JuncHolder.lookup_table(parent, child)
 
-    #         if junc_table is not None:
-    #             if not isinstance(values, list):
-    #                 values = [values]
-    #             many_query.append([child, values, junc_table])
+            if junc_table is not None:
+                if not isinstance(values, list):
+                    values = [values]
+                many_query.append([child, values, junc_table])
 
-    #         for field, values, table in many_query:
-    #             # TODO this should only insert when it doesnt already exist
-    #             self.process_many_query(session, table, id, field, parent, values)
+            for field, values, table in many_query:
+                # TODO this should only insert when it doesnt already exist
+                self.process_many_query(session, table, id, field, parent, values)
 
-    #     except Exception:
-    #         raise InternalServerError()
+        except Exception as e:
+            raise InternalServerError()
 
-    #     return self.get_many_one(id, parent, child)
-    #     # return {f'{child}': children}, 200
+        return self.get_many_one(id, parent, child)
+        # return {f'{child}': children}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):

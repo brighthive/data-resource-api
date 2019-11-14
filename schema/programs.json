@@ -35,8 +35,18 @@
               {
                 "get": {
                   "enabled": true,
-                  "secured": true,
+                  "secured": false,
                   "grants": ["get:users"]
+                },
+                "put": {
+                  "enabled": true,
+                  "secured": false,
+                  "grants": []
+                },
+                "patch": {
+                  "enabled": true,
+                  "secured": false,
+                  "grants": []
                 }
               }
             ]

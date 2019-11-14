@@ -61,12 +61,17 @@ frameworks_descriptor = {
                     "enabled": True,
                     "secured": False,
                     "grants": []
+                  },
+                  "put": {
+                    "enabled": True,
+                    "secured": False,
+                    "grants": []
+                  },
+                  "patch": {
+                    "enabled": True,
+                    "secured": False,
+                    "grants": []
                   }
-                  # "post": {
-                  #   "enabled": True,
-                  #   "secured": False,
-                  #   "grants": []
-                  # },
                 }
               ]
             }

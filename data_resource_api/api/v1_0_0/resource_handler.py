@@ -381,6 +381,19 @@ class ResourceHandler(object):
         except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def get_many_one_secure(self, id: int, parent: str, child: str):
+        """Wrapper method for get many method.
+
+        Args:
+            
+
+        Return:
+            function: The wrapped method.
+
+        """
+        return self.get_many_one(id, data_model, data_resource_name, table_schema)
+
     def get_many_one(self, id: int, parent: str, child: str):
         """Retrieve the many to many relationship data of a parent and child.
 
@@ -404,6 +417,19 @@ class ResourceHandler(object):
             raise InternalServerError()
 
         return {f'{child}': children}, 200
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def put_many_one_secure(self, id: int, parent: str, child: str, values):
+        """Wrapper method for put many method.
+
+        Args:
+            
+
+        Return:
+            function: The wrapped method.
+
+        """
+        return self.put_many_one(self, id, parent, child, values)
 
     def put_many_one(self, id: int, parent: str, child: str, values):
         """put data for a many to many relationship of a parent and child.
@@ -442,6 +468,19 @@ class ResourceHandler(object):
 
         return self.get_many_one(id, parent, child)
         # return {f'{child}': children}, 200
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def patch_many_one_secure(self, id: int, parent: str, child: str, values):
+        """Wrapper method for patch many method.
+
+        Args:
+            
+
+        Return:
+            function: The wrapped method.
+
+        """
+        return self.patch_many_one(id, parent, child, value)
 
     def patch_many_one(self, id: int, parent: str, child: str, values):
         """put data for a many to many relationship of a parent and child.

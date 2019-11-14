@@ -13,7 +13,6 @@ from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
 from data_resource_api.app.exception_handler import ApiError, ApiUnhandledError, InternalServerError
-import psycopg2
 
 
 class ResourceHandler(object):
@@ -334,8 +333,6 @@ class ResourceHandler(object):
                 session.commit()
 
             except Exception as e:
-                self.logger.info(type(e).__name__)
-                self.logger.info(e.__class__.__name__)
                 # psycopg2.errors.UniqueViolation
                 if e.code == 'gkpj':
                     session.rollback()
@@ -386,7 +383,9 @@ class ResourceHandler(object):
         """Wrapper method for get many method.
 
         Args:
-            
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
 
         Return:
             function: The wrapped method.
@@ -423,7 +422,9 @@ class ResourceHandler(object):
         """Wrapper method for put many method.
 
         Args:
-            
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
 
         Return:
             function: The wrapped method.
@@ -445,7 +446,6 @@ class ResourceHandler(object):
             junc_table = JuncHolder.lookup_table(parent, child)
 
             # delete all relations
-            # if junc_table is not None:
             parent_col = getattr(junc_table.c, f'{parent}_id')
             del_st = junc_table.delete().where(
                 parent_col == id)
@@ -467,14 +467,16 @@ class ResourceHandler(object):
             raise InternalServerError()
 
         return self.get_many_one(id, parent, child)
-        # return {f'{child}': children}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def patch_many_one_secure(self, id: int, parent: str, child: str, values):
         """Wrapper method for patch many method.
 
         Args:
-            
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+            values (list or int): list of values to patch
 
         Return:
             function: The wrapped method.
@@ -489,12 +491,12 @@ class ResourceHandler(object):
             id (int): Given ID of type parent
             parent (str): Type of parent
             child (str): Type of child
+            values (list or int): list of values to patch
         """
         join_table = JuncHolder.lookup_table(parent, child)
         try:
             session = Session()
 
-            # put the items
             many_query = []
             junc_table = JuncHolder.lookup_table(parent, child)
 
@@ -511,7 +513,6 @@ class ResourceHandler(object):
             raise InternalServerError()
 
         return self.get_many_one(id, parent, child)
-        # return {f'{child}': children}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):

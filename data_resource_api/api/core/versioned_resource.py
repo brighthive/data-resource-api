@@ -39,16 +39,16 @@ class VersionedResourceMany(VersionedResourceParent):
 
         Returns nothing.
         '''
+        enabled = False
         try:
-            enabled = False
             for custom_resource in api_schema['custom']:
                 if custom_resource['resource'] == resource:
-                    # assert is bool?
                     for method in custom_resource['methods']:
                         enabled = method[verb]['enabled']
+                        if not enabled:
+                            raise MethodNotAllowed()
 
-            if not enabled:
-                raise MethodNotAllowed()
+                        return
 
         except ValueError:
             raise MethodNotAllowed()

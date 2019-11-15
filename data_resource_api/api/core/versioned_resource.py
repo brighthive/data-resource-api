@@ -50,7 +50,7 @@ class VersionedResourceMany(VersionedResourceParent):
 
     def is_secured(self, verb: str, resource: str, api_schema: dict):
         '''
-        Defaults to secured unless for security.
+        Defaults to secured for security.
         '''
         try:
             secured = False

@@ -3,10 +3,8 @@ from expects import expect, be_an, raise_error, have_property, equal, be_empty, 
 from data_resource_api.app.exception_handler import MethodNotAllowed
 import pytest
 
-
 resource_one = '/programs/skills'
 resource_two = '/providers/credentials'
-
 api_schema = {
     'get': {},
     'custom': [

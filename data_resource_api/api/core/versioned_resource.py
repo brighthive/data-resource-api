@@ -34,6 +34,11 @@ class VersionedResourceParent(Resource):
 
 class VersionedResourceMany(VersionedResourceParent):
     def error_if_resource_is_disabled(self, verb: str, resource: str, api_schema: dict):
+        '''This will raise an exception that will return an error to the client
+        if they attempt to access a disabled resource.
+
+        Returns nothing.
+        '''
         try:
             enabled = False
             for custom_resource in api_schema['custom']:

@@ -273,6 +273,8 @@ SECRET_MANAGER
 =======
 ## Running tests
 
+A few tests within the test suite currently require a docker image to be spun up in order to pass the tests. In order for the tests to pass you simply need to have docker running.
+
 For developers to run a test use the following,
 
 1. First install the requirements

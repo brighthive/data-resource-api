@@ -111,6 +111,19 @@ class VersionedResourceMany(VersionedResourceParent):
         else:
             return self.get_resource_handler(request.headers).patch_many_one(id, parent, child, value)
 
+    def delete(self, id=None):
+        paths = request.path.split('/')
+        parent, child = paths[1], paths[3]
+
+        resource = f'/{parent}/{child}'
+        self.error_if_resource_is_disabled('delete', resource, self.api_schema)
+
+        value = request.json[child]  # Needs an except KeyError
+        if self.is_secured('delete', resource, self.api_schema):
+            return self.get_resource_handler(request.headers).delete_many_one_secure(id, parent, child, value)
+        else:
+            return self.get_resource_handler(request.headers).delete_many_one(id, parent, child, value)
+
 
 class VersionedResource(VersionedResourceParent):
     def get(self, id=None):

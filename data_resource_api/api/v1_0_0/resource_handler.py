@@ -622,3 +622,10 @@ class ResourceHandler(object):
             dict, int: The response object and the HTTP status code.
         """
         pass
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def delete_many_one_secure(self, id: int, parent: str, child: str, values):
+        return self.delete_many_one(id, parent, child, values)
+
+    def delete_many_one(self, id: int, parent: str, child: str, values):
+        return self.get_many_one(id, parent, child)

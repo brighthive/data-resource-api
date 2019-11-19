@@ -61,6 +61,7 @@ class DataResourceFactory(object):
                 #     f'/{custom_table[1]}/<id>/{custom_table[2]}/<child_id>'
                 # ) # DELETE route
                 many_resources.append(f'/{custom_table[1]}/<int:id>/{custom_table[2]}')
+                many_resources.append(f'/{custom_table[2]}/<int:id>/{custom_table[1]}')
 
         flask_restful_many_resource = type(f'{endpoint_name}Many', (VersionedResourceMany,), {
             'data_resource_name': table_name,

@@ -94,8 +94,8 @@ class TestStartup(object):
         skill_1 = ApiHelper.post_a_skill(c, "skill1")
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skills_list = [skill_1, skill_2]
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         ApiHelper.check_for_skills_on_framework(c, framework_id, skills_list)
 
     def test_relationships(self, frameworks_skills_client):
@@ -132,8 +132,8 @@ class TestStartup(object):
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skills_list = [skill_1, skill_2]
         skill_3 = ApiHelper.post_a_skill(c, "skill3")
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         ApiHelper.put_a_framework_skill(c, framework_id, [skill_3])
         ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_3])
 
@@ -144,8 +144,8 @@ class TestStartup(object):
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skills_list = [skill_1, skill_2]
         skill_3 = ApiHelper.post_a_skill(c, "skill3")
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         ApiHelper.patch_a_framework_skill(c, framework_id, [skill_3])
         ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_1, skill_2, skill_3])
 
@@ -155,8 +155,8 @@ class TestStartup(object):
         skill_1 = ApiHelper.post_a_skill(c, "skill1")
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skills_list = [skill_1, skill_2]
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1])
 
         expect(resp['skills']).to(equal([skill_2]))
@@ -168,8 +168,8 @@ class TestStartup(object):
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skill_3 = ApiHelper.post_a_skill(c, "skill3")
         skills_list = [skill_1, skill_2, skill_3]
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1, skill_3])
 
         expect(resp['skills']).to(equal([skill_2]))

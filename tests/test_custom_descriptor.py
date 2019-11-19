@@ -70,7 +70,7 @@ class ApiHelper:
         route = f'/frameworks/{framework_id}/skills'
         response = c.get(route)
         body = json.loads(response.data)
-
+        
         expect(response.status_code).to(equal(200))
         expect(body['skills']).to(equal(skills_list))
 

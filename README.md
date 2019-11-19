@@ -224,10 +224,11 @@ This will generate a many to many relationship.
 
 #### POST
 To add a resource you would POST and in the body include the child field as a parameter.
-
+]
 #### GET
 To query the relationship you have to go to `/programs/1/credentials`. The relationship will not currently show up if you simply query `/programs/1`.
 ,4
+
 #### PUT
 To replace the relationship perform a `PUT` to `/programs/1/credentials` with the full list of primary keys.
 
@@ -262,7 +263,6 @@ You can also give more than one item. Given that you have a list of relationship
 ```
 
 Results in `[2,4]`.
-
 
 ## Configuration
 

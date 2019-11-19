@@ -321,8 +321,8 @@ class ResourceHandler(object):
         parent_column = f'{data_resource_name}_id'
         relationship_column = f'{field}_id'
 
-        try:
-            for value in values:
+        for value in values:
+            try:
                 cols = {
                     f'{parent_column}': id_value,
                     f'{relationship_column}': value
@@ -332,8 +332,12 @@ class ResourceHandler(object):
                 session.execute(insert)
                 session.commit()
 
-        except Exception:
-            raise InternalServerError()
+            except Exception as e:
+                # psycopg2.errors.UniqueViolation
+                if e.code == 'gkpj':
+                    session.rollback()
+                else:
+                    raise InternalServerError()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_one_secure(self, id, data_model, data_resource_name, table_schema):
@@ -374,6 +378,21 @@ class ResourceHandler(object):
         except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def get_many_one_secure(self, id: int, parent: str, child: str):
+        """Wrapper method for get many method.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+
+        Return:
+            function: The wrapped method.
+
+        """
+        return self.get_many_one(id, data_model, data_resource_name, table_schema)
+
     def get_many_one(self, id: int, parent: str, child: str):
         """Retrieve the many to many relationship data of a parent and child.
 
@@ -397,6 +416,103 @@ class ResourceHandler(object):
             raise InternalServerError()
 
         return {f'{child}': children}, 200
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def put_many_one_secure(self, id: int, parent: str, child: str, values):
+        """Wrapper method for put many method.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+
+        Return:
+            function: The wrapped method.
+
+        """
+        return self.put_many_one(self, id, parent, child, values)
+
+    def put_many_one(self, id: int, parent: str, child: str, values):
+        """put data for a many to many relationship of a parent and child.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+        """
+        join_table = JuncHolder.lookup_table(parent, child)
+        try:
+            session = Session()
+            junc_table = JuncHolder.lookup_table(parent, child)
+
+            # delete all relations
+            parent_col = getattr(junc_table.c, f'{parent}_id')
+            del_st = junc_table.delete().where(
+                parent_col == id)
+
+            res = session.execute(del_st)
+
+            # put the items
+            many_query = []
+
+            if junc_table is not None:
+                if not isinstance(values, list):
+                    values = [values]
+                many_query.append([child, values, junc_table])
+
+            for field, values, table in many_query:
+                self.process_many_query(session, table, id, field, parent, values)
+
+        except Exception:
+            raise InternalServerError()
+
+        return self.get_many_one(id, parent, child)
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def patch_many_one_secure(self, id: int, parent: str, child: str, values):
+        """Wrapper method for patch many method.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+            values (list or int): list of values to patch
+
+        Return:
+            function: The wrapped method.
+
+        """
+        return self.patch_many_one(id, parent, child, value)
+
+    def patch_many_one(self, id: int, parent: str, child: str, values):
+        """put data for a many to many relationship of a parent and child.
+
+        Args:
+            id (int): Given ID of type parent
+            parent (str): Type of parent
+            child (str): Type of child
+            values (list or int): list of values to patch
+        """
+        join_table = JuncHolder.lookup_table(parent, child)
+        try:
+            session = Session()
+
+            many_query = []
+            junc_table = JuncHolder.lookup_table(parent, child)
+
+            if junc_table is not None:
+                if not isinstance(values, list):
+                    values = [values]
+                many_query.append([child, values, junc_table])
+
+            for field, values, table in many_query:
+                # TODO this should only insert when it doesnt already exist
+                self.process_many_query(session, table, id, field, parent, values)
+
+        except Exception as e:
+            raise InternalServerError()
+
+        return self.get_many_one(id, parent, child)
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):

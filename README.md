@@ -224,7 +224,18 @@ This will generate a many to many relationship.
 
 To add a resource you would POST and in the body include the child field as a parameter.
 
-To query the relationship you have to go to `/programs/1/credentials`. The relatinoship will not currently show up if you simply query `/programs/1`.
+To query the relationship you have to go to `/programs/1/credentials`. The relationship will not currently show up if you simply query `/programs/1`.
+
+You can `PUT` and `PATCH` the many to many route to modify the relationship. To replace the relationship perform a `PUT` to `/programs/1/credentials` with the full list of primary keys.
+
+```json
+{
+  "credentials": [2,3]
+}
+```
+
+
+To append a primary key to the relationship list perform a `PATCH`. If you currently have a list of `"credentials": [1]` and you perform `PATCH` with `"credentials": [2,3]` it will return `"credentials":[1,2,3]`
 
 ## Configuration
 
@@ -272,6 +283,8 @@ SECRET_MANAGER
 
 =======
 ## Running tests
+
+A few tests within the test suite currently require a docker image to be spun up in order to pass the tests. In order for the tests to pass you simply need to have docker running.
 
 For developers to run a test use the following,
 

@@ -173,3 +173,16 @@ class TestStartup(object):
         resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1, skill_3])
 
         expect(resp['skills']).to(equal([skill_2]))
+
+    def test_mn_delete_relationship_that_does_not_exist(self, frameworks_skills_client):
+        c = frameworks_skills_client
+
+        skill_1 = ApiHelper.post_a_skill(c, "skill1")
+        skill_2 = ApiHelper.post_a_skill(c, "skill2")
+        skill_3 = ApiHelper.post_a_skill(c, "skill3")
+        skills_list = [skill_1, skill_2]
+
+        framework_id = ApiHelper.post_a_framework(c, skills_list)
+        resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_3])
+
+        expect(resp['skills']).to(equal([skill_1, skill_2]))

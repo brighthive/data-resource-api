@@ -222,11 +222,15 @@ To create a many to many resource add the relationship to the API section.
 
 This will generate a many to many relationship.
 
+#### POST
 To add a resource you would POST and in the body include the child field as a parameter.
-
+]
+#### GET
 To query the relationship you have to go to `/programs/1/credentials`. The relationship will not currently show up if you simply query `/programs/1`.
+,4
 
-You can `PUT` and `PATCH` the many to many route to modify the relationship. To replace the relationship perform a `PUT` to `/programs/1/credentials` with the full list of primary keys.
+#### PUT
+To replace the relationship perform a `PUT` to `/programs/1/credentials` with the full list of primary keys.
 
 ```json
 {
@@ -234,8 +238,31 @@ You can `PUT` and `PATCH` the many to many route to modify the relationship. To 
 }
 ```
 
-
+#### PATCH
 To append a primary key to the relationship list perform a `PATCH`. If you currently have a list of `"credentials": [1]` and you perform `PATCH` with `"credentials": [2,3]` it will return `"credentials":[1,2,3]`
+
+#### DELETE
+You can perform a `DELETE` that will remove the given items from the list. If you wish to remove all items perform a `PUT` with an empty list.
+
+Given that you have a list of relationships, `[1,2,3,4,5]`:
+
+Performing a `DELETE` with 
+```
+{
+  "credentials": [2]
+}
+```
+
+Results in `[1,3,4,5]`.
+
+You can also give more than one item. Given that you have a list of relationships, `[1,2,3,4,5]` and we perform the following with `DELETE`
+```
+{
+  "credentials": [1,3,5]
+}
+```
+
+Results in `[2,4]`.
 
 ## Configuration
 

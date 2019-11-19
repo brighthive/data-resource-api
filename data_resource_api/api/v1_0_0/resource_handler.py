@@ -13,6 +13,7 @@ from data_resource_api.db import Session
 from data_resource_api.app.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
 from data_resource_api.app.exception_handler import ApiError, ApiUnhandledError, InternalServerError
+from sqlalchemy import and_
 
 
 class ResourceHandler(object):
@@ -493,7 +494,6 @@ class ResourceHandler(object):
             child (str): Type of child
             values (list or int): list of values to patch
         """
-        join_table = JuncHolder.lookup_table(parent, child)
         try:
             session = Session()
 
@@ -622,3 +622,33 @@ class ResourceHandler(object):
             dict, int: The response object and the HTTP status code.
         """
         pass
+
+    @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
+    def delete_many_one_secure(self, id: int, parent: str, child: str, values):
+        return self.delete_many_one(id, parent, child, values)
+
+    def delete_many_one(self, id: int, parent: str, child: str, values):
+        try:
+            session = Session()
+            junc_table = JuncHolder.lookup_table(parent, child)
+
+            if not isinstance(values, list):
+                values = [values]
+
+            for value in values:
+                parent_col = getattr(junc_table.c, f'{parent}_id')
+                child_col = getattr(junc_table.c, f'{child}_id')
+                del_st = junc_table.delete().where(and_(
+                    parent_col == id,
+                    child_col == value
+                ))
+
+                res = session.execute(del_st)
+                print(res)
+                session.commit()
+
+        except Exception:
+            session.rollback()
+            raise InternalServerError()
+
+        return self.get_many_one(id, parent, child)

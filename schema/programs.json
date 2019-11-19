@@ -47,6 +47,11 @@
                   "enabled": true,
                   "secured": false,
                   "grants": []
+                },
+                "delete": {
+                  "enabled": true,
+                  "secured": false,
+                  "grants": []
                 }
               }
             ]

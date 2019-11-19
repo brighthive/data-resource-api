@@ -71,6 +71,11 @@ frameworks_descriptor = {
                     "enabled": True,
                     "secured": False,
                     "grants": []
+                  },
+                  "delete": {
+                    "enabled": True,
+                    "secured": False,
+                    "grants": []
                   }
                 }
               ]

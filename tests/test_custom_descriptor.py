@@ -26,7 +26,6 @@ class ApiHelper:
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
-        print(body)
         expect(response.status_code).to(equal(201))
 
         return body['id']
@@ -40,7 +39,6 @@ class ApiHelper:
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
-        print(body)
         expect(response.status_code).to(equal(201))
 
         return body['id']
@@ -54,7 +52,6 @@ class ApiHelper:
         response = c.put(route, json=put_body)
         body = json.loads(response.data)
 
-        print(body)
         expect(response.status_code).to(equal(200))
 
     @staticmethod
@@ -66,7 +63,6 @@ class ApiHelper:
         response = c.patch(route, json=patch_body)
         body = json.loads(response.data)
 
-        print(body)
         expect(response.status_code).to(equal(200))
 
     @staticmethod
@@ -75,7 +71,6 @@ class ApiHelper:
         response = c.get(route)
         body = json.loads(response.data)
 
-        print(body)
         expect(response.status_code).to(equal(200))
         expect(body['skills']).to(equal(skills_list))
 
@@ -89,7 +84,7 @@ class ApiHelper:
         response = c.delete(route, json=delete_body)
         body = json.loads(response.data)
 
-        expect(response.status_code).to(equal(204))
+        expect(response.status_code).to(equal(200))  # 204
         return body
 
 

@@ -107,7 +107,7 @@ class Client():
         delete_migration_artifacts()
 
         self.initalize_objects()
-        
+
         try:
             self.upgrade_loop()
             return self.app.test_client()

@@ -50,7 +50,7 @@ class VersionedResourceMany(VersionedResourceParent):
 
                         return
 
-        except ValueError:
+        except KeyError:
             raise MethodNotAllowed()
 
     def is_secured(self, verb: str, resource: str, api_schema: dict):
@@ -67,7 +67,7 @@ class VersionedResourceMany(VersionedResourceParent):
 
             return secured
 
-        except ValueError:
+        except KeyError:
             return True
 
     def get(self, id=None):

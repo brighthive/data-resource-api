@@ -114,78 +114,78 @@ class VersionedResourceMany(VersionedResourceParent):
 
 class VersionedResource(VersionedResourceParent):
     def get(self, id=None):
-        if self.api_schema['get']['enabled']:
-            if request.path.endswith('/query'):
-                raise MethodNotAllowed()
-            offset = 0
-            limit = 20
-            try:
-                offset = request.args['offset']
-            except Exception:
-                pass
-
-            try:
-                limit = request.args['limit']
-            except Exception:
-                pass
-
-            if id is None:
-                if self.api_schema['get']['secured']:
-                    return self.get_resource_handler(request.headers).get_all_secure(self.data_model, self.data_resource_name, self.restricted_fields, offset, limit)
-                else:
-                    return self.get_resource_handler(request.headers).get_all(self.data_model, self.data_resource_name, self.restricted_fields, offset, limit)
-            else:
-                if self.api_schema['get']['secured']:
-                    return self.get_resource_handler(request.headers).get_one_secure(id, self.data_model, self.data_resource_name, self.table_schema)
-                else:
-                    return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name, self.table_schema)
-        else:
+        if not self.api_schema['get']['enabled']:
             raise MethodNotAllowed()
+        if request.path.endswith('/query'):
+            raise MethodNotAllowed()
+
+        offset = 0
+        limit = 20
+        try:
+            offset = request.args['offset']
+        except Exception:
+            pass
+
+        try:
+            limit = request.args['limit']
+        except Exception:
+            pass
+
+        if id is None:
+            if self.api_schema['get']['secured']:
+                return self.get_resource_handler(request.headers).get_all_secure(self.data_model, self.data_resource_name, self.restricted_fields, offset, limit)
+            else:
+                return self.get_resource_handler(request.headers).get_all(self.data_model, self.data_resource_name, self.restricted_fields, offset, limit)
+        else:
+            if self.api_schema['get']['secured']:
+                return self.get_resource_handler(request.headers).get_one_secure(id, self.data_model, self.data_resource_name, self.table_schema)
+            else:
+                return self.get_resource_handler(request.headers).get_one(id, self.data_model, self.data_resource_name, self.table_schema)
 
     def post(self):
-        if self.api_schema['post']['enabled']:
-            if self.api_schema['post']['secured']:
-                if request.path.endswith('/query'):
-                    return self.get_resource_handler(request.headers).query_secure(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
-                else:
-                    return self.get_resource_handler(request.headers).insert_one_secure(self.data_model, self.data_resource_name, self.table_schema, request)
-            else:
-                if request.path.endswith('/query'):
-                    return self.get_resource_handler(request.headers).query(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
-                else:
-                    return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
-        else:
+        if not self.api_schema['post']['enabled']:
             raise MethodNotAllowed()
+
+        if self.api_schema['post']['secured']:
+            if request.path.endswith('/query'):
+                return self.get_resource_handler(request.headers).query_secure(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
+            else:
+                return self.get_resource_handler(request.headers).insert_one_secure(self.data_model, self.data_resource_name, self.table_schema, request)
+        else:
+            if request.path.endswith('/query'):
+                return self.get_resource_handler(request.headers).query(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
+            else:
+                return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
 
     def put(self, id):
-        if self.api_schema['put']['enabled']:
-            if request.path.endswith('/query'):
-                raise MethodNotAllowed()
-            if self.api_schema['put']['secured']:
-                return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
-            else:
-                return self.get_resource_handler(request.headers).update_one(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
-        else:
+        if not self.api_schema['put']['enabled']:
+            raise MethodNotAllowed()
+        if request.path.endswith('/query'):
             raise MethodNotAllowed()
 
-    def patch(self, id):
-        if self.api_schema['patch']['enabled']:
-            if request.path.endswith('/query'):
-                raise MethodNotAllowed()
-            if self.api_schema['patch']['secured']:
-                return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
-            else:
-                return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
+        if self.api_schema['put']['secured']:
+            return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
         else:
+            return self.get_resource_handler(request.headers).update_one(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PUT')
+
+    def patch(self, id):
+        if not self.api_schema['patch']['enabled']:
             raise MethodNotAllowed()
+        if request.path.endswith('/query'):
+            raise MethodNotAllowed()
+
+        if self.api_schema['patch']['secured']:
+            return self.get_resource_handler(request.headers).update_one_secure(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
+        else:
+            return self.get_resource_handler(request.headers).update_one(id, self.data_model, self.data_resource_name, self.table_schema, self.restricted_fields, request, mode='PATCH')
 
     def delete(self, id):
         if self.api_schema['delete']['enabled']:
-            if request.path.endswith('/query'):
-                raise MethodNotAllowed()
-            if self.api_schema['delete']['secured']:
-                return {'message': 'delete secure'}
-            else:
-                return {'message': 'delete'}
-        else:
             raise MethodNotAllowed()
+        if request.path.endswith('/query'):
+            raise MethodNotAllowed()
+
+        if self.api_schema['delete']['secured']:
+            return {'message': 'Unimplemented secure delete'}
+        else:
+            return {'message': 'Unimplemented unsecure delete'}

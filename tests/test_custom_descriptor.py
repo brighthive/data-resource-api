@@ -58,10 +58,10 @@ class ApiHelper:
         expect(response.status_code).to(equal(200))
 
     @staticmethod
-    def patch_a_framework_skill(c, framework_id: int, skills: list):
+    def patch_a_framework_skill(c, framework_id: int, skills_list: list):
         route = f'/frameworks/{framework_id}/skills'
         patch_body = {
-            "skills": skills
+            "skills": skills_list
         }
         response = c.patch(route, json=patch_body)
         body = json.loads(response.data)
@@ -70,7 +70,7 @@ class ApiHelper:
         expect(response.status_code).to(equal(200))
 
     @staticmethod
-    def check_for_skills_on_framework(c, framework_id, skills_list: list):
+    def check_for_skills_on_framework(c, framework_id: int, skills_list: list):
         route = f'/frameworks/{framework_id}/skills'
         response = c.get(route)
         body = json.loads(response.data)
@@ -78,6 +78,19 @@ class ApiHelper:
         print(body)
         expect(response.status_code).to(equal(200))
         expect(body['skills']).to(equal(skills_list))
+
+    @staticmethod
+    def delete_a_framework_skill(c, framework_id: int, skills_list: list):
+        route = f'/frameworks/{framework_id}/skills'
+        delete_body = {
+            'skills': skills_list
+        }
+
+        response = c.delete(route, json=delete_body)
+        body = json.loads(response.data)
+
+        expect(response.status_code).to(equal(204))
+        return body
 
 
 class TestStartup(object):
@@ -140,3 +153,28 @@ class TestStartup(object):
         framework_id = ApiHelper.post_a_framework(c, skills_list)
         ApiHelper.patch_a_framework_skill(c, framework_id, [skill_3])
         ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_1, skill_2, skill_3])
+
+    def test_mn_delete_one(self, frameworks_skills_client):
+        c = frameworks_skills_client
+
+        skill_1 = ApiHelper.post_a_skill(c, "skill1")
+        skill_2 = ApiHelper.post_a_skill(c, "skill2")
+        skills_list = [skill_1, skill_2]
+
+        framework_id = ApiHelper.post_a_framework(c, skills_list)
+        resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1])
+
+        expect(resp['skills']).to(equal([skill_2]))
+
+    def test_mn_delete_many(self, frameworks_skills_client):
+        c = frameworks_skills_client
+
+        skill_1 = ApiHelper.post_a_skill(c, "skill1")
+        skill_2 = ApiHelper.post_a_skill(c, "skill2")
+        skill_3 = ApiHelper.post_a_skill(c, "skill3")
+        skills_list = [skill_1, skill_2, skill_3]
+
+        framework_id = ApiHelper.post_a_framework(c, skills_list)
+        resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1, skill_3])
+
+        expect(resp['skills']).to(equal([skill_2]))

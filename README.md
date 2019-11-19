@@ -222,11 +222,14 @@ To create a many to many resource add the relationship to the API section.
 
 This will generate a many to many relationship.
 
+#### POST
 To add a resource you would POST and in the body include the child field as a parameter.
 
+#### GET
 To query the relationship you have to go to `/programs/1/credentials`. The relationship will not currently show up if you simply query `/programs/1`.
 
-You can `PUT` and `PATCH` the many to many route to modify the relationship. To replace the relationship perform a `PUT` to `/programs/1/credentials` with the full list of primary keys.
+#### PUT
+To replace the relationship perform a `PUT` to `/programs/1/credentials` with the full list of primary keys.
 
 ```json
 {
@@ -234,8 +237,9 @@ You can `PUT` and `PATCH` the many to many route to modify the relationship. To 
 }
 ```
 
-
+#### PATCH
 To append a primary key to the relationship list perform a `PATCH`. If you currently have a list of `"credentials": [1]` and you perform `PATCH` with `"credentials": [2,3]` it will return `"credentials":[1,2,3]`
+
 
 ## Configuration
 

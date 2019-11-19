@@ -70,9 +70,18 @@ class ApiHelper:
         route = f'/frameworks/{framework_id}/skills'
         response = c.get(route)
         body = json.loads(response.data)
-        
+
         expect(response.status_code).to(equal(200))
         expect(body['skills']).to(equal(skills_list))
+
+    @staticmethod
+    def get_frameworks_on_skill(c, skill_id: int):
+        route = f'/skills/{skill_id}/frameworks'
+        response = c.get(route)
+        body = json.loads(response.data)
+
+        expect(response.status_code).to(equal(200))
+        return body
 
     @staticmethod
     def delete_a_framework_skill(c, framework_id: int, skills_list: list):
@@ -94,8 +103,8 @@ class TestStartup(object):
         skill_1 = ApiHelper.post_a_skill(c, "skill1")
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skills_list = [skill_1, skill_2]
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         ApiHelper.check_for_skills_on_framework(c, framework_id, skills_list)
 
     def test_relationships(self, frameworks_skills_client):
@@ -132,8 +141,8 @@ class TestStartup(object):
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skills_list = [skill_1, skill_2]
         skill_3 = ApiHelper.post_a_skill(c, "skill3")
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         ApiHelper.put_a_framework_skill(c, framework_id, [skill_3])
         ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_3])
 
@@ -168,8 +177,8 @@ class TestStartup(object):
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skill_3 = ApiHelper.post_a_skill(c, "skill3")
         skills_list = [skill_1, skill_2, skill_3]
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1, skill_3])
 
         expect(resp['skills']).to(equal([skill_2]))
@@ -181,8 +190,18 @@ class TestStartup(object):
         skill_2 = ApiHelper.post_a_skill(c, "skill2")
         skill_3 = ApiHelper.post_a_skill(c, "skill3")
         skills_list = [skill_1, skill_2]
-
         framework_id = ApiHelper.post_a_framework(c, skills_list)
+
         resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_3])
 
         expect(resp['skills']).to(equal([skill_1, skill_2]))
+
+    def test_mn_reverse_relationship(self, frameworks_skills_client):
+        c = frameworks_skills_client
+
+        skill_1 = ApiHelper.post_a_skill(c, "skill1")
+        framework_id = ApiHelper.post_a_framework(c, [skill_1])
+
+        resp = ApiHelper.get_frameworks_on_skill(c, skill_1)
+
+        expect(resp['frameworks']).to(equal([framework_id]))

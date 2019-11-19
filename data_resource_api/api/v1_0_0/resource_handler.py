@@ -409,10 +409,17 @@ class ResourceHandler(object):
         #     return {'error': f"relationship '{child}' of '{parent}' not found."}
         try:
             session = Session()
-            cols = {f'{parent}_id': id}
+            parent_col_str = f'{parent}_id'
+            child_col_str = f'{child}_id'
+
+            cols = {parent_col_str: id}
             query = session.query(join_table).filter_by(**cols).all()
 
-            children = [value[1] for value in query]
+            children = []
+            for row in query:
+                row_dict = row._asdict()  # example - {'programs_id': 2, 'credentials_id': 3}
+                children.append(row_dict[child_col_str])
+
         except Exception:
             raise InternalServerError()
 

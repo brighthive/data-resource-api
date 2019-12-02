@@ -89,3 +89,54 @@ class TestStartup(object):
 
         expect(response.status_code).to(equal(200))
         # expect(body['message']).to(equal('Access Denied'))
+
+    def test_pagination(self, regular_client):
+        def post_a_credential():
+            post_body = {
+                "credential_name": "testtesttest"
+            }
+            response = regular_client.post('/credentials', json=post_body)
+
+            expect(response.status_code).to(equal(201))
+
+            body = json.loads(response.data)
+            return body
+
+        body = post_a_credential()
+        print(json.dumps(body, indent=4))
+
+        # do regular get
+        route = '/credentials'
+        response = regular_client.get(route)
+        body = json.loads(response.data)
+        print(json.dumps(body, indent=4))
+
+        expect(response.status_code).to(equal(200))
+        expect(len(body['credentials'])).not_to(equal(0))
+
+        # do get with pagination
+        route = '/credentials?offset=0&limit=20'
+        response = regular_client.get(route)
+        body = json.loads(response.data)
+        print(json.dumps(body, indent=4))
+
+        expect(response.status_code).to(equal(200))
+
+        # add items till we need the pagination
+        for _ in range(100):
+            body = post_a_credential()
+            print(json.dumps(body, indent=4))
+
+        # do get with pagination
+        route = '/credentials?offset=0&limit=20'
+        response = regular_client.get(route)
+        body = json.loads(response.data)
+        print(json.dumps(body, indent=4))
+        expect(len(body['credentials'])).to(equal(20))
+
+        # do get with pagination
+        route = '/credentials?offset=20&limit=20'
+        response = regular_client.get(route)
+        body = json.loads(response.data)
+        print(json.dumps(body, indent=4))
+        # expect(len(body['credentials'])).to(equal(20))

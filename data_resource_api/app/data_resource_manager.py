@@ -222,7 +222,7 @@ class DataResourceManagerSync(object):
             schema_file = os.path.join(schema_dir, schema)
 
             if not os.path.isfile(schema_file):
-                return
+                continue
 
             with open(os.path.join(schema_dir, schema), 'r') as fh:
                 schema_dict = json.load(fh)

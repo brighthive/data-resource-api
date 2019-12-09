@@ -300,7 +300,7 @@ class DataModelManagerSync(object):
             if os.path.isdir(os.path.join(schema_dir, schema)):
                 self.logger.exception(
                     f"Cannot open a nested schema directory '{schema}'")
-                return
+                continue
 
             try:
                 with open(os.path.join(schema_dir, schema), 'r') as fh:

@@ -25,7 +25,7 @@ class ResourceHandler(object):
         ) if not key.startswith('_') and not callable(key) and key not in restricted_fields}
         return resp
 
-    def compute_offset(self, page, items_per_page):
+    def compute_offset(self, page: int, items_per_page: int) -> int:
         """Compute the offset value for pagination.
         Args:
             page (int): The current page to compute the offset from.
@@ -33,9 +33,9 @@ class ResourceHandler(object):
         Returns:
             int: The offset value.
         """
-        return (page - 1) * items_per_page
+        return int(int(int(page) - 1) * int(items_per_page))
 
-    def compute_page(self, offset, items_per_page):
+    def compute_page(self, offset: int, items_per_page: int) -> int:
         """Compute the current page number based on offset.
         Args:
             offset (int): The offset to use to compute the page.
@@ -44,7 +44,7 @@ class ResourceHandler(object):
             int: The page number.
         """
 
-        return int(math.ceil((int(offset) / int(items_per_page)))) + 1
+        return int(math.ceil(((int(offset) + 1) / int(items_per_page))))
 
     def build_links(self, endpoint: str, offset: int, limit: int, rows: int):
         """Build links for a paginated response
@@ -57,6 +57,9 @@ class ResourceHandler(object):
         Returns:
             dict: The links based on the offset and limit
         """
+        offset = int(offset)
+        limit = int(limit)
+        rows = int(rows)
 
         # URL and pages
         url_link = '/{}?offset={}&limit={}'

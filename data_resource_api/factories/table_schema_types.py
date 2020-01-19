@@ -3,6 +3,7 @@
 """
 
 from sqlalchemy import Integer, String, Float, Boolean, Date, DateTime
+from sqlalchemy.dialects.postgresql import JSONB
 
 # Mapping of a Frictionless Table Schema to SQLAlchemy Data Type.
 #
@@ -15,7 +16,7 @@ TABLESCHEMA_TO_SQLALCHEMY_TYPES = {
     'number': Float,
     'integer': Integer,
     'boolean': Boolean,
-    'object': String,
+    'object': JSONB,
     'array': String,
     'date': Date,
     'time': DateTime,

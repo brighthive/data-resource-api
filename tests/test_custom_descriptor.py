@@ -63,7 +63,6 @@ class ApiHelper:
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
-        print(body)
         expect(response.status_code).to(equal(201))
 
         return body['id']

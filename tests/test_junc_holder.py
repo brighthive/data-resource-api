@@ -3,11 +3,6 @@ from expects import expect, be_an, raise_error, have_property, equal, be_empty, 
 import pytest
 
 
-class TestTable:
-    def __init__(self, table_name):
-        self.__tablename__ = table_name
-
-
 class TestJuncHolder(object):
     def test_use(self):
         JuncHolder.reset()

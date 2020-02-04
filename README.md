@@ -325,3 +325,10 @@ pipenv install --dev
 ```bash
 pipenv run pytest -c pytest.ini
 ```
+
+## Troubleshooting
+If you have trouble starting the application with `docker-compose up` the problem may lie in your postgres container.
+
+Try running `docker rm postgres-container-id` to remove any prevoiusly saved data in the postgres container. This will allow the application to rebuild the database from scratch and should start successfully.
+
+Or try running `docker system prune`.

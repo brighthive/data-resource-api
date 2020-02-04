@@ -1,42 +1,3 @@
-custom_descriptor = [{
-    "api": {
-      "resource": "tests",
-      "methods": [
-        {
-          "get": {
-            "enabled": True,
-            "secured": False,
-            "grants": []
-          }
-        }
-      ]
-    },
-    "datastore": {
-      "tablename": "tests",
-      "restricted_fields": [],
-      "schema": {
-        "fields": [
-          {
-            "name": "id",
-            "title": "Test ID",
-            "description": "Test Desc",
-            "type": "integer",
-            "required": True
-          },
-          {
-            "name": "name",
-            "title": "namename",
-            "description": "test name",
-            "type": "string",
-            "required": True
-          }
-        ],
-        "primaryKey": "id"
-      }
-    }
-  }
-]
-
 frameworks_descriptor = {
     "api": {
       "resource": "frameworks",
@@ -102,6 +63,12 @@ frameworks_descriptor = {
             "description": "framework name",
             "type": "string",
             "required": True
+          },
+          {
+            "name": "jsonb",
+            "title": "jsonb",
+            "type": "object",
+            "required": False
           }
         ],
         "primaryKey": "id"

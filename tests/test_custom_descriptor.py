@@ -31,6 +31,16 @@ class ApiHelper:
         return body['id']
 
     @staticmethod
+    def get_a_framework_by_id(c, id: int):
+        route = '/frameworks'
+        response = c.get(f'{route}/{id}')
+        body = json.loads(response.data)
+
+        expect(response.status_code).to(equal(200))
+
+        return body
+
+    @staticmethod
     def post_a_framework_with_no_skills(c):
         route = '/frameworks'
         post_body = {
@@ -39,6 +49,21 @@ class ApiHelper:
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
+        expect(response.status_code).to(equal(201))
+
+        return body['id']
+
+    @staticmethod
+    def post_json(c, data: object):
+        route = '/frameworks'
+        post_body = {
+            "name": "test",
+            "jsonb": data
+        }
+        response = c.post(route, json=post_body)
+        body = json.loads(response.data)
+
+        print(body)
         expect(response.status_code).to(equal(201))
 
         return body['id']
@@ -205,3 +230,12 @@ class TestStartup(object):
         resp = ApiHelper.get_frameworks_on_skill(c, skill_1)
 
         expect(resp['frameworks']).to(equal([framework_id]))
+
+    def test_json(self, frameworks_skills_client):
+        c = frameworks_skills_client
+
+        json_framework_id = ApiHelper.post_json(c, {"testkey": "testvalue"})
+
+        resp = ApiHelper.get_a_framework_by_id(c, json_framework_id)
+
+        expect(resp['jsonb']).to(equal("{'testkey': 'testvalue'}"))

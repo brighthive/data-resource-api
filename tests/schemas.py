@@ -35,7 +35,7 @@ custom_descriptor = [{
       }
     }
   }
-]
+] ## I think this can be deleted
 
 frameworks_descriptor = {
     "api": {
@@ -102,6 +102,12 @@ frameworks_descriptor = {
             "description": "framework name",
             "type": "string",
             "required": True
+          },
+          {
+            "name": "jsonb",
+            "title": "jsonb",
+            "type": "object",
+            "required": False
           }
         ],
         "primaryKey": "id"

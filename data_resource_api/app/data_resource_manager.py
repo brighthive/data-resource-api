@@ -208,6 +208,10 @@ class DataResourceManagerSync(object):
     def monitor_data_resources(self):
         """Monitor all data resources.
         """
+        if self.api is None or self.app is None:
+            self.logger.info("Flask and API have not been initalized yet.")
+            return
+
         self.logger.info('Checking data resources...')
 
         # Get a configured schema dir

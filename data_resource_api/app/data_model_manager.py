@@ -64,29 +64,40 @@ class DataModelManagerSync(object):
 
     def run_upgrade(self):
         db_active = False
-        max_retries = 5
-        retry_wait = 10
-        retries = 1
+        max_retries = 10
+        retry_wait = 1
+        retries = 0
         while not db_active and retries <= max_retries:
+            if retries != 0:
+                retry_wait *= 1.5
+                self.logger.info(f'Sleeping for {retry_wait} seconds...')
+                sleep(retry_wait)
+
+            retries += 1
+
             self.logger.info('Checking database availability...')
             try:
+                self.logger.info('Looking for checksum...')
                 session = Session()
                 data = session.query(Checksum).all()
                 db_active = True
+                self.logger.info('Successfully found checksum.')
             except Exception as e:
+                self.logger.info('Hit exception looking for checksum...')
                 # UndefinedTable
                 if e.code == 'f405':
+                    self.logger.info('Checksum table was not found; Creating checksum migration...')
                     self.revision('checksum_and_logs')
                     self.upgrade()
                     db_active = True
+                    self.logger.info('Successfully created checksum.')
+
                 elif e.code == 'e3q8':
+                    self.logger.info('Database is not available yet exception.')
                     self.logger.info(
                         'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
                 else:
                     self.logger.exception(f'Error occured upgrading database.')
-
-            retries += 1
-            sleep(retry_wait)
 
         self.logger.info('Upgrade loop exited')
 

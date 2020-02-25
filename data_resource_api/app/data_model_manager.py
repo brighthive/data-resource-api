@@ -302,11 +302,11 @@ class DataModelManagerSync(object):
         self.logger.info('Checking data models')
         schema_dir = self.get_data_resource_schema_path()
 
-        if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
+        if not os.path.exists(schema_dir) or not os.path.aisdir(schema_dir):
             self.logger.exception(
                 f"Unable to locate schema directory '{schema_dir}'")
 
-        schemas = os.listdir(schema_dir)
+        schemas = [f for f in os.listdir(schema_dir) if f.endswith('.json')]
         for schema in schemas:
             if os.path.isdir(os.path.join(schema_dir, schema)):
                 self.logger.exception(
@@ -347,6 +347,8 @@ class DataModelManagerSync(object):
                     sort_keys=True
                 ).encode('utf-8')
             ).hexdigest()
+
+
 
             if self.data_model_exists(schema_filename):
                 if not self.data_model_changed(schema_filename, model_checksum):

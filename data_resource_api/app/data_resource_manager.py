@@ -221,7 +221,7 @@ class DataResourceManagerSync(object):
             self.logger.exception('Schema directory does not exist.')
             return
 
-        schemas = os.listdir(schema_dir)
+        schemas = [f for f in os.listdir(schema_dir) if f.endswith('.json')]
         for schema in schemas:
             schema_file = os.path.join(schema_dir, schema)
 

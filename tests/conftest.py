@@ -8,7 +8,11 @@ from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
-from tests.schemas import frameworks_descriptor, skills_descriptor
+from tests.schemas import (
+    frameworks_descriptor,
+    skills_descriptor,
+    credentials_descriptor,
+    programs_descriptor)
 
 
 class PostgreSQLContainer(object):
@@ -129,7 +133,7 @@ class Client():
             try:
                 with self.app.app_context():
                     print("------------- running upgrade")
-                    self.data_model_manager.run_upgrade()
+                    self.data_model_manager.initalize_base_models()
 
                     if self.schema_dicts is None:
                         print("------------- running monitor data resources")
@@ -143,7 +147,7 @@ class Client():
                             print("------------- running monitor data models")
                             self.data_model_manager.work_on_schema(schema_dict, "custom_schema")
                     
-                    self.data_model_manager.run_upgrade()
+                    self.data_model_manager.initalize_base_models()
                     upgraded = True
                     return True
 
@@ -168,7 +172,7 @@ def regular_client():
     Returns:
         client (object): The Flask test client for the application.
     """
-    client = Client()
+    client = Client([credentials_descriptor, programs_descriptor])
     yield client.run_and_return_test_client()
     client.stop_container()
 

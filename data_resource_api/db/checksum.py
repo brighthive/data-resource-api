@@ -5,6 +5,7 @@
 from data_resource_api.db import Base
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class Checksum(Base):
@@ -19,3 +20,4 @@ class Checksum(Base):
     data_resource = Column(String, primary_key=True)
     model_checksum = Column(String, nullable=False)
     date_modified = Column(DateTime, default=func.now())
+    descriptor_json = Column(JSONB)

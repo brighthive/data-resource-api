@@ -46,10 +46,11 @@ class DataModelManagerSync(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, base=Base):
+        print(Base)
         self.app_config = ConfigurationFactory.from_env()
         self.data_model_descriptors: DataModelDescriptor = []
-        self.orm_factory = ORMFactory()
+        self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
 
     def run(self):
@@ -113,18 +114,25 @@ class DataModelManagerSync(object):
 
         self.logger.info('Base models initalized.')
 
+    # TODO integration test?
     def restore_models_from_database(self):
+        """This method will load all stored descriptor files from DB
+        into SQL Alchemy ORM models.
+        """
         # query database for all jsonb in checksum table
         json_descriptor_list = self.get_stored_descriptors()
 
-        # if json_descriptor_list is empty can we return?
-
         # load each item into our models
         for descriptor in json_descriptor_list:
-            table_name, table_schema, api_schema = self.split_metadata_from_descriptor(descriptor)
-            data_model = self.orm_factory.create_orm_from_dict(
-                table_schema, table_name, api_schema)
+            load_descriptor_into_sql_alchemy_model(descriptor)
 
+        return
+
+    def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
+        table_name, table_schema, api_schema = DataModelManagerSync.split_metadata_from_descriptor(descriptor)
+
+        data_model = self.orm_factory.create_orm_from_dict(
+            table_schema, table_name, api_schema)
         return
 
     def get_sleep_interval(self):
@@ -278,24 +286,14 @@ class DataModelManagerSync(object):
 
         """
         session = Session()
-        descriptor_list = []
+        descriptor_list = []  # list of json dict
         try:
             query = session.query(Checksum)
             for _row in query.all():
-                descriptor_list.append(_row.descriptor_json)  # may want to just yield this?
+                descriptor_list.append(_row.descriptor_json)
         except Exception as e:
             self.logger.exception('Error retrieving stored models')
         session.close()
-
-        #
-        # move this to its own function that restore_models_from_database is calling
-        # and take the yield from get_stored_models for the in variable
-        #
-        # load each item into a json object and put in a list
-        # json_descriptors_list = []
-        # for descriptor in descriptor_list:
-        #     descriptor_dict = json.load(descriptor)
-        #     json_descriptors_list.append(descriptor_dict)
 
         return descriptor_list
 
@@ -385,13 +383,16 @@ class DataModelManagerSync(object):
 
         self.logger.info('Completed check of data models')
 
-    def split_metadata_from_descriptor(self, schema_dict: dict):
+    # TODO refactor DRM to use this
+    @staticmethod
+    def split_metadata_from_descriptor(schema_dict: dict):
         table_name = schema_dict['datastore']['tablename']
         table_schema = schema_dict['datastore']['schema']
         api_schema = schema_dict['api']['methods'][0]
 
         return table_name, table_schema, api_schema
 
+    # TODO refactor this into smaller functions
     def work_on_schema(self, schema_dict: dict, schema_filename: str):
         """Operate on a schema dict for data model changes.
 
@@ -406,7 +407,7 @@ class DataModelManagerSync(object):
 
         try:
             # Extract data from the json
-            table_name, table_schema, api_schema = self.split_metadata_from_descriptor(schema_dict)
+            table_name, table_schema, api_schema = DataModelManagerSync.split_metadata_from_descriptor(schema_dict)
 
             # calculate the checksum for this json
             model_checksum = md5(

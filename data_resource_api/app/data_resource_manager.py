@@ -75,7 +75,7 @@ class DataResourceManagerSync(object):
         self.app = None
         self.api = None
         self.available_services = AvailableServicesResource()
-        self.orm_factory = ORMFactory()
+        self.orm_factory = ORMFactory(Base)
         self.data_resource_factory = DataResourceFactory()
         self.logger = LogFactory.get_console_logger('data-resource-manager')
 

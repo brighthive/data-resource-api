@@ -143,9 +143,9 @@ class Client():
                     else:
                         for schema_dict in self.schema_dicts:
                             print("------------- running monitor data resources")
-                            self.data_resource_manager.work_on_schema(schema_dict, "custom_schema")
+                            self.data_resource_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
                             print("------------- running monitor data models")
-                            self.data_model_manager.work_on_schema(schema_dict, "custom_schema")
+                            self.data_model_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
                     
                     self.data_model_manager.initalize_base_models()
                     upgraded = True

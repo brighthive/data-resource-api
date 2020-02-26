@@ -1,0 +1,6 @@
+{
+    "hello": [ "this", "is", "valid"],
+    "json": {
+        "yep": 1
+    }
+}

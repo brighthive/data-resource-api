@@ -218,19 +218,20 @@ class DataResourceManagerSync(object):
         # Get a configured schema dir
         schema_dir = self.get_data_resource_schema_path()
         # Check that the path exists and that it is a directory
-        if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
-            self.logger.exception('Schema directory does not exist.')
-            return
+        schema_dir = self.get_data_resource_schema_path()
 
-        schemas = os.listdir(schema_dir)
-        for schema in schemas:
-            schema_file = os.path.join(schema_dir, schema)
+        try:
+            descriptor_file_helper = DescriptorFileHelper(schema_dir)
+        except Exception as e:
+            # self.logger.error(e)
+            raise e
 
-            if not os.path.isfile(schema_file):
-                continue
-
-            with open(os.path.join(schema_dir, schema), 'r') as fh:
-                schema_dict = json.load(fh)
+        for schema_filename in descriptor_file_helper.schemas:
+            schema_dict = {}
+            try:
+                schema_dict = DescriptorFromFile(schema_dir, schema_filename).get_descriptor_obj()
+            except Exception as e:
+                raise e
 
             self.work_on_schema(schema_dict, schema_file)
 
@@ -254,7 +255,7 @@ class DataResourceManagerSync(object):
             data_resource_name = desc.data_resource_name
 
             try:
-                restricted_fields = schema_dict['datastore']['restricted_fields']
+                restricted_fields = desc.descriptor['datastore']['restricted_fields']
             except KeyError:
                 restricted_fields = []
 

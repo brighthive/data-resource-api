@@ -20,6 +20,7 @@ from data_resource_api import ConfigurationFactory
 from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 from data_resource_api.db import Base, Session, Log, Checksum
 from data_resource_api.logging import LogFactory
+from data_resource_api.app.descriptor import Descriptor
 
 
 class DataModelDescriptor(object):
@@ -383,15 +384,6 @@ class DataModelManagerSync(object):
 
         self.logger.info('Completed check of data models')
 
-    # TODO refactor DRM to use this
-    @staticmethod
-    def split_metadata_from_descriptor(schema_dict: dict):
-        table_name = schema_dict['datastore']['tablename']
-        table_schema = schema_dict['datastore']['schema']
-        api_schema = schema_dict['api']['methods'][0]
-
-        return table_name, table_schema, api_schema
-
     # TODO refactor this into smaller functions
     def work_on_schema(self, schema_dict: dict, schema_filename: str):
         """Operate on a schema dict for data model changes.
@@ -407,7 +399,10 @@ class DataModelManagerSync(object):
 
         try:
             # Extract data from the json
-            table_name, table_schema, api_schema = DataModelManagerSync.split_metadata_from_descriptor(schema_dict)
+            desc = Descriptor(schema_dict)
+            table_name = desc.table_name
+            table_schema = desc.table_schema
+            api_schema = desc.api_schema
 
             # calculate the checksum for this json
             model_checksum = md5(
@@ -426,13 +421,13 @@ class DataModelManagerSync(object):
                 if not self.data_model_changed(schema_filename, model_checksum):
                     self.logger.info(f"{schema_filename}: Unchanged.")
                     return
-                
+
                 self.logger.info(f"{schema_filename}: Found changed.")
 
                 # Get the index for this descriptor within our local metadata
                 data_model_index = self.get_data_model_index(
                     schema_filename)
-                
+
                 # Create the sql alchemy orm
                 data_model = self.orm_factory.create_orm_from_dict(
                     table_schema, table_name, api_schema)

@@ -16,6 +16,7 @@ from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Base, Session, Checksum
 from data_resource_api.logging import LogFactory
 from data_resource_api.app.exception_handler import handle_errors
+from data_resource_api.app.descriptor import Descriptor
 
 
 class DataResource(object):
@@ -246,10 +247,11 @@ class DataResourceManagerSync(object):
                 ).encode('utf-8')
             ).hexdigest()
 
-            data_resource_name = schema_dict['api']['resource']
-            api_schema = schema_dict['api']['methods'][0]
-            table_name = schema_dict['datastore']['tablename']
-            table_schema = schema_dict['datastore']['schema']
+            desc = Descriptor(schema_dict)
+            table_name = desc.table_name
+            table_schema = desc.table_schema
+            api_schema = desc.api_schema
+            data_resource_name = desc.data_resource_name
 
             try:
                 restricted_fields = schema_dict['datastore']['restricted_fields']

@@ -25,9 +25,3 @@ class TestDataModelManager():
 
         # delete sqlalchemy base
         del Base
-
-    def test_split_metadata_from_descriptor(self):
-        table_name, table_schema, api_schema = DataModelManagerSync.split_metadata_from_descriptor(frameworks_descriptor)
-        expect(table_name).to(equal("frameworks"))
-        # expect(table_schema).to(equal("frameworks"))  # TODO
-        # expect(api_schema).to(equal("frameworks"))  # TODO

@@ -185,12 +185,6 @@ def frameworks_skills_client():
     client.stop_container()
 
 
-# @pytest.fixture(scope='module')
-# def test_client():
-#     client = Client(custom_descriptor)
-#     yield client.run_and_return_test_client()
-#     client.stop_container()
-
 @pytest.fixture(scope='function')
 def base():
     Base = declarative_base()

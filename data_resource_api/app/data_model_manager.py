@@ -56,12 +56,8 @@ class DataModelManagerSync(object):
         self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
 
-        if descriptors is None:
-            self.load_descriptors_from_dir = True
-            self.descriptors_to_load = None
-        else:
-            self.load_descriptors_from_dir = False
-            self.descriptors_to_load = descriptors
+        self.descriptor_directories.append(self.get_data_resource_schema_path())
+        self.custom_descriptors = descriptors
 
     def run(self):
         self.initalize_base_models()
@@ -368,10 +364,10 @@ class DataModelManagerSync(object):
             responsbility of iterating through a directory to find schema files to load.
         """
         self.logger.info('Checking data models')
-        # # Test
-        # descriptors = DescriptorsGetter(['directory'], [{}])
-        # for descriptor in descriptors.get_descriptors():
-
+        
+        descriptors = DescriptorsGetter(self.descriptor_directories, self.custom_descriptors)
+        for descriptor in descriptors.get_descriptors():
+            self.process_descriptor(descriptor)
 
 
         # Test

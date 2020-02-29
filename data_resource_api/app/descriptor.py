@@ -2,17 +2,44 @@ import os
 import json
 
 
+class DescriptorsGetter():
+    def __init__(self, directories: list = [], custom_descriptors: list = []):
+        # print(directories)
+        self.directories = directories
+
+    def iter_descriptors(self):
+        yield from self._get_from_dir()
+
+    def _get_from_dir(self):
+        for directory in self.directories:
+            self._check_if_path_exists(directory)
+            for file_name in self._get_file_from_dir(directory):
+                yield DescriptorFromFile(directory, file_name)
+
+    def _check_if_path_exists(self, dir_path):
+        if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
+            raise RunTimeError(f"Unable to locate schema directory '{dir_path}'")
+
+    def _get_file_from_dir(self, directory):
+        yield from [f for f in os.listdir(directory) if f.endswith('.json')]
+
+
+
+
+
 class DescriptorFileHelper():
     def __init__(self, dir_path: str):
         self.check_if_path_exists(dir_path)
         self.get_only_json_files(dir_path)
 
-    def check_if_path_exists(self, dir_path):
-        if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-            raise RunTimeError(f"Unable to locate schema directory '{dir_path}'")
+    # def check_if_path_exists(self, dir_path):
+    #     if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
+    #         raise RunTimeError(f"Unable to locate schema directory '{dir_path}'")
 
-    def get_only_json_files(self, dir_path):
-        self.schemas = [f for f in os.listdir(dir_path) if f.endswith('.json')]
+    
+    # # def get_only_json_files(self, dir_path):
+    #     # self.schemas = [f for f in os.listdir(dir_path) if f.endswith('.json')]
+
 
 
 class DescriptorFromFile():

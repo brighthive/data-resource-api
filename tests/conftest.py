@@ -13,6 +13,7 @@ from tests.schemas import (
     skills_descriptor,
     credentials_descriptor,
     programs_descriptor)
+from sqlalchemy.ext.declarative import declarative_base
 
 
 class PostgreSQLContainer(object):
@@ -189,3 +190,9 @@ def frameworks_skills_client():
 #     client = Client(custom_descriptor)
 #     yield client.run_and_return_test_client()
 #     client.stop_container()
+
+@pytest.fixture(scope='function')
+def base():
+    Base = declarative_base()
+    yield Base
+    del Base

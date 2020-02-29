@@ -50,12 +50,18 @@ class DataModelManagerSync(object):
 
     """
 
-    def __init__(self, base=Base):
-        print(Base)
+    def __init__(self, base: object = Base, descriptors: list = []):
         self.app_config = ConfigurationFactory.from_env()
         self.data_model_descriptors: DataModelDescriptor = []
         self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
+
+        if descriptors is None:
+            self.load_descriptors_from_dir = True
+            self.descriptors_to_load = None
+        else:
+            self.load_descriptors_from_dir = False
+            self.descriptors_to_load = descriptors
 
     def run(self):
         self.initalize_base_models()
@@ -362,16 +368,32 @@ class DataModelManagerSync(object):
             responsbility of iterating through a directory to find schema files to load.
         """
         self.logger.info('Checking data models')
+        # # Test
+        # descriptors = DescriptorsGetter(['directory'], [{}])
+        # for descriptor in descriptors.get_descriptors():
+
+
+
+        # Test
+        
+        
+        ## TODO load from dir or from given list
         schema_dir = self.get_data_resource_schema_path()
+        schemas = None
 
-        try:
-            descriptor_file_helper = DescriptorFileHelper(schema_dir)
-        except Exception as e:
-            # self.logger.error(e)
-            raise e
+        if self.load_descriptors_from_dir:
+            try:
+                descriptor_file_helper = DescriptorFileHelper(schema_dir)
+            except Exception as e:
+                # self.logger.error(e)
+                raise e
 
-        for schema_filename in descriptor_file_helper.schemas:
-            schema_dict = {}
+            schemas = descriptor_file_helper.schemas
+        else:
+            schemas = self.descriptors_to_load
+
+        for schema_filename in schemas:
+            schema_dict = {}  # none?
             try:
                 schema_dict = DescriptorFromFile(schema_dir, schema_filename).get_descriptor_obj()
             except Exception as e:

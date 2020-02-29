@@ -18,14 +18,13 @@ class DescriptorFileHelper():
 class DescriptorFromFile():
     def __init__(self, schema_dir: str, file_name: str):
         self.check_if_the_file_is_a_directory(schema_dir, file_name)
-        self.create_and_return_descriptor(schema_dir, file_name)
+        self.descriptor_obj = self.create_descriptor(schema_dir, file_name)
 
     def check_if_the_file_is_a_directory(self, schema_dir: str, file_name: str):
-        # check if the provided file is a directory
         if os.path.isdir(os.path.join(schema_dir, file_name)):
             raise RuntimeError(f"Cannot open a directory '{file_name}' as a descriptor.")
 
-    def create_and_return_descriptor(self, schema_dir: str, file_name: str):
+    def create_descriptor(self, schema_dir: str, file_name: str):
         self.descriptor_obj = {}
         # Open the file and store its json data and file name
         try:
@@ -37,7 +36,7 @@ class DescriptorFromFile():
         except Exception as e:
             raise RuntimeError(f"Error opening schema {file_name}")
 
-        self.descriptor_obj = Descriptor(schema_dict)
+        return Descriptor(schema_dict)
 
     def get_descriptor_obj(self):
         return self.descriptor_obj
@@ -53,18 +52,22 @@ class Descriptor():
             self.table_name = descriptor['datastore']['tablename']
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+
         try:
             self.table_schema = descriptor['datastore']['schema']
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+
         try:
             self.api_schema = descriptor['api']['methods'][0]
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+
         try:
             self.data_resource_name = descriptor['api']['resource']
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+
         try:
             self.descriptor = descriptor
         except KeyError:

@@ -13,10 +13,12 @@ from tests.schemas import (
     skills_descriptor,
     credentials_descriptor,
     programs_descriptor)
+
 from sqlalchemy.ext.declarative import declarative_base
 from data_resource_api.logging import LogFactory
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.descriptor import Descriptor
+from data_resource_api.app.junc_holder import JuncHolder
 
 logger = LogFactory.get_console_logger('data-model-manager')
 
@@ -199,8 +201,9 @@ def frameworks_skills_client():
     client.stop_container()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def base():
-    Base = declarative_base()
-    yield Base
-    del Base
+    JuncHolder.reset()
+    base = declarative_base()
+    yield base
+    del base

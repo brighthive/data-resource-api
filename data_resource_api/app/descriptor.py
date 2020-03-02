@@ -3,6 +3,13 @@ import json
 
 
 class DescriptorsGetter():
+    """
+    Given a list of directories and a list of descriptor files this
+    class will handle the file loading and yielding of each descriptor.
+    This greatly simplifies the code in the DMM.
+
+    iter_descriptors yields a Descriptor object
+    """
     def __init__(self, directories: list = [], custom_descriptors: list = []):
         # print(directories)
         self.directories = directories
@@ -14,7 +21,7 @@ class DescriptorsGetter():
         for directory in self.directories:
             self._check_if_path_exists(directory)
             for file_name in self._get_file_from_dir(directory):
-                yield DescriptorFromFile(directory, file_name)
+                yield DescriptorFromFile(directory, file_name).get_descriptor_obj()
 
     def _check_if_path_exists(self, dir_path):
         if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
@@ -63,7 +70,7 @@ class DescriptorFromFile():
         except Exception as e:
             raise RuntimeError(f"Error opening schema {file_name}")
 
-        return Descriptor(schema_dict)
+        return Descriptor(schema_dict, file_name)
 
     def get_descriptor_obj(self):
         return self.descriptor_obj
@@ -74,7 +81,7 @@ class Descriptor():
     This is a utility class to encapsulate functions and operations
     related to descriptor files.
     """
-    def __init__(self, descriptor: dict):
+    def __init__(self, descriptor: dict, file_name: str = ""):
         try:
             self.table_name = descriptor['datastore']['tablename']
         except KeyError:
@@ -99,3 +106,12 @@ class Descriptor():
             self.descriptor = descriptor
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+
+        # self.file_name = self._set_file_name(file_name, self.table_name)
+        self.file_name = file_name
+
+    # def _set_file_name(self, file_name: str, table_name: str):
+    #     if file_name is None:
+    #         self.file_name = f"{table_name}.json"
+    #     else:
+    #         self.file_name = file_name

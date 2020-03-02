@@ -23,7 +23,8 @@ from data_resource_api.logging import LogFactory
 from data_resource_api.app.descriptor import (
     Descriptor,
     DescriptorFileHelper,
-    DescriptorFromFile)
+    DescriptorFromFile,
+    DescriptorsGetter)
 
 
 class DataModelDescriptor(object):
@@ -56,6 +57,7 @@ class DataModelManagerSync(object):
         self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
 
+        self.descriptor_directories = []
         self.descriptor_directories.append(self.get_data_resource_schema_path())
         self.custom_descriptors = descriptors
 
@@ -366,42 +368,44 @@ class DataModelManagerSync(object):
         self.logger.info('Checking data models')
         
         descriptors = DescriptorsGetter(self.descriptor_directories, self.custom_descriptors)
-        for descriptor in descriptors.get_descriptors():
+        for descriptor in descriptors.iter_descriptors():
+            ## got a descriptor object
+            self.logger.info("---------------------")
+            self.logger.info("---------------------")
+            self.logger.info(descriptor.file_name)
+            self.logger.info(type(descriptor))
+            self.logger.info("---------------------")
             self.process_descriptor(descriptor)
 
+        # ## TODO load from dir or from given list
+        # schema_dir = self.get_data_resource_schema_path()
+        # schemas = None
 
-        # Test
-        
-        
-        ## TODO load from dir or from given list
-        schema_dir = self.get_data_resource_schema_path()
-        schemas = None
+        # if self.load_descriptors_from_dir:
+        #     try:
+        #         descriptor_file_helper = DescriptorFileHelper(schema_dir)
+        #     except Exception as e:
+        #         # self.logger.error(e)
+        #         raise e
 
-        if self.load_descriptors_from_dir:
-            try:
-                descriptor_file_helper = DescriptorFileHelper(schema_dir)
-            except Exception as e:
-                # self.logger.error(e)
-                raise e
+        #     schemas = descriptor_file_helper.schemas
+        # else:
+        #     schemas = self.descriptors_to_load
 
-            schemas = descriptor_file_helper.schemas
-        else:
-            schemas = self.descriptors_to_load
+        # for schema_filename in schemas:
+        #     schema_dict = {}  # none?
+        #     try:
+        #         schema_dict = DescriptorFromFile(schema_dir, schema_filename).get_descriptor_obj()
+        #     except Exception as e:
+        #         raise e
 
-        for schema_filename in schemas:
-            schema_dict = {}  # none?
-            try:
-                schema_dict = DescriptorFromFile(schema_dir, schema_filename).get_descriptor_obj()
-            except Exception as e:
-                raise e
-
-            # Pass the json data and filename to the worker function
-            self.work_on_schema(schema_dict, schema_filename)
+        #     # Pass the json data and filename to the worker function
+        #     self.work_on_schema(schema_dict, schema_filename)
 
         self.logger.info('Completed check of data models')
 
     # TODO refactor this into smaller functions
-    def work_on_schema(self, schema_dict: dict, schema_filename: str):
+    def process_descriptor(self, schema_dict: object):
         """Operate on a schema dict for data model changes.
 
         Note:
@@ -411,14 +415,14 @@ class DataModelManagerSync(object):
             new Alembic migrations to meet these changes. The data models will then have
             to be reconstructed by each individual worker.
         """
+        schema_filename = schema_dict.file_name
         self.logger.info(f"Looking at {schema_filename}")
 
         try:
             # Extract data for easier use
-            desc = Descriptor(schema_dict)
-            table_name = desc.table_name
-            table_schema = desc.table_schema
-            api_schema = desc.api_schema
+            table_name = schema_dict.table_name
+            table_schema = schema_dict.table_schema
+            api_schema = schema_dict.api_schema
 
             # calculate the checksum for this json
             model_checksum = md5(

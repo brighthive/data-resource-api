@@ -90,60 +90,66 @@ class DataResourceManagerSync(object):
         self.custom_descriptors = descriptors
 
     def run(self):
-        # self.wait_for_db()
+        self.wait_for_db()
         # self.restore_models_from_database()
 
         while True:
-            sleep_time = 5
+            sleep_time = 10
             # sleep_time = self.get_sleep_interval()
 
             try:
                 self.logger.info('Data Resource Manager Running...')
-                self.logger.info(list(Base.metadata.tables.keys()))
+                self.logger.debug(f"Base metadata: {list(Base.metadata.tables.keys())}")
                 self.monitor_data_models()
+                
             except Exception as e:
+                if e.code == 'e3q8':
+                    self.logger.info("Waiting for DB...")
+                    sleep(1)
+                    continue
+
                 self.logger.error(e)
 
             self.logger.info(f'Data Resource Manager Sleeping for {sleep_time} seconds...')
             sleep(sleep_time)
 
-    # def wait_for_db(self):
-    #     db_active = False
-    #     max_retries = 10
-    #     retries = 0
+    def wait_for_db(self):
+        db_active = False
+        max_retries = 10
+        retries = 0
 
-    #     exponential_time = exponential_backoff(1, 1.5)
+        exponential_time = exponential_backoff(1, 1.5)
 
-    #     while not db_active and retries <= max_retries:
-    #         if retries != 0:
-    #             sleep_time = exponential_time()
-    #             self.logger.info(f'Sleeping for {sleep_time} with exponential backoff...')
-    #             sleep(sleep_time)
+        while not db_active and retries <= max_retries:
+            if retries != 0:
+                sleep_time = exponential_time()
+                self.logger.info(f'Sleeping for {sleep_time} with exponential backoff...')
+                sleep(sleep_time)
 
-    #         retries += 1
+            retries += 1
 
-    #         self.logger.info('Checking database availability...')
-    #         try:
-    #             self.logger.info('Looking for DB...')
-    #             session = Session()
-    #             data = session.query(Checksum).all()
-    #             db_active = True
-    #             self.logger.info('Successfully connected to DB.')
-    #         except Exception as e:
-    #             self.logger.info('Hit exception looking for checksum...')
-    #             # UndefinedTable
-    #             if e.code == 'f405':
-    #                 db_active = True
-    #                 self.logger.info('Successfully connected to DB.')
+            self.logger.info('Checking database availability...')
+            try:
+                self.logger.info('Looking for DB...')
+                session = Session()
+                data = session.query(Checksum).all()
+                db_active = True
+                self.logger.info('Successfully connected to DB.')
+            except Exception as e:
+                self.logger.info('Hit exception looking for checksum...')
+                # UndefinedTable
+                if e.code == 'f405':
+                    db_active = True
+                    self.logger.info('Successfully connected to DB.')
 
-    #             elif e.code == 'e3q8':
-    #                 self.logger.info('Database is not available yet exception.')
-    #                 self.logger.info(
-    #                     'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
-    #             else:
-    #                 self.logger.exception(f'Error occured upgrading database.')
+                elif e.code == 'e3q8':
+                    self.logger.info('Database is not available yet exception.')
+                    self.logger.info(
+                        'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
+                else:
+                    self.logger.exception(f'Error occured upgrading database.')
 
-    #     self.logger.info('Connected to DB.')
+        self.logger.info('Connected to DB.')
 
     # def restore_models_from_database(self) -> None:
     #     """This method will load all stored descriptor files from DB
@@ -298,7 +304,7 @@ class DataResourceManagerSync(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception as e:
-            self.logger.exception('Error retrieving checksum')
+            self.logger.error('Error retrieving checksum', exc_info=True)
         session.close()
         return checksum
 
@@ -321,7 +327,7 @@ class DataResourceManagerSync(object):
         """Does data resource changes based on a given schema.
         """
         schema_filename = schema_dict.file_name
-        self.logger.info(f"Looking at {schema_filename}")
+        self.logger.debug(f"Looking at {schema_filename}")
 
         try:
             # Extract data for easier use
@@ -329,8 +335,6 @@ class DataResourceManagerSync(object):
             table_name = schema_dict.table_name
             table_schema = schema_dict.table_schema
             api_schema = schema_dict.api_schema
-
-            self.logger.info("1")
 
             # calculate the checksum for this json
             data_resource_checksum = hashlib.md5(
@@ -340,10 +344,8 @@ class DataResourceManagerSync(object):
                 ).encode('utf-8')
             ).hexdigest()
 
-            self.logger.info("2")
             restricted_fields = schema_dict.restricted_fields
 
-            self.logger.info("3")
             if self.data_resource_exists(data_resource_name):
 
                 # determine if api changed

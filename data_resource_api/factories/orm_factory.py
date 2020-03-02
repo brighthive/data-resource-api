@@ -152,7 +152,7 @@ class ORMFactory(object):
                     custom_table_name = f'{custom_table[1]}/{custom_table[2]}'
                     join_tables.append(custom_table_name)
 
-            logger.debug(f"found join tables: '{join_tables'")
+            logger.debug(f"found join tables: '{join_tables}'")
 
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)

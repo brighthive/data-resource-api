@@ -106,7 +106,7 @@ class ORMFactory(object):
                             self.get_sqlalchemy_type(
                                 field['type']), ForeignKey(reference_table, onupdate='CASCADE', ondelete='CASCADE'))
                     except Exception as e:
-                        print('An exception occured {}'.format(e))
+                        logger.error(e)
         return sqlalchemy_fields
 
     def get_sqlalchemy_type(self, data_type: str):
@@ -152,7 +152,8 @@ class ORMFactory(object):
                     custom_table_name = f'{custom_table[1]}/{custom_table[2]}'
                     join_tables.append(custom_table_name)
 
-            logger.info(join_tables)
+            logger.debug(f"found join tables: '{join_tables'")
+
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)
 
@@ -195,7 +196,7 @@ class ORMFactory(object):
                 extend_existing=True
             )
         except Exception as e:
+            logger.warn(f"Error on create junc table '{join_table}'")
             logger.error(e)
-            print(f"Error on create junc table '{join_table}'; {str(e)}")
 
         JuncHolder.add_table(join_table, association_table)

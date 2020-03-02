@@ -14,6 +14,10 @@ from tests.schemas import (
     credentials_descriptor,
     programs_descriptor)
 from sqlalchemy.ext.declarative import declarative_base
+from data_resource_api.logging import LogFactory
+
+
+logger = LogFactory.get_console_logger('data-model-manager')
 
 
 class PostgreSQLContainer(object):
@@ -57,7 +61,7 @@ class PostgreSQLContainer(object):
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
         except Exception as e:
-            print('Exception {}'.format(e))
+            logger.error(e)
 
         self.container = self.docker_client.containers.run(
             self.get_postgresql_image(),
@@ -66,11 +70,11 @@ class PostgreSQLContainer(object):
             name=self.config.CONTAINER_NAME,
             environment=self.db_environment,
             ports=self.db_ports)
-    
+
     def stop_if_running(self):
         try:
             running = self.docker_client.containers.get(self.config.CONTAINER_NAME)
-            print(f"Killing running container '{self.config.CONTAINER_NAME}'")
+            logger.info(f"Killing running container '{self.config.CONTAINER_NAME}'")
             running.stop()
         except Exception as e:
             if "404 Client Error: Not Found" in str(e):
@@ -86,8 +90,9 @@ class PostgreSQLContainer(object):
         if self.container is not None:
             self.container.stop()
 
+
 def delete_migration_artifacts():
-    print('Deleting migration artifacts...')
+    logger.info('Deleting migration artifacts...')
     rootdir = os.path.abspath('./migrations/versions')
 
     for file in os.listdir(os.fsencode(rootdir)):
@@ -98,7 +103,8 @@ def delete_migration_artifacts():
             continue
 
 
-class UpgradeFail(Exception): pass
+class UpgradeFail(Exception):
+    pass
 
 
 class Client():
@@ -117,7 +123,7 @@ class Client():
             self.upgrade_loop()
             return self.app.test_client()
         except UpgradeFail:
-            print("Failed to upgrade database.")
+            logger.error("Failed to upgrade database.")
 
     def initalize_objects(self):
         self.data_resource_manager = DataResourceManagerSync()
@@ -133,32 +139,33 @@ class Client():
         while not upgraded and self.counter <= self.counter_max:
             try:
                 with self.app.app_context():
-                    print("------------- running upgrade")
+                    logger.info("------------- running upgrade")
                     self.data_model_manager.initalize_base_models()
 
                     if self.schema_dicts is None:
-                        print("------------- running monitor data resources")
+                        logger.info("------------- running monitor data resources")
                         self.data_resource_manager.monitor_data_resources()
-                        print("------------- running monitor data models")
+                        logger.info("------------- running monitor data models")
                         self.data_model_manager.monitor_data_models()
                     else:
                         for schema_dict in self.schema_dicts:
-                            print("------------- running monitor data resources")
+                            logger.info("------------- running monitor data resources")
                             self.data_resource_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
-                            print("------------- running monitor data models")
+                            logger.info("------------- running monitor data models")
                             self.data_model_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
-                    
+
                     self.data_model_manager.initalize_base_models()
                     upgraded = True
                     return True
 
             except Exception as e:
-                print(f"Not upgraded, sleeping... {self.counter}/{self.counter_max} time(s)")
+                logger.error(e)
+                logger.info(f"Not upgraded, sleeping... {self.counter}/{self.counter_max} time(s)")
                 self.counter += 1
                 sleep(1)
-        
+
         if self.counter > self.counter_max:
-            print("Max fail reached; stopping postgres container")
+            logger.info("Max fail reached; stopping postgres container")
             self.postgres.stop_container()
             raise UpgradeFail
 

@@ -7,9 +7,11 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 import warnings
 from tableschema import Schema
 from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Table, Integer
-from data_resource_api.db import Base
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.logging import LogFactory
+
+logger = LogFactory.get_console_logger('orm-factory')
 
 
 class ORMFactory(object):
@@ -20,6 +22,8 @@ class ORMFactory(object):
         factories and modules.
 
     """
+    def __init__(self, base):
+        self.base = base
 
     def evaluate_foreign_key(self, foreign_keys, field_name, field_type):
         """Determine if a field is a foreign key.
@@ -56,7 +60,7 @@ class ORMFactory(object):
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore', category=exc.SAWarning)
-                        type(table, (Base,), {
+                        type(table, (self.base,), {
                             '__tablename__': table,
                             '__table_args__': {'extend_existing': True},
                             'id': Column(self.get_sqlalchemy_type(field_type), primary_key=True)
@@ -75,7 +79,7 @@ class ORMFactory(object):
             foreign_keys (list): Collection of foreign key fields.
 
         Return:
-            dict: SQLAlchemy fields to append to the new database object.
+            dict: SQLAlchemy fields to append to the new dataself.base object.
 
         """
         sqlalchemy_fields = {}
@@ -102,7 +106,7 @@ class ORMFactory(object):
                             self.get_sqlalchemy_type(
                                 field['type']), ForeignKey(reference_table, onupdate='CASCADE', ondelete='CASCADE'))
                     except Exception as e:
-                        print('An exception occured {}'.format(e))
+                        logger.error(e)
         return sqlalchemy_fields
 
     def get_sqlalchemy_type(self, data_type: str):
@@ -112,7 +116,7 @@ class ORMFactory(object):
             data_type (str): Tableschema type to look up in the table.
 
         Return:
-            object: SQLAlchemy type based on Tableschema mapping.
+            object: SQLAlchemy type self.based on Tableschema mapping.
         """
         try:
             return TABLESCHEMA_TO_SQLALCHEMY_TYPES[data_type]
@@ -148,6 +152,8 @@ class ORMFactory(object):
                     custom_table_name = f'{custom_table[1]}/{custom_table[2]}'
                     join_tables.append(custom_table_name)
 
+            logger.debug(f"found join tables: '{join_tables}'")
+
             fields = self.create_sqlalchemy_fields(
                 table_schema['fields'], table_schema['primaryKey'], foreign_keys)
 
@@ -162,8 +168,9 @@ class ORMFactory(object):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=exc.SAWarning)
-                    orm_class = type(model_name, (Base,), fields)
+                    orm_class = type(model_name, (self.base,), fields)
             except Exception as e:
+                logger.error(e)
                 orm_class = None
 
         return orm_class
@@ -174,6 +181,7 @@ class ORMFactory(object):
         Args:
             join_table (str): String name of the association table
         """
+        logger.info("processing " + join_table)
         tables = join_table.split('/')
 
         if JuncHolder.lookup_full_table(join_table) is not None:
@@ -182,12 +190,13 @@ class ORMFactory(object):
         try:
             association_table = Table(
                 join_table,
-                Base.metadata,
+                self.base.metadata,
                 Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id'), primary_key=True),
                 Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id'), primary_key=True),
                 extend_existing=True
             )
         except Exception as e:
-            print(f"Error on create junc table '{join_table}'; {str(e)}")
+            logger.warn(f"Error on create junc table '{join_table}'")
+            logger.error(e)
 
         JuncHolder.add_table(join_table, association_table)

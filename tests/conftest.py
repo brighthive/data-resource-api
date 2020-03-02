@@ -8,7 +8,19 @@ from data_resource_api.app.data_resource_manager import DataResourceManagerSync
 from data_resource_api.app.data_model_manager import DataModelManagerSync
 from pathlib import Path
 from time import sleep
-from tests.schemas import frameworks_descriptor, skills_descriptor
+from tests.schemas import (
+    frameworks_descriptor,
+    skills_descriptor,
+    credentials_descriptor,
+    programs_descriptor)
+
+from sqlalchemy.ext.declarative import declarative_base
+from data_resource_api.logging import LogFactory
+from data_resource_api.utils import exponential_backoff
+from data_resource_api.app.descriptor import Descriptor
+from data_resource_api.app.junc_holder import JuncHolder
+
+logger = LogFactory.get_console_logger('conftest')
 
 
 class PostgreSQLContainer(object):
@@ -52,7 +64,7 @@ class PostgreSQLContainer(object):
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
         except Exception as e:
-            print('Exception {}'.format(e))
+            logger.error(e)
 
         self.container = self.docker_client.containers.run(
             self.get_postgresql_image(),
@@ -61,11 +73,11 @@ class PostgreSQLContainer(object):
             name=self.config.CONTAINER_NAME,
             environment=self.db_environment,
             ports=self.db_ports)
-    
+
     def stop_if_running(self):
         try:
             running = self.docker_client.containers.get(self.config.CONTAINER_NAME)
-            print(f"Killing running container '{self.config.CONTAINER_NAME}'")
+            logger.info(f"Killing running container '{self.config.CONTAINER_NAME}'")
             running.stop()
         except Exception as e:
             if "404 Client Error: Not Found" in str(e):
@@ -81,8 +93,9 @@ class PostgreSQLContainer(object):
         if self.container is not None:
             self.container.stop()
 
+
 def delete_migration_artifacts():
-    print('Deleting migration artifacts...')
+    logger.info('Deleting migration artifacts...')
     rootdir = os.path.abspath('./migrations/versions')
 
     for file in os.listdir(os.fsencode(rootdir)):
@@ -93,7 +106,8 @@ def delete_migration_artifacts():
             continue
 
 
-class UpgradeFail(Exception): pass
+class UpgradeFail(Exception):
+    pass
 
 
 class Client():
@@ -112,7 +126,7 @@ class Client():
             self.upgrade_loop()
             return self.app.test_client()
         except UpgradeFail:
-            print("Failed to upgrade database.")
+            logger.error("Failed to upgrade database.")
 
     def initalize_objects(self):
         self.data_resource_manager = DataResourceManagerSync()
@@ -125,35 +139,42 @@ class Client():
         upgraded = False
         self.counter = 1
         self.counter_max = 10
+        exponential_time = exponential_backoff(1, 1.5)
+
         while not upgraded and self.counter <= self.counter_max:
             try:
                 with self.app.app_context():
-                    print("------------- running upgrade")
-                    self.data_model_manager.run_upgrade()
+                    logger.info("------------- running upgrade")
+                    self.data_model_manager.initalize_base_models()
 
                     if self.schema_dicts is None:
-                        print("------------- running monitor data resources")
+                        logger.info("------------- running monitor data resources")
                         self.data_resource_manager.monitor_data_resources()
-                        print("------------- running monitor data models")
+                        logger.info("------------- running monitor data models")
                         self.data_model_manager.monitor_data_models()
                     else:
                         for schema_dict in self.schema_dicts:
-                            print("------------- running monitor data resources")
-                            self.data_resource_manager.work_on_schema(schema_dict, "custom_schema")
-                            print("------------- running monitor data models")
-                            self.data_model_manager.work_on_schema(schema_dict, "custom_schema")
-                    
-                    self.data_model_manager.run_upgrade()
+                            logger.info("------------- running monitor data resources")
+                            self.data_resource_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
+                            logger.info("------------- running monitor data models")
+                            desc = Descriptor(schema_dict, "schemas_loaded_into_test_fixture")
+                            self.data_model_manager.process_descriptor(desc)
+
+                    self.data_model_manager.initalize_base_models()
                     upgraded = True
                     return True
 
             except Exception as e:
-                print(f"Not upgraded, sleeping... {self.counter}/{self.counter_max} time(s)")
+                logger.error(e)
+
+                sleep_time = exponential_time()
+                logger.info(f"Not upgraded, sleeping {sleep_time} seconds... {self.counter}/{self.counter_max} time(s)")
+
                 self.counter += 1
-                sleep(1)
-        
+                sleep(sleep_time)
+
         if self.counter > self.counter_max:
-            print("Max fail reached; stopping postgres container")
+            logger.info("Max fail reached; stopping postgres container")
             self.postgres.stop_container()
             raise UpgradeFail
 
@@ -168,7 +189,7 @@ def regular_client():
     Returns:
         client (object): The Flask test client for the application.
     """
-    client = Client()
+    client = Client([credentials_descriptor, programs_descriptor])
     yield client.run_and_return_test_client()
     client.stop_container()
 
@@ -180,8 +201,9 @@ def frameworks_skills_client():
     client.stop_container()
 
 
-# @pytest.fixture(scope='module')
-# def test_client():
-#     client = Client(custom_descriptor)
-#     yield client.run_and_return_test_client()
-#     client.stop_container()
+@pytest.fixture
+def base():
+    JuncHolder.reset()
+    base = declarative_base()
+    yield base
+    del base

@@ -18,7 +18,7 @@ from sqlalchemy import and_
 
 class ResourceHandler(object):
     def __init__(self):
-        self.logger = LogFactory.get_console_logger('data-model-manager')
+        self.logger = LogFactory.get_console_logger('resource-handler')
 
     def build_json_from_object(self, obj: object, restricted_fields: dict = []):
         resp = {key: str(value) if value is not None else '' for key, value in obj.__dict__.items(

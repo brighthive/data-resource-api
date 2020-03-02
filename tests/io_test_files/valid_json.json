@@ -1,0 +1,77 @@
+{
+    "api": {
+      "resource": "frameworks",
+      "methods": [
+        {
+          "get": {
+            "enabled": true,
+            "secured": false,
+            "grants": []
+          },
+          "post": {
+            "enabled": true,
+            "secured": false,
+            "grants": []
+          },
+          "custom": [
+            {
+              "resource": "/frameworks/skills",
+              "methods": [
+                {
+                  "get": {
+                    "enabled": true,
+                    "secured": false,
+                    "grants": []
+                  },
+                  "put": {
+                    "enabled": true,
+                    "secured": false,
+                    "grants": []
+                  },
+                  "patch": {
+                    "enabled": true,
+                    "secured": false,
+                    "grants": []
+                  },
+                  "delete": {
+                    "enabled": true,
+                    "secured": false,
+                    "grants": []
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "datastore": {
+      "tablename": "frameworks",
+      "restricted_fields": [],
+      "schema": {
+        "fields": [
+          {
+            "name": "id",
+            "title": "framework ID",
+            "description": "framework Desc",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "name",
+            "title": "framework name",
+            "description": "framework name",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "jsonb",
+            "title": "jsonb",
+            "type": "object",
+            "required": false
+          }
+        ],
+        "primaryKey": "id"
+      }
+    }
+  }

@@ -20,7 +20,7 @@ from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.descriptor import Descriptor
 from data_resource_api.app.junc_holder import JuncHolder
 
-logger = LogFactory.get_console_logger('data-model-manager')
+logger = LogFactory.get_console_logger('conftest')
 
 
 class PostgreSQLContainer(object):

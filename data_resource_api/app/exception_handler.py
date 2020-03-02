@@ -83,7 +83,7 @@ def handle_errors(e):
     if isinstance(e, ApiError):
         return e.get_message(), e.get_status_code()
 
-    logger = LogFactory.get_console_logger('data-model-manager')
+    logger = LogFactory.get_console_logger('exception-handler')
     logger.exception("Encountered an error while processing a request.")
 
     if isinstance(e, ApiUnhandledError):

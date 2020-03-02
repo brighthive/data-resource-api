@@ -11,7 +11,7 @@ from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 from data_resource_api.app.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
 
-logger = LogFactory.get_console_logger('data-model-manager')
+logger = LogFactory.get_console_logger('orm-factory')
 
 
 class ORMFactory(object):

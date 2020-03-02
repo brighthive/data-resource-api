@@ -2,7 +2,7 @@ import os
 import json
 from data_resource_api.logging import LogFactory
 
-logger = LogFactory.get_console_logger('data-model-manager')
+logger = LogFactory.get_console_logger('descriptor-utils')
 
 
 class DescriptorsGetter():

@@ -1,5 +1,8 @@
 import os
 import json
+from data_resource_api.logging import LogFactory
+
+logger = LogFactory.get_console_logger('data-model-manager')
 
 
 class DescriptorsGetter():
@@ -37,7 +40,11 @@ class DescriptorFileHelper():
         for directory in self.directories:
             self._check_if_path_exists(directory)
             for file_name in self._get_file_from_dir(directory):
-                yield DescriptorFromFile(directory, file_name).get_descriptor_obj()
+                try:
+                    yield DescriptorFromFile(directory, file_name).get_descriptor_obj()
+                except (Exception, RuntimeError) as e:
+                    logger.error(e)
+                    continue
 
     def _check_if_path_exists(self, dir_path):
         if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
@@ -68,7 +75,9 @@ class DescriptorFromFile():
                 try:
                     schema_dict = json.load(fh)
                 except Exception as e:
-                    raise e
+                    logger.info(f"Your JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'")
+                    logger.error(e)
+                    
         except Exception as e:
             raise RuntimeError(f"Error opening schema {file_name}")
 

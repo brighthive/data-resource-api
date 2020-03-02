@@ -30,10 +30,7 @@ class TestDescriptorGetterWithDir():
         # Expect an error is not raised (valid_json)
         next(descriptors)
 
-        # Expect an error is raised (invalid_json)
-        with pytest.raises(RuntimeError):
-            expect(next(descriptors)).to(equal(2))
-
+        # Expect the next item is skipped (invalid_json)
         with pytest.raises(StopIteration):
             next(descriptors)
 
@@ -48,9 +45,18 @@ class TestDescriptorGetterWithCustom():
 
         next(descriptors)
 
-# class TestDescriptorGetterWithDirAndCustom():
-    # def test_load_with_dir_and_custom(self):
-    #     desc = DescriptorsGetter([test_descriptor_dir], [frameworks_descriptor])
 
-    # def test_yields_descriptors_from_dir_and_custom(self):
-    #     pass
+class TestDescriptorGetterWithDirAndCustom():
+    def test_load_with_dir_and_custom(self):
+        desc = DescriptorsGetter([test_descriptor_dir], [frameworks_descriptor])
+
+    def test_yields_descriptors_from_dir_and_custom(self):
+        desc = DescriptorsGetter([test_descriptor_dir], [frameworks_descriptor])
+        descriptors = desc.iter_descriptors()
+
+        next(descriptors)
+
+        next(descriptors)
+
+        with pytest.raises(StopIteration):
+            next(descriptors)

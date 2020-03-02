@@ -46,7 +46,6 @@ class TestDescriptorGetterWithCustom():
         desc = DescriptorsGetter([], [frameworks_descriptor])
         descriptors = desc.iter_descriptors()
 
-        # Expect an error is not raiased (valid_json)
         next(descriptors)
 
 # class TestDescriptorGetterWithDirAndCustom():

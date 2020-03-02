@@ -119,11 +119,10 @@ class Descriptor():
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
 
-        # self.file_name = self._set_file_name(file_name, self.table_name)
-        self.file_name = file_name
+        self._set_file_name(file_name, self.table_name)
 
-    # def _set_file_name(self, file_name: str, table_name: str):
-    #     if file_name is None:
-    #         self.file_name = f"{table_name}.json"
-    #     else:
-    #         self.file_name = file_name
+    def _set_file_name(self, file_name: str, table_name: str):
+        if file_name == "":
+            self.file_name = f"{table_name}.json"
+        else:
+            self.file_name = file_name

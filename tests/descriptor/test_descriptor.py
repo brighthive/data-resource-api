@@ -27,3 +27,13 @@ class TestDescriptorClass():
         desc = Descriptor(frameworks_descriptor)
         api_schema = desc.api_schema
         expect(api_schema).to(equal(frameworks_descriptor['api']['methods'][0]))
+
+    def test_descriptor_with_no_file_name(self):
+        desc = Descriptor(frameworks_descriptor)
+        file_name = desc.file_name
+        expect(file_name).to(equal("frameworks.json"))
+
+    def test_descriptor_with_file_name(self):
+        desc = Descriptor(frameworks_descriptor, "asdf.json")
+        file_name = desc.file_name
+        expect(file_name).to(equal("asdf.json"))

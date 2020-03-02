@@ -18,6 +18,7 @@ class TestDescriptorGetterWithNothing():
         with pytest.raises(StopIteration):
             next(descriptors)
 
+
 class TestDescriptorGetterWithDir():
     def test_load_with_dir(self):
         desc = DescriptorsGetter([test_descriptor_dir])
@@ -36,11 +37,11 @@ class TestDescriptorGetterWithDir():
         with pytest.raises(StopIteration):
             next(descriptors)
 
+
 class TestDescriptorGetterWithCustom():
     def test_load_with_custom(self):
         desc = DescriptorsGetter([], [frameworks_descriptor])
 
-    @pytest.mark.xfail
     def test_yields_descriptors_from_custom(self):
         desc = DescriptorsGetter([], [frameworks_descriptor])
         descriptors = desc.iter_descriptors()

@@ -11,10 +11,26 @@ class DescriptorsGetter():
     iter_descriptors yields a Descriptor object
     """
     def __init__(self, directories: list = [], custom_descriptors: list = []):
-        # print(directories)
         self.directories = directories
+        self.custom_descriptors = custom_descriptors
 
     def iter_descriptors(self):
+        files = DescriptorFileHelper(self.directories).iter_files()
+        yield from files
+
+        descriptors = DescriptorCustomHelper(self.custom_descriptors).iter_descriptors()
+        yield from descriptors
+
+
+class DescriptorFileHelper():
+    """
+    This class when given a list of directories will handle yielding them
+    as Descriptor objects.
+    """
+    def __init__(self, directories: list):
+        self.directories = directories
+
+    def iter_files(self):
         yield from self._get_from_dir()
 
     def _get_from_dir(self):
@@ -31,25 +47,11 @@ class DescriptorsGetter():
         yield from [f for f in os.listdir(directory) if f.endswith('.json')]
 
 
-
-
-
-class DescriptorFileHelper():
-    def __init__(self, dir_path: str):
-        self.check_if_path_exists(dir_path)
-        self.get_only_json_files(dir_path)
-
-    # def check_if_path_exists(self, dir_path):
-    #     if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-    #         raise RunTimeError(f"Unable to locate schema directory '{dir_path}'")
-
-    
-    # # def get_only_json_files(self, dir_path):
-    #     # self.schemas = [f for f in os.listdir(dir_path) if f.endswith('.json')]
-
-
-
 class DescriptorFromFile():
+    """
+    This class takes a directory and file name and does logical checks on the file
+    and then exposes a Descriptor object.
+    """
     def __init__(self, schema_dir: str, file_name: str):
         self.check_if_the_file_is_a_directory(schema_dir, file_name)
         self.descriptor_obj = self.create_descriptor(schema_dir, file_name)
@@ -76,10 +78,20 @@ class DescriptorFromFile():
         return self.descriptor_obj
 
 
+class DescriptorCustomHelper():
+    def __init__(self, descriptors: list):
+        self.descriptors = descriptors
+
+    def iter_descriptors(self):
+        for descriptor in self.descriptors:
+            yield Descriptor(descriptor)
+
+
 class Descriptor():
     """
-    This is a utility class to encapsulate functions and operations
-    related to descriptor files.
+    This utility class encompasses frequent operations performed on descriptor dictionaries.
+
+    It reduces code reuse!
     """
     def __init__(self, descriptor: dict, file_name: str = ""):
         try:

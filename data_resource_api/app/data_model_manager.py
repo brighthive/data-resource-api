@@ -89,7 +89,11 @@ class DataModelManagerSync(object):
 
         while not db_active and retries <= max_retries:
             if retries != 0:
+<<<<<<< HEAD
                 self.logger.info(f'Sleeping with exponential backoff...')
+=======
+                self.logger.info(f'Sleeping for {retry_wait} seconds...')
+>>>>>>> master
                 exponential_sleep()
 
             retries += 1
@@ -120,6 +124,7 @@ class DataModelManagerSync(object):
 
         self.logger.info('Base models initalized.')
 
+<<<<<<< HEAD
     # TODO integration test?
     def restore_models_from_database(self) -> None:
         """This method will load all stored descriptor files from DB
@@ -143,6 +148,20 @@ class DataModelManagerSync(object):
 
         data_model = self.orm_factory.create_orm_from_dict(
             table_schema, table_name, api_schema)
+=======
+    def restore_models_from_database(self):
+        # query database for all jsonb in checksum table
+        json_descriptor_list = self.get_stored_descriptors()
+
+        # if json_descriptor_list is empty can we return?
+
+        # load each item into our models
+        for descriptor in json_descriptor_list:
+            table_name, table_schema, api_schema = self.split_metadata_from_descriptor(descriptor)
+            data_model = self.orm_factory.create_orm_from_dict(
+                table_schema, table_name, api_schema)
+
+>>>>>>> master
         return
 
     def get_sleep_interval(self):
@@ -290,6 +309,7 @@ class DataModelManagerSync(object):
         session.close()
         return checksum
 
+<<<<<<< HEAD
     def get_stored_descriptors(self) -> list:
         """
         Gets stored json models from database.
@@ -303,10 +323,36 @@ class DataModelManagerSync(object):
             query = session.query(Checksum)
             for _row in query.all():
                 descriptor_list.append(_row.descriptor_json)
+=======
+    def get_stored_descriptors(self):
+        """
+        Gets stored json models from database.
+
+        """
+        session = Session()
+        descriptor_list = []
+        try:
+            query = session.query(Checksum)
+            for _row in query.all():
+                descriptor_list.append(_row.descriptor_json)  # may want to just yield this?
+>>>>>>> master
         except Exception as e:
             self.logger.exception('Error retrieving stored models')
         session.close()
 
+<<<<<<< HEAD
+=======
+        #
+        # move this to its own function that restore_models_from_database is calling
+        # and take the yield from get_stored_models for the in variable
+        #
+        # load each item into a json object and put in a list
+        # json_descriptors_list = []
+        # for descriptor in descriptor_list:
+        #     descriptor_dict = json.load(descriptor)
+        #     json_descriptors_list.append(descriptor_dict)
+
+>>>>>>> master
         return descriptor_list
 
     def get_alembic_config(self):
@@ -369,6 +415,7 @@ class DataModelManagerSync(object):
         for descriptor in descriptors.get_descriptors():
             self.process_descriptor(descriptor)
 
+<<<<<<< HEAD
 
         # Test
         
@@ -378,6 +425,23 @@ class DataModelManagerSync(object):
         schemas = None
 
         if self.load_descriptors_from_dir:
+=======
+        # Do some error checking on the provided path
+        if not os.path.exists(schema_dir) or not os.path.isdir(schema_dir):
+            self.logger.exception(
+                f"Unable to locate schema directory '{schema_dir}'")
+
+        # iterate over every descriptor file
+        schemas = os.listdir(schema_dir)
+        for schema in schemas:
+            # ignore folders
+            if os.path.isdir(os.path.join(schema_dir, schema)):
+                self.logger.exception(
+                    f"Cannot open a nested schema directory '{schema}'")
+                continue
+
+            # Open the file and store its json data and file name
+>>>>>>> master
             try:
                 descriptor_file_helper = DescriptorFileHelper(schema_dir)
             except Exception as e:
@@ -400,7 +464,17 @@ class DataModelManagerSync(object):
 
         self.logger.info('Completed check of data models')
 
+<<<<<<< HEAD
     # TODO refactor this into smaller functions
+=======
+    def split_metadata_from_descriptor(self, schema_dict: dict):
+        table_name = schema_dict['datastore']['tablename']
+        table_schema = schema_dict['datastore']['schema']
+        api_schema = schema_dict['api']['methods'][0]
+
+        return table_name, table_schema, api_schema
+
+>>>>>>> master
     def work_on_schema(self, schema_dict: dict, schema_filename: str):
         """Operate on a schema dict for data model changes.
 
@@ -414,11 +488,16 @@ class DataModelManagerSync(object):
         self.logger.info(f"Looking at {schema_filename}")
 
         try:
+<<<<<<< HEAD
             # Extract data for easier use
             desc = Descriptor(schema_dict)
             table_name = desc.table_name
             table_schema = desc.table_schema
             api_schema = desc.api_schema
+=======
+            # Extract data from the json
+            table_name, table_schema, api_schema = self.split_metadata_from_descriptor(schema_dict)
+>>>>>>> master
 
             # calculate the checksum for this json
             model_checksum = md5(
@@ -437,13 +516,22 @@ class DataModelManagerSync(object):
                 if not self.data_model_changed(schema_filename, model_checksum):
                     self.logger.info(f"{schema_filename}: Unchanged.")
                     return
+                
+                self.logger.info(f"{schema_filename}: Found changed.")
 
+<<<<<<< HEAD
                 self.logger.info(f"{schema_filename}: Found changed.")
 
                 # Get the index for this descriptor within our local metadata
                 data_model_index = self.get_data_model_index(
                     schema_filename)
 
+=======
+                # Get the index for this descriptor within our local metadata
+                data_model_index = self.get_data_model_index(
+                    schema_filename)
+                
+>>>>>>> master
                 # Create the sql alchemy orm
                 data_model = self.orm_factory.create_orm_from_dict(
                     table_schema, table_name, api_schema)
@@ -484,7 +572,11 @@ class DataModelManagerSync(object):
                     self.revision(table_name)
                     self.upgrade()
                     self.add_model_checksum(
+<<<<<<< HEAD
                         table_name, model_checksum, schema_dict.descriptor)
+=======
+                        table_name, model_checksum, schema_dict)
+>>>>>>> master
                 del data_model  # this can probably be removed?
 
                 self.logger.info('Post2: ' + str(Base.metadata.tables.keys()))

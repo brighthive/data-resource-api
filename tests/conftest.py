@@ -16,7 +16,7 @@ from tests.schemas import (
 from sqlalchemy.ext.declarative import declarative_base
 from data_resource_api.logging import LogFactory
 from data_resource_api.utils import exponential_backoff
-
+from data_resource_api.app.descriptor import Descriptor
 
 logger = LogFactory.get_console_logger('data-model-manager')
 
@@ -155,7 +155,8 @@ class Client():
                             logger.info("------------- running monitor data resources")
                             self.data_resource_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
                             logger.info("------------- running monitor data models")
-                            self.data_model_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
+                            desc = Descriptor(schema_dict, "schemas_loaded_into_test_fixture")
+                            self.data_model_manager.process_descriptor(desc)
 
                     self.data_model_manager.initalize_base_models()
                     upgraded = True

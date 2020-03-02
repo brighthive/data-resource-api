@@ -312,18 +312,6 @@ class DataModelManagerSync(object):
             query = session.query(Checksum)
             for _row in query.all():
                 descriptor_list.append(_row.descriptor_json)
-
-    def get_stored_descriptors(self):
-        """
-        Gets stored json models from database.
-
-        """
-        session = Session()
-        descriptor_list = []
-        try:
-            query = session.query(Checksum)
-            for _row in query.all():
-                descriptor_list.append(_row.descriptor_json)  # may want to just yield this?
         except Exception as e:
             self.logger.exception('Error retrieving stored models')
         session.close()

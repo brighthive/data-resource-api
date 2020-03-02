@@ -139,6 +139,19 @@ class DataModelManagerSync(object):
 
         data_model = self.orm_factory.create_orm_from_dict(
             table_schema, table_name, api_schema)
+
+    def restore_models_from_database(self):
+        # query database for all jsonb in checksum table
+        json_descriptor_list = self.get_stored_descriptors()
+
+        # if json_descriptor_list is empty can we return?
+
+        # load each item into our models
+        for descriptor in json_descriptor_list:
+            table_name, table_schema, api_schema = self.split_metadata_from_descriptor(descriptor)
+            data_model = self.orm_factory.create_orm_from_dict(
+                table_schema, table_name, api_schema)
+
         return
 
     def get_sleep_interval(self):
@@ -299,6 +312,18 @@ class DataModelManagerSync(object):
             query = session.query(Checksum)
             for _row in query.all():
                 descriptor_list.append(_row.descriptor_json)
+
+    def get_stored_descriptors(self):
+        """
+        Gets stored json models from database.
+
+        """
+        session = Session()
+        descriptor_list = []
+        try:
+            query = session.query(Checksum)
+            for _row in query.all():
+                descriptor_list.append(_row.descriptor_json)  # may want to just yield this?
         except Exception as e:
             self.logger.exception('Error retrieving stored models')
         session.close()
@@ -360,41 +385,10 @@ class DataModelManagerSync(object):
             responsbility of iterating through a directory to find schema files to load.
         """
         self.logger.info('Checking data models')
-        
+
         descriptors = DescriptorsGetter(self.descriptor_directories, self.custom_descriptors)
         for descriptor in descriptors.iter_descriptors():
-            ## got a descriptor object
-            self.logger.info("---------------------")
-            self.logger.info("---------------------")
-            self.logger.info(descriptor.file_name)
-            self.logger.info(type(descriptor))
-            self.logger.info("---------------------")
             self.process_descriptor(descriptor)
-
-        # ## TODO load from dir or from given list
-        # schema_dir = self.get_data_resource_schema_path()
-        # schemas = None
-
-        # if self.load_descriptors_from_dir:
-        #     try:
-        #         descriptor_file_helper = DescriptorFileHelper(schema_dir)
-        #     except Exception as e:
-        #         # self.logger.error(e)
-        #         raise e
-
-        #     schemas = descriptor_file_helper.schemas
-        # else:
-        #     schemas = self.descriptors_to_load
-
-        # for schema_filename in schemas:
-        #     schema_dict = {}  # none?
-        #     try:
-        #         schema_dict = DescriptorFromFile(schema_dir, schema_filename).get_descriptor_obj()
-        #     except Exception as e:
-        #         raise e
-
-        #     # Pass the json data and filename to the worker function
-        #     self.work_on_schema(schema_dict, schema_filename)
 
         self.logger.info('Completed check of data models')
 
@@ -483,6 +477,7 @@ class DataModelManagerSync(object):
                     self.upgrade()
                     self.add_model_checksum(
                         table_name, model_checksum, schema_dict.descriptor)
+
                 del data_model  # this can probably be removed?
 
                 self.logger.info('Post2: ' + str(Base.metadata.tables.keys()))

@@ -116,7 +116,7 @@ class DataModelManagerSync(object):
 
         self.logger.info('Base models initalized.')
 
-    # TODO integration test?
+    # TODO integration test
     def restore_models_from_database(self) -> None:
         """This method will load all stored descriptor files from DB
         into SQL Alchemy ORM models.
@@ -128,9 +128,6 @@ class DataModelManagerSync(object):
         for descriptor in json_descriptor_list:
             self.load_descriptor_into_sql_alchemy_model(descriptor)
 
-        return
-
-    # unit test TODO?
     def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
         desc = Descriptor(descriptor)
         table_schema = desc.table_schema
@@ -140,19 +137,15 @@ class DataModelManagerSync(object):
         data_model = self.orm_factory.create_orm_from_dict(
             table_schema, table_name, api_schema)
 
-    def restore_models_from_database(self):
+    def restore_models_from_database(self) -> None:
         # query database for all jsonb in checksum table
         json_descriptor_list = self.get_stored_descriptors()
-
-        # if json_descriptor_list is empty can we return?
 
         # load each item into our models
         for descriptor in json_descriptor_list:
             table_name, table_schema, api_schema = self.split_metadata_from_descriptor(descriptor)
             data_model = self.orm_factory.create_orm_from_dict(
                 table_schema, table_name, api_schema)
-
-        return
 
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.

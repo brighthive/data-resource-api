@@ -42,7 +42,7 @@ class DescriptorFileHelper():
             for file_name in self._get_file_from_dir(directory):
                 try:
                     yield DescriptorFromFile(directory, file_name).get_descriptor_obj()
-                except (Exception, RuntimeError) as e:
+                except (Exception, ValueError, RuntimeError) as e:
                     logger.error(e)
                     continue
 
@@ -60,34 +60,36 @@ class DescriptorFromFile():
     and then exposes a Descriptor object.
     """
     def __init__(self, schema_dir: str, file_name: str):
-        self.check_if_the_file_is_a_directory(schema_dir, file_name)
-        self.descriptor_obj = self.create_descriptor(schema_dir, file_name)
-
-    def check_if_the_file_is_a_directory(self, schema_dir: str, file_name: str):
-        if os.path.isdir(os.path.join(schema_dir, file_name)):
-            raise RuntimeError(f"Cannot open a directory '{file_name}' as a descriptor.")
-
-    def create_descriptor(self, schema_dir: str, file_name: str):
-        self.descriptor_obj = {}
-        # Open the file and store its json data and file name
-        try:
-            with open(os.path.join(schema_dir, file_name), 'r') as fh:
-                try:
-                    schema_dict = json.load(fh)
-                except Exception as e:
-                    logger.info(f"Your JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'")
-                    logger.error(e)
-                    
-        except Exception as e:
-            raise RuntimeError(f"Error opening schema {file_name}")
-
-        return Descriptor(schema_dict, file_name)
+        self._check_if_the_file_is_a_directory(schema_dir, file_name)
+        self.descriptor_obj = self._create_descriptor(schema_dir, file_name)
 
     def get_descriptor_obj(self):
         return self.descriptor_obj
 
+    def _check_if_the_file_is_a_directory(self, schema_dir: str, file_name: str):
+        if os.path.isdir(os.path.join(schema_dir, file_name)):
+            raise RuntimeError(f"Cannot open a directory '{file_name}' as a descriptor.")
+
+    def _create_descriptor(self, schema_dir: str, file_name: str):
+        try:
+            with open(os.path.join(schema_dir, file_name), 'r') as fh:
+                try:
+                    descriptor_dict = json.load(fh)
+                except ValueError as e:
+                    logger.info(f"JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'")
+                    logger.error(e)
+
+        except Exception as e:
+            raise RuntimeError(f"Error opening schema {file_name}")
+
+        return Descriptor(descriptor_dict, file_name)
+
 
 class DescriptorCustomHelper():
+    """
+    This class is intended to receieve a list of descriptor dictionaries
+    and provides an interface to yield Descriptor objects from that list.
+    """
     def __init__(self, descriptors: list):
         self.descriptors = descriptors
 
@@ -98,30 +100,33 @@ class DescriptorCustomHelper():
 
 class Descriptor():
     """
-    This utility class encompasses frequent operations performed on descriptor dictionaries.
+    This utility class encompasses frequent operations performed on
+    descriptor dictionaries.
 
     It reduces code reuse!
     """
     def __init__(self, descriptor: dict, file_name: str = ""):
+        # add validation checker here
+
         try:
             self.table_name = descriptor['datastore']['tablename']
         except KeyError:
-            raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+            raise RuntimeError("Error finding data in descriptor. Descriptor file may not be valid.")
 
         try:
             self.table_schema = descriptor['datastore']['schema']
         except KeyError:
-            raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+            raise RuntimeError("Error finding data in descriptor. Descriptor file may not be valid.")
 
         try:
             self.api_schema = descriptor['api']['methods'][0]
         except KeyError:
-            raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+            raise RuntimeError("Error finding data in descriptor. Descriptor file may not be valid.")
 
         try:
             self.data_resource_name = descriptor['api']['resource']
         except KeyError:
-            raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")
+            raise RuntimeError("Error finding data in descriptor. Descriptor file may not be valid.")
 
         try:
             self.descriptor = descriptor

@@ -16,7 +16,12 @@ from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import engine, Base, Session, Checksum
 from data_resource_api.logging import LogFactory
 from data_resource_api.app.exception_handler import handle_errors
-from data_resource_api.app.descriptor import Descriptor
+from data_resource_api.app.descriptor import (
+    Descriptor,
+    DescriptorFileHelper,
+    DescriptorFromFile,
+    DescriptorsGetter)
+from data_resource_api.utils import exponential_backoff
 
 
 class DataResource(object):
@@ -70,7 +75,7 @@ class DataResourceManagerSync(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, descriptors: list = []):
         self.data_resources: DataResource = []
         self.app_config = ConfigurationFactory.from_env()
         self.app = None
@@ -80,13 +85,104 @@ class DataResourceManagerSync(object):
         self.data_resource_factory = DataResourceFactory()
         self.logger = LogFactory.get_console_logger('data-resource-manager')
 
+        self.descriptor_directories = []
+        self.descriptor_directories.append(self.get_data_resource_schema_path())
+        self.custom_descriptors = descriptors
+
     def run(self):
+        # self.wait_for_db()
+        # self.restore_models_from_database()
+
         while True:
-            self.logger.info('Data Resource Manager Running...')
-            self.monitor_data_resources()
-            self.logger.info('Data Resource Manager Sleeping for {} seconds...'.format(
-                self.get_sleep_interval()))
-            sleep(self.get_sleep_interval())
+            sleep_time = 5
+            # sleep_time = self.get_sleep_interval()
+
+            try:
+                self.logger.info('Data Resource Manager Running...')
+                self.logger.info(list(Base.metadata.tables.keys()))
+                self.monitor_data_models()
+            except Exception as e:
+                self.logger.error(e)
+
+            self.logger.info(f'Data Resource Manager Sleeping for {sleep_time} seconds...')
+            sleep(sleep_time)
+
+    # def wait_for_db(self):
+    #     db_active = False
+    #     max_retries = 10
+    #     retries = 0
+
+    #     exponential_time = exponential_backoff(1, 1.5)
+
+    #     while not db_active and retries <= max_retries:
+    #         if retries != 0:
+    #             sleep_time = exponential_time()
+    #             self.logger.info(f'Sleeping for {sleep_time} with exponential backoff...')
+    #             sleep(sleep_time)
+
+    #         retries += 1
+
+    #         self.logger.info('Checking database availability...')
+    #         try:
+    #             self.logger.info('Looking for DB...')
+    #             session = Session()
+    #             data = session.query(Checksum).all()
+    #             db_active = True
+    #             self.logger.info('Successfully connected to DB.')
+    #         except Exception as e:
+    #             self.logger.info('Hit exception looking for checksum...')
+    #             # UndefinedTable
+    #             if e.code == 'f405':
+    #                 db_active = True
+    #                 self.logger.info('Successfully connected to DB.')
+
+    #             elif e.code == 'e3q8':
+    #                 self.logger.info('Database is not available yet exception.')
+    #                 self.logger.info(
+    #                     'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
+    #             else:
+    #                 self.logger.exception(f'Error occured upgrading database.')
+
+    #     self.logger.info('Connected to DB.')
+
+    # def restore_models_from_database(self) -> None:
+    #     """This method will load all stored descriptor files from DB
+    #     into SQL Alchemy ORM models.
+    #     """
+    #     # query database for all jsonb in checksum table
+    #     json_descriptor_list = self.get_stored_descriptors()
+
+    #     # load each item into our models
+    #     for descriptor in json_descriptor_list:
+    #         self.load_descriptor_into_sql_alchemy_model(descriptor)
+
+    # def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
+    #     desc = Descriptor(descriptor)
+    #     table_schema = desc.table_schema
+    #     table_name = desc.table_name
+    #     api_schema = desc.api_schema
+
+    #     data_model = self.orm_factory.create_orm_from_dict(
+    #         table_schema, table_name, api_schema)
+
+    # def get_stored_descriptors(self) -> list:
+    #     """
+    #     Gets stored json models from database.
+
+    #     Returns:
+    #         list: List of JSON dictionaries
+    #     """
+    #     session = Session()
+    #     descriptor_list = []  # list of json dict
+    #     try:
+    #         query = session.query(Checksum)
+    #         for _row in query.all():
+    #             descriptor_list.append(_row.descriptor_json)
+    #     except Exception as e:
+    #         self.logger.exception('Error retrieving stored models')
+    #     session.close()
+
+    #     return descriptor_list
 
     def create_app(self):
         """Create the base Flask application.
@@ -206,59 +302,48 @@ class DataResourceManagerSync(object):
         session.close()
         return checksum
 
-    def monitor_data_resources(self):
-        """Monitor all data resources.
+    def monitor_data_models(self):
+        """Wraps monitor data models for changes.
+
+        Note:
+            This method wraps the core worker for this class. This method has the
+            responsbility of iterating through a directory to find schema files to load.
         """
-        if self.api is None or self.app is None:
-            self.logger.info("Flask and API have not been initalized yet.")
-            return
+        self.logger.info('Checking data models')
 
-        self.logger.info('Checking data resources...')
+        descriptors = DescriptorsGetter(self.descriptor_directories, self.custom_descriptors)
+        for descriptor in descriptors.iter_descriptors():
+            self.process_descriptor(descriptor)
 
-        # Get a configured schema dir
-        schema_dir = self.get_data_resource_schema_path()
-        # Check that the path exists and that it is a directory
-        schema_dir = self.get_data_resource_schema_path()
+        self.logger.info('Completed check of data models')
 
-        try:
-            descriptor_file_helper = DescriptorFileHelper(schema_dir)
-        except Exception as e:
-            # self.logger.error(e)
-            raise e
-
-        for schema_filename in descriptor_file_helper.schemas:
-            schema_dict = {}
-            try:
-                schema_dict = DescriptorFromFile(schema_dir, schema_filename).get_descriptor_obj()
-            except Exception as e:
-                raise e
-
-            self.work_on_schema(schema_dict, schema_file)
-
-        self.logger.info('Completed check of data resources')
-
-    def work_on_schema(self, schema_dict: dict, schema_file: str):
+    def process_descriptor(self, schema_dict: object):
         """Does data resource changes based on a given schema.
         """
+        schema_filename = schema_dict.file_name
+        self.logger.info(f"Looking at {schema_filename}")
+
         try:
+            # Extract data for easier use
+            data_resource_name = schema_dict.data_resource_name
+            table_name = schema_dict.table_name
+            table_schema = schema_dict.table_schema
+            api_schema = schema_dict.api_schema
+
+            self.logger.info("1")
+
+            # calculate the checksum for this json
             data_resource_checksum = hashlib.md5(
                 json.dumps(
-                    schema_dict,
+                    table_schema,
                     sort_keys=True
                 ).encode('utf-8')
             ).hexdigest()
 
-            desc = Descriptor(schema_dict)
-            table_name = desc.table_name
-            table_schema = desc.table_schema
-            api_schema = desc.api_schema
-            data_resource_name = desc.data_resource_name
+            self.logger.info("2")
+            restricted_fields = schema_dict.restricted_fields
 
-            try:
-                restricted_fields = desc.descriptor['datastore']['restricted_fields']
-            except KeyError:
-                restricted_fields = []
-
+            self.logger.info("3")
             if self.data_resource_exists(data_resource_name):
 
                 # determine if api changed

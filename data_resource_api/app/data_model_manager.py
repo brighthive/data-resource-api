@@ -137,16 +137,6 @@ class DataModelManagerSync(object):
         data_model = self.orm_factory.create_orm_from_dict(
             table_schema, table_name, api_schema)
 
-    def restore_models_from_database(self) -> None:
-        # query database for all jsonb in checksum table
-        json_descriptor_list = self.get_stored_descriptors()
-
-        # load each item into our models
-        for descriptor in json_descriptor_list:
-            table_name, table_schema, api_schema = self.split_metadata_from_descriptor(descriptor)
-            data_model = self.orm_factory.create_orm_from_dict(
-                table_schema, table_name, api_schema)
-
     def get_sleep_interval(self):
         """Retrieve the thread's sleep interval.
 
@@ -385,7 +375,7 @@ class DataModelManagerSync(object):
             to be reconstructed by each individual worker.
         """
         schema_filename = schema_dict.file_name
-        self.logger.info(f"Looking at {schema_filename}")
+        self.logger.debug(f"Looking at {schema_filename}")
 
         try:
             # Extract data for easier use

@@ -129,6 +129,11 @@ class Descriptor():
             raise RuntimeError("Error finding data in descriptor. Descriptor file may not be valid.")
 
         try:
+            self.restricted_fields = descriptor['datastore']['restricted_fields']
+        except KeyError:
+            self.restricted_fields = []
+
+        try:
             self.descriptor = descriptor
         except KeyError:
             raise RuntimeError("Error finding data in descritpor. Descriptor file may not be valid.")

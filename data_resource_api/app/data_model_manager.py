@@ -391,17 +391,17 @@ class DataModelManagerSync(object):
                 ).encode('utf-8')
             ).hexdigest()
 
-            self.logger.info('Pre: ' + str(Base.metadata.tables.keys()))
+            self.logger.debug('Pre: ' + str(Base.metadata.tables.keys()))
 
             # Check if data model exists by checking if we have stored metadata about it
             if self.data_model_exists(schema_filename):
-                self.logger.info(f"{schema_filename}: Found existing.")
+                self.logger.debug(f"{schema_filename}: Found existing.")
                 # check if the cached db checksum has changed from the new file checksum
                 if not self.data_model_changed(schema_filename, model_checksum):
-                    self.logger.info(f"{schema_filename}: Unchanged.")
+                    self.logger.debug(f"{schema_filename}: Unchanged.")
                     return
                 
-                self.logger.info(f"{schema_filename}: Found changed.")
+                self.logger.debug(f"{schema_filename}: Found changed.")
 
                 # Get the index for this descriptor within our local metadata
                 data_model_index = self.get_data_model_index(
@@ -418,13 +418,13 @@ class DataModelManagerSync(object):
                     table_name, model_checksum)
                 del data_model
 
-                self.logger.info('Post1: ' + Base.metadata.tables.keys())
+                self.logger.debug('Post1: ' + Base.metadata.tables.keys())
 
                 # store metadata for descriptor locally
                 self.data_model_descriptors[data_model_index].model_checksum = model_checksum
 
             else:
-                self.logger.info(f"{schema_filename}: Unseen before now.")
+                self.logger.debug(f"{schema_filename}: Unseen before now.")
                 # Create the metadata store for descriptor
                 data_model_descriptor = DataModelDescriptor(
                     schema_filename, table_name, model_checksum)
@@ -451,13 +451,13 @@ class DataModelManagerSync(object):
 
                 del data_model  # this can probably be removed?
 
-                self.logger.info('Post2: ' + str(Base.metadata.tables.keys()))
+                self.logger.debug('Post2: ' + str(Base.metadata.tables.keys()))
 
         except Exception as e:
             self.logger.exception(
                 f"Error loading data resource schema '{schema_filename}'")
 
-        self.logger.info('Post3: ' + str(Base.metadata.tables.keys()))
+        self.logger.debug('Post3: ' + str(Base.metadata.tables.keys()))
 
 
 class DataModelManager(Thread, DataModelManagerSync):

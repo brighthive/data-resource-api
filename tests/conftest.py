@@ -129,7 +129,7 @@ class Client():
             try:
                 with self.app.app_context():
                     print("------------- running upgrade")
-                    self.data_model_manager.run_upgrade()
+                    self.data_model_manager.initalize_base_models()
 
                     if self.schema_dicts is None:
                         print("------------- running monitor data resources")
@@ -143,7 +143,7 @@ class Client():
                             print("------------- running monitor data models")
                             self.data_model_manager.work_on_schema(schema_dict, "custom_schema")
                     
-                    self.data_model_manager.run_upgrade()
+                    self.data_model_manager.initalize_base_models()
                     upgraded = True
                     return True
 

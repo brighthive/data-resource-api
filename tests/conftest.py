@@ -15,6 +15,7 @@ from tests.schemas import (
     programs_descriptor)
 from sqlalchemy.ext.declarative import declarative_base
 from data_resource_api.logging import LogFactory
+from data_resource_api.utils import exponential_backoff
 
 
 logger = LogFactory.get_console_logger('data-model-manager')
@@ -136,6 +137,8 @@ class Client():
         upgraded = False
         self.counter = 1
         self.counter_max = 10
+        exponential_time = exponential_backoff(1, 1.5)
+
         while not upgraded and self.counter <= self.counter_max:
             try:
                 with self.app.app_context():
@@ -160,9 +163,12 @@ class Client():
 
             except Exception as e:
                 logger.error(e)
-                logger.info(f"Not upgraded, sleeping... {self.counter}/{self.counter_max} time(s)")
+
+                sleep_time = exponential_time()
+                logger.info(f"Not upgraded, sleeping {sleep_time} seconds... {self.counter}/{self.counter_max} time(s)")
+
                 self.counter += 1
-                sleep(1)
+                sleep(sleep_time)
 
         if self.counter > self.counter_max:
             logger.info("Max fail reached; stopping postgres container")

@@ -20,6 +20,7 @@ from data_resource_api import ConfigurationFactory
 from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
 from data_resource_api.db import Base, Session, Log, Checksum
 from data_resource_api.logging import LogFactory
+from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.descriptor import (
     Descriptor,
     DescriptorFileHelper,
@@ -79,20 +80,13 @@ class DataModelManagerSync(object):
         max_retries = 10
         retries = 0
 
-        # needs unit tests
-        def sleep_exponential_backoff(wait_time, exponential_rate):
-            def wait_func():
-                nonlocal wait_time
-                wait_time *= exponential_rate
-                sleep(wait_time)
-            return wait_func
-
-        exponential_sleep = sleep_exponential_backoff(1, 1.5)
+        exponential_time = exponential_backoff(1, 1.5)
 
         while not db_active and retries <= max_retries:
             if retries != 0:
-                self.logger.info(f'Sleeping with exponential backoff...')
-                exponential_sleep()
+                sleep_time = exponential_time()
+                self.logger.info(f'Sleeping for {sleep_time} with exponential backoff...')
+                sleep(sleep_time)
 
             retries += 1
 

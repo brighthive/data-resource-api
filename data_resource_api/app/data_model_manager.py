@@ -437,7 +437,7 @@ class DataModelManagerSync(object):
                 if not self.data_model_changed(schema_filename, model_checksum):
                     self.logger.info(f"{schema_filename}: Unchanged.")
                     return
-
+                
                 self.logger.info(f"{schema_filename}: Found changed.")
 
                 # Get the index for this descriptor within our local metadata

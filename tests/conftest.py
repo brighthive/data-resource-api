@@ -150,14 +150,17 @@ class Client():
                     if self.schema_dicts is None:
                         logger.info("------------- running monitor data resources")
                         self.data_resource_manager.monitor_data_resources()
+                        
                         logger.info("------------- running monitor data models")
                         self.data_model_manager.monitor_data_models()
                     else:
                         for schema_dict in self.schema_dicts:
-                            logger.info("------------- running monitor data resources")
-                            self.data_resource_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
-                            logger.info("------------- running monitor data models")
                             desc = Descriptor(schema_dict, "schemas_loaded_into_test_fixture")
+
+                            logger.info("------------- running monitor data resources")
+                            self.data_resource_manager.process_descriptor(desc)
+
+                            logger.info("------------- running monitor data models")                            
                             self.data_model_manager.process_descriptor(desc)
 
                     self.data_model_manager.initalize_base_models()

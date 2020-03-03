@@ -68,6 +68,56 @@ class DataModelManagerSync(object):
             
         self.custom_descriptors = descriptors
 
+    # Config fns
+    def get_sleep_interval(self):
+        """Retrieve the thread's sleep interval.
+
+        Returns:
+            int: The sleep interval (in seconds) for the thread.
+
+        Note:
+            The method will look for an enviroment variable (SLEEP_INTERVAL).
+            If the environment variable isn't set or cannot be parsed as an integer,
+            the method returns the default interval of 30 seconds.
+
+        """
+
+        return self.app_config.DATA_MODEL_SLEEP_INTERVAL
+
+    def get_data_resource_schema_path(self):
+        """Retrieve the path to look for data resource specifications.
+
+        Returns:
+            str: The search path for data resource schemas.
+
+        Note:
+            The application will look for an environment variable named DATA_RESOURCE_PATH
+            and if it is not found will revert to the default path (i.e. /path/to/application/schema).
+
+        """
+
+        return os.getenv(
+            'DATA_RESOURCE_PATH', os.path.join(self.app_config.ROOT_PATH, 'schema'))
+
+    def get_alembic_config(self):
+        """ Load the Alembic configuration.
+
+        Returns:
+            object, object: The Alembic configuration and migration directory.
+        """
+
+        try:
+            alembic_config = Config(os.path.join(
+                self.app_config.ROOT_PATH, 'alembic.ini'))
+            migrations_dir = os.path.join(
+                self.app_config.ROOT_PATH, 'migrations', 'versions')
+            if not os.path.exists(migrations_dir) or not os.path.isdir(migrations_dir):
+                migrations_dir = None
+            return alembic_config, migrations_dir
+        except Exception as e:
+            return None, None
+
+    # DMM core fns
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
         self.restore_models_from_database()
@@ -149,218 +199,7 @@ class DataModelManagerSync(object):
 
         data_model = self.orm_factory.create_orm_from_dict(
             table_schema, table_name, api_schema)
-
-    def get_sleep_interval(self):
-        """Retrieve the thread's sleep interval.
-
-        Returns:
-            int: The sleep interval (in seconds) for the thread.
-
-        Note:
-            The method will look for an enviroment variable (SLEEP_INTERVAL).
-            If the environment variable isn't set or cannot be parsed as an integer,
-            the method returns the default interval of 30 seconds.
-
-        """
-
-        return self.app_config.DATA_MODEL_SLEEP_INTERVAL
-
-    def get_data_resource_schema_path(self):
-        """Retrieve the path to look for data resource specifications.
-
-        Returns:
-            str: The search path for data resource schemas.
-
-        Note:
-            The application will look for an environment variable named DATA_RESOURCE_PATH
-            and if it is not found will revert to the default path (i.e. /path/to/application/schema).
-
-        """
-
-        return os.getenv(
-            'DATA_RESOURCE_PATH', os.path.join(self.app_config.ROOT_PATH, 'schema'))
-
-    def data_model_exists(self, schema_filename):
-        """Checks if a data model is already registered with the data model manager.
-
-        Args:
-            schema_filename (str): Name of the schema file on disk.
-
-        Returns:
-            bool: True if the data model exists. False if not.
-
-        """
-        exists = False
-        for data_model in self.data_model_descriptors:
-            if data_model.schema_filename.lower() == schema_filename.lower():
-                exists = True
-                break
-        return exists
-
-    def data_model_changed(self, schema_filename, checksum):
-        """Checks if the medata for a data model has been changed.
-
-        Args:
-            schema_filename (str): Name of the schema file on disk.
-            checksum (str): Computed MD5 checksum of the schema.
-
-        Returns:
-            bool: True if the data model has been changed. False if not.
-
-        """
-        changed = False
-        for data_model in self.data_model_descriptors:
-            if data_model.schema_filename.lower() == schema_filename.lower():
-                if data_model.model_checksum != checksum:
-                    changed = True
-                break
-        return changed
-
-    def get_data_model_index(self, schema_filename):
-        """Checks if the medata for a data model has been changed.
-
-        Args:
-           schema_filename (str): Name of the schema file on disk.
-
-        Returns:
-            int: Index of the schema stored in memory, or -1 if not found.
-        """
-        index = -1
-        for idx, data_model in enumerate(self.data_model_descriptors):
-            if data_model.schema_filename.lower() == schema_filename.lower():
-                index = idx
-                break
-        return index
-
-    def add_model_checksum(self, table_name: str, model_checksum: str = '0', descriptor_json: dict = {}):
-        """Adds a new checksum for a data model.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-            checksum (str): Checksum value.
-        """
-        session = Session()
-        try:
-            checksum = Checksum()
-            checksum.data_resource = table_name
-            checksum.model_checksum = model_checksum
-            checksum.descriptor_json = descriptor_json
-            session.add(checksum)
-            session.commit()
-        except Exception as e:
-            self.logger.exception('Error adding checksum')
-        session.close()
-
-    def update_model_checksum(self, table_name: str, model_checksum: str):
-        """Updates a checksum for a data model.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-            checksum (str): Checksum value.
-
-        Returns:
-            bool: True if checksum was updated. False otherwise.
-
-        """
-        session = Session()
-        updated = False
-        try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
-            checksum.model_checksum = model_checksum
-            session.commit()
-            updated = True
-        except Exception as e:
-            self.logger.exception('Error updating checksum')
-        session.close()
-        return updated
-
-    def get_model_checksum(self, table_name: str):
-        """Retrieves a checksum by table name.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-
-        Returns:
-            object: The checksum object if it exists, None otherwise.
-
-        """
-        session = Session()
-        checksum = None
-        try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
-        except Exception as e:
-            self.logger.exception('Error retrieving checksum')
-        session.close()
-        return checksum
-
-    def get_stored_descriptors(self) -> list:
-        """
-        Gets stored json models from database.
-
-        Returns:
-            list: List of JSON dictionaries
-        """
-        session = Session()
-        descriptor_list = []  # list of json dict
-        try:
-            query = session.query(Checksum)
-            for _row in query.all():
-                descriptor_list.append(_row.descriptor_json)
-        except Exception as e:
-            self.logger.exception('Error retrieving stored models')
-        session.close()
-
-        return descriptor_list
-
-    def get_alembic_config(self):
-        """ Load the Alembic configuration.
-
-        Returns:
-            object, object: The Alembic configuration and migration directory.
-        """
-
-        try:
-            alembic_config = Config(os.path.join(
-                self.app_config.ROOT_PATH, 'alembic.ini'))
-            migrations_dir = os.path.join(
-                self.app_config.ROOT_PATH, 'migrations', 'versions')
-            if not os.path.exists(migrations_dir) or not os.path.isdir(migrations_dir):
-                migrations_dir = None
-            return alembic_config, migrations_dir
-        except Exception as e:
-            return None, None
-
-    def upgrade(self):
-        """Migrate up to head.
-
-        This method runs  the Alembic upgrade command programatically.
-
-        """
-        alembic_config, migrations_dir = self.get_alembic_config()
-        if migrations_dir is not None:
-            command.upgrade(config=alembic_config, revision='head')
-        else:
-            self.logger.info('No migrations to run...')
-
-    def revision(self, table_name: str, create_table: bool = True):
-        """Create a new migration.
-
-        This method runs the Alembic revision command programmatically.
-
-        """
-        alembic_config, migrations_dir = self.get_alembic_config()
-        if migrations_dir is not None:
-            if create_table:
-                message = 'Create table {}'.format(table_name)
-            else:
-                message = 'Update table {}'.format(table_name)
-            command.revision(config=alembic_config,
-                             message=message, autogenerate=True)
-        else:
-            self.logger.info('No migrations to run...')
-
+    
     def monitor_data_models(self):
         """Wraps monitor data models for changes.
 
@@ -472,6 +311,170 @@ class DataModelManagerSync(object):
 
         self.logger.debug('Post3: ' + str(Base.metadata.tables.keys()))
 
+    # DMM data model fns
+    def data_model_exists(self, schema_filename):
+        """Checks if a data model is already registered with the data model manager.
+
+        Args:
+            schema_filename (str): Name of the schema file on disk.
+
+        Returns:
+            bool: True if the data model exists. False if not.
+
+        """
+        exists = False
+        for data_model in self.data_model_descriptors:
+            if data_model.schema_filename.lower() == schema_filename.lower():
+                exists = True
+                break
+        return exists
+
+    def data_model_changed(self, schema_filename, checksum):
+        """Checks if the medata for a data model has been changed.
+
+        Args:
+            schema_filename (str): Name of the schema file on disk.
+            checksum (str): Computed MD5 checksum of the schema.
+
+        Returns:
+            bool: True if the data model has been changed. False if not.
+
+        """
+        changed = False
+        for data_model in self.data_model_descriptors:
+            if data_model.schema_filename.lower() == schema_filename.lower():
+                if data_model.model_checksum != checksum:
+                    changed = True
+                break
+        return changed
+
+    def get_data_model_index(self, schema_filename):
+        """Checks if the medata for a data model has been changed.
+
+        Args:
+           schema_filename (str): Name of the schema file on disk.
+
+        Returns:
+            int: Index of the schema stored in memory, or -1 if not found.
+        """
+        index = -1
+        for idx, data_model in enumerate(self.data_model_descriptors):
+            if data_model.schema_filename.lower() == schema_filename.lower():
+                index = idx
+                break
+        return index
+
+    # DB fns
+    def add_model_checksum(self, table_name: str, model_checksum: str = '0', descriptor_json: dict = {}):
+        """Adds a new checksum for a data model.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+            checksum (str): Checksum value.
+        """
+        session = Session()
+        try:
+            checksum = Checksum()
+            checksum.data_resource = table_name
+            checksum.model_checksum = model_checksum
+            checksum.descriptor_json = descriptor_json
+            session.add(checksum)
+            session.commit()
+        except Exception as e:
+            self.logger.exception('Error adding checksum')
+        session.close()
+
+    def update_model_checksum(self, table_name: str, model_checksum: str):
+        """Updates a checksum for a data model.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+            checksum (str): Checksum value.
+
+        Returns:
+            bool: True if checksum was updated. False otherwise.
+
+        """
+        session = Session()
+        updated = False
+        try:
+            checksum = session.query(Checksum).filter(
+                Checksum.data_resource == table_name).first()
+            checksum.model_checksum = model_checksum
+            session.commit()
+            updated = True
+        except Exception as e:
+            self.logger.exception('Error updating checksum')
+        session.close()
+        return updated
+
+    def get_model_checksum(self, table_name: str):
+        """Retrieves a checksum by table name.
+
+        Args:
+            table_name (str): Name of the table to add the checksum.
+
+        Returns:
+            object: The checksum object if it exists, None otherwise.
+
+        """
+        session = Session()
+        checksum = None
+        try:
+            checksum = session.query(Checksum).filter(
+                Checksum.data_resource == table_name).first()
+        except Exception as e:
+            self.logger.exception('Error retrieving checksum')
+        session.close()
+        return checksum
+
+    def get_stored_descriptors(self) -> list:
+        """
+        Gets stored json models from database.
+
+        Returns:
+            list: List of JSON dictionaries
+        """
+        session = Session()
+        descriptor_list = []  # list of json dict
+        try:
+            query = session.query(Checksum)
+            for _row in query.all():
+                descriptor_list.append(_row.descriptor_json)
+        except Exception as e:
+            self.logger.exception('Error retrieving stored models')
+        session.close()
+
+        return descriptor_list
+
+    def upgrade(self):
+        """Migrate up to head.
+
+        This method runs  the Alembic upgrade command programatically.
+
+        """
+        alembic_config, migrations_dir = self.get_alembic_config()
+        if migrations_dir is not None:
+            command.upgrade(config=alembic_config, revision='head')
+        else:
+            self.logger.info('No migrations to run...')
+
+    def revision(self, table_name: str, create_table: bool = True):
+        """Create a new migration.
+
+        This method runs the Alembic revision command programmatically.
+
+        """
+        alembic_config, migrations_dir = self.get_alembic_config()
+        if migrations_dir is not None:
+            if create_table:
+                message = 'Create table {}'.format(table_name)
+            else:
+                message = 'Update table {}'.format(table_name)
+            command.revision(config=alembic_config,
+                             message=message, autogenerate=True)
+        else:
+            self.logger.info('No migrations to run...')
 
 class DataModelManager(Thread, DataModelManagerSync):
     def __init__(self):

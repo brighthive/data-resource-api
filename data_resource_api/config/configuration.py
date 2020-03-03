@@ -3,7 +3,6 @@
 """
 
 import os
-import json
 from brighthive_authlib import OAuth2ProviderFactory, AuthLibConfiguration
 
 
@@ -195,4 +194,5 @@ class ConfigurationFactory(object):
             Config: Configuration object based on the configuration environment supplied in the `APP_ENV` environment variable.
 
         """
-        return ConfigurationFactory.get_config(os.getenv('APP_ENV', 'DEVELOPMENT'))
+        return ConfigurationFactory.get_config(
+            os.getenv('APP_ENV', 'DEVELOPMENT'))

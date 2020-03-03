@@ -10,16 +10,16 @@ import json
 from hashlib import md5
 from threading import Thread
 from time import sleep
-from data_resource_api.factories import ORMFactory
-from data_resource_api import ConfigurationFactory
-from data_resource_api.db import Base, Session, Checksum
-from data_resource_api.logging import LogFactory
-from data_resource_api.utils import exponential_backoff
-from data_resource_api.app.descriptor import (
+from data_resource_api.app.utils.descriptor import (
     Descriptor,
     DescriptorsGetter)
-from data_resource_api.app.db_handler import DBHandler
-from data_resource_api.app.config import ConfigFunctions
+from data_resource_api.app.utils.db_handler import DBHandler
+from data_resource_api.app.utils.config import ConfigFunctions
+from data_resource_api.config import ConfigurationFactory
+from data_resource_api.db import Base, Session, Checksum
+from data_resource_api.factories import ORMFactory
+from data_resource_api.logging import LogFactory
+from data_resource_api.utils import exponential_backoff
 
 
 class DataModelDescriptor(object):

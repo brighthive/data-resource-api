@@ -3,7 +3,7 @@
 """
 
 from expects import expect, be_an, raise_error, have_property
-from data_resource_api import ConfigurationFactory, InvalidConfigurationError
+from data_resource_api.config import ConfigurationFactory, InvalidConfigurationError
 
 
 class TestConfigurationFactory(object):

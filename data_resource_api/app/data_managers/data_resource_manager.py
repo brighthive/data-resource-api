@@ -4,7 +4,6 @@ The Data Resource Manager manages the lifecycles of all data resources. It is re
 creating the Flask application that sits at the front of the data resource.
 
 """
-import os
 import json
 import hashlib
 from threading import Thread
@@ -13,17 +12,14 @@ from flask import Flask
 from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
-from data_resource_api.db import engine, Base, Session, Checksum
+from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.logging import LogFactory
-from data_resource_api.app.exception_handler import handle_errors
-from data_resource_api.app.descriptor import (
-    Descriptor,
-    DescriptorFileHelper,
-    DescriptorFromFile,
+from data_resource_api.app.utils.exception_handler import handle_errors
+from data_resource_api.app.utils.descriptor import (
     DescriptorsGetter)
 from data_resource_api.utils import exponential_backoff
-from data_resource_api.app.db_handler import DBHandler
-from data_resource_api.app.config import ConfigFunctions
+from data_resource_api.app.utils.db_handler import DBHandler
+from data_resource_api.app.utils.config import ConfigFunctions
 
 
 class DataResource(object):

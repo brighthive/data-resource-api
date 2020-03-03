@@ -1,5 +1,4 @@
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
-from data_resource_api import ConfigurationFactory, InvalidConfigurationError
 import json
 
 
@@ -47,7 +46,8 @@ class TestStartup(object):
         put_body = {
             "credential_name": "asdf"
         }
-        response = regular_client.put(f'{route}/{credential_id}', json=put_body)
+        response = regular_client.put(
+            f'{route}/{credential_id}', json=put_body)
         expect(response.status_code).to(equal(201))
 
         response = regular_client.get(f'{route}/{credential_id}')
@@ -62,7 +62,8 @@ class TestStartup(object):
         patch_body = {
             "credential_name": "qwery"
         }
-        response = regular_client.patch(f'{route}/{credential_id}', json=patch_body)
+        response = regular_client.patch(
+            f'{route}/{credential_id}', json=patch_body)
         body = json.loads(response.data)
         expect(response.status_code).to(equal(201))
 

@@ -1,4 +1,4 @@
-from data_resource_api.app.descriptor import DescriptorsGetter
+from data_resource_api.app.utils.descriptor import DescriptorsGetter
 from tests.schemas import (
     frameworks_descriptor)
 from expects import expect, equal
@@ -48,10 +48,14 @@ class TestDescriptorGetterWithCustom():
 
 class TestDescriptorGetterWithDirAndCustom():
     def test_load_with_dir_and_custom(self):
-        desc = DescriptorsGetter([test_descriptor_dir], [frameworks_descriptor])
+        desc = DescriptorsGetter(
+            [test_descriptor_dir],
+            [frameworks_descriptor])
 
     def test_yields_descriptors_from_dir_and_custom(self):
-        desc = DescriptorsGetter([test_descriptor_dir], [frameworks_descriptor])
+        desc = DescriptorsGetter(
+            [test_descriptor_dir],
+            [frameworks_descriptor])
         descriptors = desc.iter_descriptors()
 
         next(descriptors)

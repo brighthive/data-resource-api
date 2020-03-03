@@ -1,4 +1,4 @@
-from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.app.utils.junc_holder import JuncHolder
 from expects import expect, be_an, raise_error, have_property, equal, be_empty, be
 import pytest
 

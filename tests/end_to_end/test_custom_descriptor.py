@@ -121,7 +121,7 @@ class ApiHelper:
         return body
 
 
-class TestStartup(object):
+class TestStartup():
     def test_load_descriptor(self, frameworks_skills_client):
         c = frameworks_skills_client
         skill_1 = ApiHelper.post_a_skill(c, "skill1")

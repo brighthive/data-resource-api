@@ -201,6 +201,13 @@ def frameworks_skills_client():
     client.stop_container()
 
 
+@pytest.fixture(scope='module')
+def json_client():
+    client = Client([json_descriptor])
+    yield client.run_and_return_test_client()
+    client.stop_container()
+
+
 @pytest.fixture
 def base():
     JuncHolder.reset()

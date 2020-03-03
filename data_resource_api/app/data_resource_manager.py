@@ -75,7 +75,22 @@ class DataResourceManagerSync(object):
 
     """
 
-    def __init__(self, descriptors: list = []):
+    def __init__(self, **kwargs):
+        if 'base' in kwargs:
+            base = kwargs.get('base')
+        else:
+            base = Base
+            
+        if 'use_local_dirs' in kwargs:
+            use_local_dirs = kwargs.get('use_local_dirs')
+        else:
+            use_local_dirs = True
+            
+        if 'descriptors' in kwargs:
+            descriptors = kwargs.get('descriptors')
+        else:
+            descriptors = []
+
         self.data_resources: DataResource = []
         self.app_config = ConfigurationFactory.from_env()
         self.app = None
@@ -86,30 +101,36 @@ class DataResourceManagerSync(object):
         self.logger = LogFactory.get_console_logger('data-resource-manager')
 
         self.descriptor_directories = []
-        self.descriptor_directories.append(self.get_data_resource_schema_path())
+        if use_local_dirs:
+            self.descriptor_directories.append(self.get_data_resource_schema_path())
+
         self.custom_descriptors = descriptors
 
-    def run(self):
+    def run(self, test_mode: bool = True):
         self.wait_for_db()
         # self.restore_models_from_database()
 
+        def run_fn():
+            # try:
+            self.logger.info('Data Resource Manager Running...')
+            self.logger.debug(f"Base metadata: {list(Base.metadata.tables.keys())}")
+            self.monitor_data_models()   
+            # except Exception as e:
+            #     if e.code == 'e3q8':
+            #         self.logger.info("Waiting for DB...")
+            #         sleep(1)
+            #         continue
+
+            #     self.logger.error(e)
+
+        if test_mode:
+            run_fn()
+            return
+
         while True:
+            run_fn()
             sleep_time = 10
             # sleep_time = self.get_sleep_interval()
-
-            try:
-                self.logger.info('Data Resource Manager Running...')
-                self.logger.debug(f"Base metadata: {list(Base.metadata.tables.keys())}")
-                self.monitor_data_models()
-                
-            except Exception as e:
-                if e.code == 'e3q8':
-                    self.logger.info("Waiting for DB...")
-                    sleep(1)
-                    continue
-
-                self.logger.error(e)
-
             self.logger.info(f'Data Resource Manager Sleeping for {sleep_time} seconds...')
             sleep(sleep_time)
 

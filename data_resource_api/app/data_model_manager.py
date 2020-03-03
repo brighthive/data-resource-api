@@ -52,23 +52,48 @@ class DataModelManagerSync(object):
 
     """
 
-    def __init__(self, base: object = Base, descriptors: list = []):
+    def __init__(self, **kwargs):        
+        if 'base' in kwargs:
+            base = kwargs.get('base')
+        else:
+            base = Base
+            
+        if 'use_local_dirs' in kwargs:
+            use_local_dirs = kwargs.get('use_local_dirs')
+        else:
+            use_local_dirs = True
+            
+        if 'descriptors' in kwargs:
+            descriptors = kwargs.get('descriptors')
+        else:
+            descriptors = []
+            
+
         self.app_config = ConfigurationFactory.from_env()
         self.data_model_descriptors: DataModelDescriptor = []
         self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
 
         self.descriptor_directories = []
-        self.descriptor_directories.append(self.get_data_resource_schema_path())
+        if use_local_dirs:
+            self.descriptor_directories.append(self.get_data_resource_schema_path())
+            
         self.custom_descriptors = descriptors
 
-    def run(self):
+    def run(self, test_mode: bool = False):
         self.initalize_base_models()
         self.restore_models_from_database()
 
-        while True:
+        def run_fn():
             self.logger.info('Data Model Manager Running...')
             self.monitor_data_models()
+
+        if test_mode:  # Does not run in while loop
+            run_fn()
+            return
+        
+        while True:
+            run_fn()
             self.logger.info('Data Model Manager Sleeping for {} seconds...'.format(
                 self.get_sleep_interval()))
             sleep(self.get_sleep_interval())

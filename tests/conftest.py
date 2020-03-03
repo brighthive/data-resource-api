@@ -117,10 +117,13 @@ class Client():
 
         self.schema_dicts = schema_dicts
 
+        if len(self.schema_dicts) == 0:
+            raise RuntimeError("Need at least one schema dict for test client")
+
     def run_and_return_test_client(self):
         delete_migration_artifacts()
 
-        self.initalize_objects()
+        self.initialize_test_client()
 
         try:
             self.upgrade_loop()
@@ -128,12 +131,16 @@ class Client():
         except UpgradeFail:
             logger.error("Failed to upgrade database.")
 
-    def initalize_objects(self):
-        self.data_resource_manager = DataResourceManagerSync()
+    def initialize_test_client(self):
+        self.data_resource_manager = DataResourceManagerSync(
+            use_local_dirs=False,
+            descriptors=self.schema_dicts)
         self.app = self.data_resource_manager.create_app()
         self.postgres = PostgreSQLContainer()
         self.postgres.start_container()
-        self.data_model_manager = DataModelManagerSync()
+        self.data_model_manager = DataModelManagerSync(
+            use_local_dirs=False,
+            descriptors=self.schema_dicts)
 
     def upgrade_loop(self):
         upgraded = False
@@ -145,22 +152,8 @@ class Client():
             try:
                 with self.app.app_context():
                     logger.info("------------- running upgrade")
-                    self.data_model_manager.initalize_base_models()
-
-                    if self.schema_dicts is None:
-                        logger.info("------------- running monitor data resources")
-                        self.data_resource_manager.monitor_data_resources()
-                        logger.info("------------- running monitor data models")
-                        self.data_model_manager.monitor_data_models()
-                    else:
-                        for schema_dict in self.schema_dicts:
-                            logger.info("------------- running monitor data resources")
-                            self.data_resource_manager.work_on_schema(schema_dict, "schemas_loaded_into_test_fixture")
-                            logger.info("------------- running monitor data models")
-                            desc = Descriptor(schema_dict, "schemas_loaded_into_test_fixture")
-                            self.data_model_manager.process_descriptor(desc)
-
-                    self.data_model_manager.initalize_base_models()
+                    self.data_model_manager.run(True)
+                    self.data_resource_manager.run(True)
                     upgraded = True
                     return True
 

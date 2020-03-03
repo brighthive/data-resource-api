@@ -106,7 +106,7 @@ class ORMFactory(object):
                             self.get_sqlalchemy_type(
                                 field['type']), ForeignKey(reference_table, onupdate='CASCADE', ondelete='CASCADE'))
                     except Exception as e:
-                        logger.error(e)
+                        logger.error("Error in create_sqlalchemy_fields", exc_info=True)
         return sqlalchemy_fields
 
     def get_sqlalchemy_type(self, data_type: str):
@@ -170,7 +170,7 @@ class ORMFactory(object):
                     warnings.simplefilter('ignore', category=exc.SAWarning)
                     orm_class = type(model_name, (self.base,), fields)
             except Exception as e:
-                logger.error(e)
+                logger.error("Error in create_orm_from_dict", exc_info=True)
                 orm_class = None
 
         return orm_class
@@ -196,7 +196,6 @@ class ORMFactory(object):
                 extend_existing=True
             )
         except Exception as e:
-            logger.warn(f"Error on create junc table '{join_table}'")
-            logger.error(e)
+            logger.error(f"Error on create junc table '{join_table}'", exc_info=True)
 
         JuncHolder.add_table(join_table, association_table)

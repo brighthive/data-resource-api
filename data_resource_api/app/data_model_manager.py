@@ -26,6 +26,8 @@ from data_resource_api.app.descriptor import (
     DescriptorFileHelper,
     DescriptorFromFile,
     DescriptorsGetter)
+from data_resource_api.app.db_handler import DBHandler
+from data_resource_api.app.config import ConfigFunctions
 
 
 class DataModelDescriptor(object):
@@ -38,7 +40,8 @@ class DataModelDescriptor(object):
 
     """
 
-    def __init__(self, schema_filename=None, schema_name=None, model_checksum=None):
+    def __init__(self, schema_filename=None,
+                 schema_name=None, model_checksum=None):
         self.schema_filename = schema_filename
         self.schema_name = schema_name
         self.model_checksum = model_checksum
@@ -52,72 +55,30 @@ class DataModelManagerSync(object):
 
     """
 
-    def __init__(self, **kwargs):        
+    def __init__(self, **kwargs):
         base = kwargs.get('base', Base)
         use_local_dirs = kwargs.get('use_local_dirs', True)
         descriptors = kwargs.get('descriptors', [])
 
-        self.app_config = ConfigurationFactory.from_env()
+        app_config = ConfigurationFactory.from_env()
+        self.config = ConfigFunctions(app_config)
+
         self.data_model_descriptors: DataModelDescriptor = []
         self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
+        self.db = DBHandler(self.config)
 
         self.descriptor_directories = []
         if use_local_dirs:
-            self.descriptor_directories.append(self.get_data_resource_schema_path())
-            
+            self.descriptor_directories.append(
+                self.config.get_data_resource_schema_path())
+
         self.custom_descriptors = descriptors
 
     # Config fns
-    def get_sleep_interval(self):
-        """Retrieve the thread's sleep interval.
-
-        Returns:
-            int: The sleep interval (in seconds) for the thread.
-
-        Note:
-            The method will look for an enviroment variable (SLEEP_INTERVAL).
-            If the environment variable isn't set or cannot be parsed as an integer,
-            the method returns the default interval of 30 seconds.
-
-        """
-
-        return self.app_config.DATA_MODEL_SLEEP_INTERVAL
-
-    def get_data_resource_schema_path(self):
-        """Retrieve the path to look for data resource specifications.
-
-        Returns:
-            str: The search path for data resource schemas.
-
-        Note:
-            The application will look for an environment variable named DATA_RESOURCE_PATH
-            and if it is not found will revert to the default path (i.e. /path/to/application/schema).
-
-        """
-
-        return os.getenv(
-            'DATA_RESOURCE_PATH', os.path.join(self.app_config.ROOT_PATH, 'schema'))
-
-    def get_alembic_config(self):
-        """ Load the Alembic configuration.
-
-        Returns:
-            object, object: The Alembic configuration and migration directory.
-        """
-
-        try:
-            alembic_config = Config(os.path.join(
-                self.app_config.ROOT_PATH, 'alembic.ini'))
-            migrations_dir = os.path.join(
-                self.app_config.ROOT_PATH, 'migrations', 'versions')
-            if not os.path.exists(migrations_dir) or not os.path.isdir(migrations_dir):
-                migrations_dir = None
-            return alembic_config, migrations_dir
-        except Exception as e:
-            return None, None
 
     # DMM core fns
+
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
         self.restore_models_from_database()
@@ -129,12 +90,12 @@ class DataModelManagerSync(object):
         if test_mode:  # Does not run in while loop
             run_fn()
             return
-        
+
         while True:
             run_fn()
             self.logger.info('Data Model Manager Sleeping for {} seconds...'.format(
-                self.get_sleep_interval()))
-            sleep(self.get_sleep_interval())
+                self.config.get_sleep_interval()))
+            sleep(self.config.get_sleep_interval())
 
     def initalize_base_models(self):
         self.logger.info("Initalizing base models...")
@@ -148,7 +109,8 @@ class DataModelManagerSync(object):
         while not db_active and retries <= max_retries:
             if retries != 0:
                 sleep_time = exponential_time()
-                self.logger.info(f'Sleeping for {sleep_time} with exponential backoff...')
+                self.logger.info(
+                    f'Sleeping for {sleep_time} with exponential backoff...')
                 sleep(sleep_time)
 
             retries += 1
@@ -164,14 +126,16 @@ class DataModelManagerSync(object):
                 self.logger.info('Hit exception looking for checksum...')
                 # UndefinedTable
                 if e.code == 'f405':
-                    self.logger.info('Checksum table was not found; Creating checksum migration...')
-                    self.revision('checksum_and_logs')
-                    self.upgrade()
+                    self.logger.info(
+                        'Checksum table was not found; Creating checksum migration...')
+                    self.db.revision('checksum_and_logs')
+                    self.db.upgrade()
                     db_active = True
                     self.logger.info('Successfully created checksum.')
 
                 elif e.code == 'e3q8':
-                    self.logger.info('Database is not available yet exception.')
+                    self.logger.info(
+                        'Database is not available yet exception.')
                     self.logger.info(
                         'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
                 else:
@@ -185,7 +149,7 @@ class DataModelManagerSync(object):
         into SQL Alchemy ORM models.
         """
         # query database for all jsonb in checksum table
-        json_descriptor_list = self.get_stored_descriptors()
+        json_descriptor_list = self.db.get_stored_descriptors()
 
         # load each item into our models
         for descriptor in json_descriptor_list:
@@ -199,7 +163,7 @@ class DataModelManagerSync(object):
 
         data_model = self.orm_factory.create_orm_from_dict(
             table_schema, table_name, api_schema)
-    
+
     def monitor_data_models(self):
         """Wraps monitor data models for changes.
 
@@ -209,7 +173,9 @@ class DataModelManagerSync(object):
         """
         self.logger.info('Checking data models')
 
-        descriptors = DescriptorsGetter(self.descriptor_directories, self.custom_descriptors)
+        descriptors = DescriptorsGetter(
+            self.descriptor_directories,
+            self.custom_descriptors)
         for descriptor in descriptors.iter_descriptors():
             self.process_descriptor(descriptor)
 
@@ -245,14 +211,17 @@ class DataModelManagerSync(object):
 
             self.logger.debug('Pre: ' + str(Base.metadata.tables.keys()))
 
-            # Check if data model exists by checking if we have stored metadata about it
+            # Check if data model exists by checking if we have stored metadata
+            # about it
             if self.data_model_exists(schema_filename):
                 self.logger.debug(f"{schema_filename}: Found existing.")
-                # check if the cached db checksum has changed from the new file checksum
-                if not self.data_model_changed(schema_filename, model_checksum):
+                # check if the cached db checksum has changed from the new file
+                # checksum
+                if not self.data_model_changed(
+                        schema_filename, model_checksum):
                     self.logger.debug(f"{schema_filename}: Unchanged.")
                     return
-                
+
                 self.logger.debug(f"{schema_filename}: Found changed.")
 
                 # Get the index for this descriptor within our local metadata
@@ -262,11 +231,11 @@ class DataModelManagerSync(object):
                 # Create the sql alchemy orm
                 data_model = self.orm_factory.create_orm_from_dict(
                     table_schema, table_name, api_schema)
-                
+
                 # Something needs to be modified
-                self.revision(table_name, create_table=False)
-                self.upgrade()
-                self.update_model_checksum(
+                self.db.revision(table_name, create_table=False)
+                self.db.upgrade()
+                self.db.update_model_checksum(
                     table_name, model_checksum)
                 del data_model
 
@@ -285,7 +254,7 @@ class DataModelManagerSync(object):
                 self.data_model_descriptors.append(
                     data_model_descriptor)
                 # get the databases checksum value
-                stored_checksum = self.get_model_checksum(
+                stored_checksum = self.db.get_model_checksum(
                     table_name)
 
                 # create SqlAlchemy ORM models
@@ -296,9 +265,9 @@ class DataModelManagerSync(object):
                 # or the database checksum does not equal this files checksum
                 if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
                     # perform a revision
-                    self.revision(table_name)
-                    self.upgrade()
-                    self.add_model_checksum(
+                    self.db.revision(table_name)
+                    self.db.upgrade()
+                    self.db.add_model_checksum(
                         table_name, model_checksum, schema_dict.descriptor)
 
                 del data_model  # this can probably be removed?
@@ -364,117 +333,6 @@ class DataModelManagerSync(object):
                 break
         return index
 
-    # DB fns
-    def add_model_checksum(self, table_name: str, model_checksum: str = '0', descriptor_json: dict = {}):
-        """Adds a new checksum for a data model.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-            checksum (str): Checksum value.
-        """
-        session = Session()
-        try:
-            checksum = Checksum()
-            checksum.data_resource = table_name
-            checksum.model_checksum = model_checksum
-            checksum.descriptor_json = descriptor_json
-            session.add(checksum)
-            session.commit()
-        except Exception as e:
-            self.logger.exception('Error adding checksum')
-        session.close()
-
-    def update_model_checksum(self, table_name: str, model_checksum: str):
-        """Updates a checksum for a data model.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-            checksum (str): Checksum value.
-
-        Returns:
-            bool: True if checksum was updated. False otherwise.
-
-        """
-        session = Session()
-        updated = False
-        try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
-            checksum.model_checksum = model_checksum
-            session.commit()
-            updated = True
-        except Exception as e:
-            self.logger.exception('Error updating checksum')
-        session.close()
-        return updated
-
-    def get_model_checksum(self, table_name: str):
-        """Retrieves a checksum by table name.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-
-        Returns:
-            object: The checksum object if it exists, None otherwise.
-
-        """
-        session = Session()
-        checksum = None
-        try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
-        except Exception as e:
-            self.logger.exception('Error retrieving checksum')
-        session.close()
-        return checksum
-
-    def get_stored_descriptors(self) -> list:
-        """
-        Gets stored json models from database.
-
-        Returns:
-            list: List of JSON dictionaries
-        """
-        session = Session()
-        descriptor_list = []  # list of json dict
-        try:
-            query = session.query(Checksum)
-            for _row in query.all():
-                descriptor_list.append(_row.descriptor_json)
-        except Exception as e:
-            self.logger.exception('Error retrieving stored models')
-        session.close()
-
-        return descriptor_list
-
-    def upgrade(self):
-        """Migrate up to head.
-
-        This method runs  the Alembic upgrade command programatically.
-
-        """
-        alembic_config, migrations_dir = self.get_alembic_config()
-        if migrations_dir is not None:
-            command.upgrade(config=alembic_config, revision='head')
-        else:
-            self.logger.info('No migrations to run...')
-
-    def revision(self, table_name: str, create_table: bool = True):
-        """Create a new migration.
-
-        This method runs the Alembic revision command programmatically.
-
-        """
-        alembic_config, migrations_dir = self.get_alembic_config()
-        if migrations_dir is not None:
-            if create_table:
-                message = 'Create table {}'.format(table_name)
-            else:
-                message = 'Update table {}'.format(table_name)
-            command.revision(config=alembic_config,
-                             message=message, autogenerate=True)
-        else:
-            self.logger.info('No migrations to run...')
 
 class DataModelManager(Thread, DataModelManagerSync):
     def __init__(self):

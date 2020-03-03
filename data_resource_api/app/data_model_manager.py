@@ -52,13 +52,14 @@ class DataModelManagerSync(object):
         use_local_dirs = kwargs.get('use_local_dirs', True)
         descriptors = kwargs.get('descriptors', [])
 
-        app_config = ConfigurationFactory.from_env()
-        self.config = ConfigFunctions(app_config)
+        self.app_config = ConfigurationFactory.from_env()
+        self.config = ConfigFunctions(self.app_config)
+
+        self.db = DBHandler(self.config)
 
         self.data_model_descriptors: DataModelDescriptor = []
         self.orm_factory = ORMFactory(base)
         self.logger = LogFactory.get_console_logger('data-model-manager')
-        self.db = DBHandler(self.config)
 
         self.descriptor_directories = []
         if use_local_dirs:

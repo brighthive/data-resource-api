@@ -53,21 +53,9 @@ class DataModelManagerSync(object):
     """
 
     def __init__(self, **kwargs):        
-        if 'base' in kwargs:
-            base = kwargs.get('base')
-        else:
-            base = Base
-            
-        if 'use_local_dirs' in kwargs:
-            use_local_dirs = kwargs.get('use_local_dirs')
-        else:
-            use_local_dirs = True
-            
-        if 'descriptors' in kwargs:
-            descriptors = kwargs.get('descriptors')
-        else:
-            descriptors = []
-            
+        base = kwargs.get('base', Base)
+        use_local_dirs = kwargs.get('use_local_dirs', True)
+        descriptors = kwargs.get('descriptors', [])
 
         self.app_config = ConfigurationFactory.from_env()
         self.data_model_descriptors: DataModelDescriptor = []

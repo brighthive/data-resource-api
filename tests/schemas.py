@@ -63,12 +63,6 @@ frameworks_descriptor = {
             "description": "framework name",
             "type": "string",
             "required": True
-          },
-          {
-            "name": "jsonb",
-            "title": "jsonb",
-            "type": "object",
-            "required": False
           }
         ],
         "primaryKey": "id"
@@ -456,3 +450,46 @@ programs_descriptor = {
     }
   }
 }
+
+json_descriptor = {
+    "api": {
+      "resource": "json",
+      "methods": [
+        {
+          "get": {
+            "enabled": True,
+            "secured": False,
+            "grants": []
+          },
+          "post": {
+            "enabled": True,
+            "secured": False,
+            "grants": []
+          }
+        }
+      ]
+    },
+    "datastore": {
+      "tablename": "json",
+      "restricted_fields": [],
+      "schema": {
+        "fields": [
+          {
+            "name": "id",
+            "title": "skill ID",
+            "description": "skill Desc",
+            "type": "integer",
+            "required": False
+          },
+          {
+            "name": "json",
+            "title": "json text",
+            "description": "json text",
+            "type": "object",
+            "required": True
+          }
+        ],
+        "primaryKey": "id"
+      }
+    }
+  }

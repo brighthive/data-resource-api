@@ -12,7 +12,8 @@ from tests.schemas import (
     frameworks_descriptor,
     skills_descriptor,
     credentials_descriptor,
-    programs_descriptor)
+    programs_descriptor,
+    json_descriptor)
 
 from sqlalchemy.ext.declarative import declarative_base
 from data_resource_api.logging import LogFactory

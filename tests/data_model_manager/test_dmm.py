@@ -1,4 +1,4 @@
-from data_resource_api.app.data_model_manager import DataModelManagerSync
+from data_resource_api.app.data_managers.data_model_manager import DataModelManagerSync
 from expects import expect, be_an, raise_error, have_property, equal
 from tests.schemas import (
     frameworks_descriptor,
@@ -10,7 +10,8 @@ import pytest
 
 class TestDataModelManager():
     @pytest.mark.xfail  # this is failing because of a strange interaction with juncholder
-    # this test will pass if run by itself -- if run with all other tests it fails.
+    # this test will pass if run by itself -- if run with all other tests it
+    # fails.
     def test_load_descriptor_into_sql_alchemy_model(self, base):
         table_list = list(base.metadata.tables.keys())
         expect(table_list).to(equal([]))

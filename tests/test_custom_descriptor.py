@@ -1,5 +1,4 @@
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
-from data_resource_api import ConfigurationFactory, InvalidConfigurationError
 import json
 
 
@@ -180,7 +179,8 @@ class TestStartup(object):
 
         framework_id = ApiHelper.post_a_framework(c, skills_list)
         ApiHelper.patch_a_framework_skill(c, framework_id, [skill_3])
-        ApiHelper.check_for_skills_on_framework(c, framework_id, [skill_1, skill_2, skill_3])
+        ApiHelper.check_for_skills_on_framework(
+            c, framework_id, [skill_1, skill_2, skill_3])
 
     def test_mn_delete_one(self, frameworks_skills_client):
         c = frameworks_skills_client
@@ -203,11 +203,13 @@ class TestStartup(object):
         skills_list = [skill_1, skill_2, skill_3]
         framework_id = ApiHelper.post_a_framework(c, skills_list)
 
-        resp = ApiHelper.delete_a_framework_skill(c, framework_id, [skill_1, skill_3])
+        resp = ApiHelper.delete_a_framework_skill(
+            c, framework_id, [skill_1, skill_3])
 
         expect(resp['skills']).to(equal([skill_2]))
 
-    def test_mn_delete_relationship_that_does_not_exist(self, frameworks_skills_client):
+    def test_mn_delete_relationship_that_does_not_exist(
+            self, frameworks_skills_client):
         c = frameworks_skills_client
 
         skill_1 = ApiHelper.post_a_skill(c, "skill1")

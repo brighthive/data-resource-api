@@ -6,25 +6,17 @@ monitoring data resources on a regular interval.
 
 """
 
-import os
 import json
-import psycopg2
 from hashlib import md5
 from threading import Thread
 from time import sleep
-from alembic.config import Config
-from alembic import command, autogenerate
-from sqlalchemy.exc import ProgrammingError
 from data_resource_api.factories import ORMFactory
 from data_resource_api import ConfigurationFactory
-from data_resource_api.factories.table_schema_types import TABLESCHEMA_TO_SQLALCHEMY_TYPES
-from data_resource_api.db import Base, Session, Log, Checksum
+from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.logging import LogFactory
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.descriptor import (
     Descriptor,
-    DescriptorFileHelper,
-    DescriptorFromFile,
     DescriptorsGetter)
 from data_resource_api.app.db_handler import DBHandler
 from data_resource_api.app.config import ConfigFunctions
@@ -74,8 +66,6 @@ class DataModelManagerSync(object):
                 self.config.get_data_resource_schema_path())
 
         self.custom_descriptors = descriptors
-
-    # Config fns
 
     # DMM core fns
 

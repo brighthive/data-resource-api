@@ -56,14 +56,6 @@ class DataManager(object):
         return False
 
     def get_data_index(self, data_name: str, name_attr: str):
-        """Retrieves the index of a specific data resource in the data resources dict.
-
-        Args:
-           data_resource_name (str): Name of the data resource file on disk.
-
-        Returns:
-            int: Index of the data resource stored in memory, or -1 if not found.
-        """
         index = -1
         for idx, data_object in enumerate(self.data_store):
             if getattr(data_object, name_attr) == data_name.lower():

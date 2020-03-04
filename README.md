@@ -222,6 +222,8 @@ To create a many to many resource add the relationship to the API section.
 
 This will generate a many to many relationship.
 
+Both tables MUST have an ID column that is an Integer.
+
 #### POST
 To add a resource you would POST and in the body include the child field as a parameter.
 ]

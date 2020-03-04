@@ -212,4 +212,21 @@ class ORMFactory(object):
                 f"Error on create junc table '{join_table}'",
                 exc_info=True)
 
+        # bug fix
+        def create_table(table_name):
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', category=exc.SAWarning)
+                    type(table_name, (self.base,), {
+                        '__tablename__': table_name,
+                        '__table_args__': {'extend_existing': True},
+                        'id': Column(Integer, primary_key=True)
+                    })
+            except Exception as e:
+                return False, None
+
+        for table_name in tables:
+            create_table(table_name)
+        # end bug fix
+
         JuncHolder.add_table(join_table, association_table)

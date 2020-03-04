@@ -33,10 +33,11 @@ class DataManager(object):
 
         self.data_store = []
 
-    # ?? fns
-    def data_exists(self, data_name: str, attr_getter):
+    # Data store functions
+    def data_exists(self, data_name: str, attribute_name: str):
         for data_object in self.data_store:
-            if attr_getter(data_object).lower() == data_name.lower():
+            if getattr(data_object, attribute_name).lower(
+            ) == data_name.lower():
                 return True
         return False
 

@@ -52,7 +52,7 @@ class DataModelManagerSync(DataManager):
         super().__init__('data-model-manager', **kwargs)
         self.data_store: DataModelDescriptor = []
 
-    # DMM core fns
+    # Core functions
 
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
@@ -255,7 +255,7 @@ class DataModelManagerSync(DataManager):
 
         self.logger.debug('Post3: ' + str(Base.metadata.tables.keys()))
 
-    # DMM data model fns
+    # Data store functions
     def data_model_exists(self, schema_filename):
         """Checks if a data model is already registered with the data model manager.
 
@@ -266,10 +266,7 @@ class DataModelManagerSync(DataManager):
             bool: True if the data model exists. False if not.
 
         """
-        def fn(thing):
-            return getattr(thing, 'schema_filename')
-
-        return self.data_exists(schema_filename, fn)
+        return self.data_exists(schema_filename, 'schema_filename')
 
     def data_model_changed(self, schema_filename, checksum):
         """Checks if the medata for a data model has been changed.

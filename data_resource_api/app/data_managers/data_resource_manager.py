@@ -84,7 +84,7 @@ class DataResourceManagerSync(DataManager):
         self.available_services = AvailableServicesResource()
         self.data_resource_factory = DataResourceFactory()
 
-    # core fns
+    # Core functions
     def run(self, test_mode: bool = True):
         self.wait_for_db()
         # self.restore_models_from_database()
@@ -255,7 +255,7 @@ class DataResourceManagerSync(DataManager):
         except Exception as e:
             self.logger.exception(f"Error loading schema '{schema_file}'")
 
-    # ?? fns
+    # Data store functions
     def data_resource_exists(self, data_resource_name):
         """Checks if a data resource is already registered with the data resource manager.
 
@@ -266,10 +266,7 @@ class DataResourceManagerSync(DataManager):
             bool: True if the data resource exists. False if not.
 
         """
-        def fn(thing):
-            return getattr(thing, 'data_resource_name')
-
-        return self.data_exists(data_resource_name, fn)
+        return self.data_exists(data_resource_name, 'data_resource_name')
 
     def data_resource_changed(self, data_resource_name, checksum):
         """Checks if the medata for a data model has been changed.

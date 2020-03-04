@@ -291,10 +291,7 @@ class DataResourceManagerSync(DataManager):
         Returns:
             int: Index of the data resource stored in memory, or -1 if not found.
         """
-        def fn(thing):
-            return getattr(thing, 'data_resource_name')
-
-        return self.get_data_index(data_resource_name, fn)
+        return self.get_data_index(data_resource_name, 'data_resource_name')
 
 
 class DataResourceManager(Thread, DataResourceManagerSync):

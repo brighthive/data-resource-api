@@ -291,10 +291,7 @@ class DataModelManagerSync(DataManager):
         Returns:
             int: Index of the schema stored in memory, or -1 if not found.
         """
-        def fn(thing):
-            return getattr(thing, 'schema_filename')
-
-        return self.get_data_index(schema_filename, fn)
+        return self.get_data_index(schema_filename, 'schema_filename')
 
 
 class DataModelManager(Thread, DataModelManagerSync):

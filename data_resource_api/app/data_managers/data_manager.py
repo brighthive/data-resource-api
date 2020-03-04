@@ -55,7 +55,7 @@ class DataManager(object):
                 return True
         return False
 
-    def get_data_index(self, data_name, name_getter):
+    def get_data_index(self, data_name: str, name_attr: str):
         """Retrieves the index of a specific data resource in the data resources dict.
 
         Args:
@@ -66,6 +66,6 @@ class DataManager(object):
         """
         index = -1
         for idx, data_object in enumerate(self.data_store):
-            if name_getter(data_object) == data_name.lower():
+            if getattr(data_object, name_attr) == data_name.lower():
                 return idx
         return index

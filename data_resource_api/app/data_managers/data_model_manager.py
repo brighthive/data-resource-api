@@ -20,6 +20,7 @@ from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.factories import ORMFactory
 from data_resource_api.logging import LogFactory
 from data_resource_api.utils import exponential_backoff
+from data_resource_api.app.data_managers.data_manager import DataManager
 
 
 class DataModelDescriptor(object):
@@ -39,7 +40,7 @@ class DataModelDescriptor(object):
         self.model_checksum = model_checksum
 
 
-class DataModelManagerSync(object):
+class DataModelManagerSync(DataManager):
     """Data Model Manager Class.
 
     This class extends the Thread base class and is intended to be run in its own thread.
@@ -48,25 +49,8 @@ class DataModelManagerSync(object):
     """
 
     def __init__(self, **kwargs):
-        base = kwargs.get('base', Base)
-        use_local_dirs = kwargs.get('use_local_dirs', True)
-        descriptors = kwargs.get('descriptors', [])
-
-        self.app_config = ConfigurationFactory.from_env()
-        self.config = ConfigFunctions(self.app_config)
-
-        self.db = DBHandler(self.config)
-
-        self.data_model_descriptors: DataModelDescriptor = []
-        self.orm_factory = ORMFactory(base)
-        self.logger = LogFactory.get_console_logger('data-model-manager')
-
-        self.descriptor_directories = []
-        if use_local_dirs:
-            self.descriptor_directories.append(
-                self.config.get_data_resource_schema_path())
-
-        self.custom_descriptors = descriptors
+        super().__init__('data-model-manager', **kwargs)
+        self.data_store: DataModelDescriptor = []
 
     # DMM core fns
 
@@ -233,7 +217,7 @@ class DataModelManagerSync(object):
                 self.logger.debug('Post1: ' + Base.metadata.tables.keys())
 
                 # store metadata for descriptor locally
-                self.data_model_descriptors[data_model_index].model_checksum = model_checksum
+                self.data_store[data_model_index].model_checksum = model_checksum
 
             else:
                 self.logger.debug(f"{schema_filename}: Unseen before now.")
@@ -242,7 +226,7 @@ class DataModelManagerSync(object):
                     schema_filename, table_name, model_checksum)
 
                 # Store the metadata for descriptor locally
-                self.data_model_descriptors.append(
+                self.data_store.append(
                     data_model_descriptor)
                 # get the databases checksum value
                 stored_checksum = self.db.get_model_checksum(
@@ -282,12 +266,10 @@ class DataModelManagerSync(object):
             bool: True if the data model exists. False if not.
 
         """
-        exists = False
-        for data_model in self.data_model_descriptors:
-            if data_model.schema_filename.lower() == schema_filename.lower():
-                exists = True
-                break
-        return exists
+        def fn(thing):
+            return getattr(thing, 'schema_filename')
+
+        return self.data_exists(schema_filename, fn)
 
     def data_model_changed(self, schema_filename, checksum):
         """Checks if the medata for a data model has been changed.
@@ -301,7 +283,7 @@ class DataModelManagerSync(object):
 
         """
         changed = False
-        for data_model in self.data_model_descriptors:
+        for data_model in self.data_store:
             if data_model.schema_filename.lower() == schema_filename.lower():
                 if data_model.model_checksum != checksum:
                     changed = True
@@ -318,7 +300,7 @@ class DataModelManagerSync(object):
             int: Index of the schema stored in memory, or -1 if not found.
         """
         index = -1
-        for idx, data_model in enumerate(self.data_model_descriptors):
+        for idx, data_model in enumerate(self.data_store):
             if data_model.schema_filename.lower() == schema_filename.lower():
                 index = idx
                 break

@@ -20,6 +20,7 @@ from data_resource_api.app.utils.descriptor import (
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.app.utils.config import ConfigFunctions
+from data_resource_api.app.data_managers.data_manager import DataManager
 
 
 class DataResource(object):
@@ -64,7 +65,7 @@ class AvailableServicesResource(Resource):
         return {'endpoints': self.endpoints}, 200
 
 
-class DataResourceManagerSync(object):
+class DataResourceManagerSync(DataManager):
     """Data Resource Manager.
 
     Attributes:
@@ -74,30 +75,14 @@ class DataResourceManagerSync(object):
     """
 
     def __init__(self, **kwargs):
-        base = kwargs.get('base', Base)
-        use_local_dirs = kwargs.get('use_local_dirs', True)
-        descriptors = kwargs.get('descriptors', [])
+        super().__init__('data-resource-manager', **kwargs)
 
-        self.data_resources: DataResource = []
-
-        self.app_config = ConfigurationFactory.from_env()
-        self.config = ConfigFunctions(self.app_config)
-
-        self.db = DBHandler(self.config)
+        self.data_store: DataResource = []
 
         self.app = None
         self.api = None
         self.available_services = AvailableServicesResource()
-        self.orm_factory = ORMFactory(base)
         self.data_resource_factory = DataResourceFactory()
-        self.logger = LogFactory.get_console_logger('data-resource-manager')
-
-        self.descriptor_directories = []
-        if use_local_dirs:
-            self.descriptor_directories.append(
-                self.config.get_data_resource_schema_path())
-
-        self.custom_descriptors = descriptors
 
     # core fns
     def run(self, test_mode: bool = True):
@@ -235,7 +220,7 @@ class DataResourceManagerSync(object):
                 try:
                     if self.data_resource_changed(
                             data_resource_name, data_resource_checksum):
-                        data_resource = self.data_resources[data_resource_index]
+                        data_resource = self.data_store[data_resource_index]
                         data_resource.checksum = data_resource_checksum
                         data_resource.data_resource_methods = api_schema
                         data_resource.data_model_name = table_name
@@ -248,7 +233,7 @@ class DataResourceManagerSync(object):
                         data_resource.data_resource_object.table_schema = table_schema
                         data_resource.data_resource_object.api_schema = api_schema
                         data_resource.data_resource_object.restricted_fields = restricted_fields
-                        self.data_resources[data_resource_index] = data_resource
+                        self.data_store[data_resource_index] = data_resource
                 except Exception as e:
                     self.logger.exception(
                         'Error checking data resource')
@@ -265,7 +250,7 @@ class DataResourceManagerSync(object):
                     table_name)
                 data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
                     api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
-                self.data_resources.append(data_resource)
+                self.data_store.append(data_resource)
 
         except Exception as e:
             self.logger.exception(f"Error loading schema '{schema_file}'")
@@ -281,12 +266,10 @@ class DataResourceManagerSync(object):
             bool: True if the data resource exists. False if not.
 
         """
-        exists = False
-        for data_resource in self.data_resources:
-            if data_resource.data_resource_name.lower() == data_resource_name.lower():
-                exists = True
-                break
-        return exists
+        def fn(thing):
+            return getattr(thing, 'data_resource_name')
+
+        return self.data_exists(data_resource_name, fn)
 
     def data_resource_changed(self, data_resource_name, checksum):
         """Checks if the medata for a data model has been changed.
@@ -300,7 +283,7 @@ class DataResourceManagerSync(object):
 
         """
         changed = False
-        for data_resource in self.data_resources:
+        for data_resource in self.data_store:
             if data_resource.data_resource_name.lower() == data_resource_name.lower():
                 if data_resource.checksum != checksum:
                     changed = True
@@ -317,7 +300,7 @@ class DataResourceManagerSync(object):
             int: Index of the data resource stored in memory, or -1 if not found.
         """
         index = -1
-        for idx, data_resource in enumerate(self.data_resources):
+        for idx, data_resource in enumerate(self.data_store):
             if data_resource.data_resource_name == data_resource_name.lower():
                 index = idx
                 break

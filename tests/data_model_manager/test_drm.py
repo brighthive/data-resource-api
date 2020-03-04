@@ -55,3 +55,33 @@ class TestDataResourceManager():
         expect(
             DRM.data_resource_exists('d')
         ).to(equal(False))
+
+    def test_data_changed(self):
+        DRM = setup_drm_store()
+
+        expect(
+            DRM.data_resource_changed('a', 'a')
+        ).to(equal(False))
+
+        expect(
+            DRM.data_resource_changed('a', 'b')
+        ).to(equal(True))
+
+        expect(
+            DRM.data_resource_changed('d', 'a')
+        ).to(equal(False))
+
+    def test_get_data_index(self):
+        DRM = setup_drm_store()
+
+        expect(
+            DRM.get_data_resource_index('a')
+        ).to(equal(0))
+
+        expect(
+            DRM.get_data_resource_index('b')
+        ).to(equal(1))
+
+        expect(
+            DRM.get_data_resource_index('d')
+        ).to(equal(-1))

@@ -51,6 +51,7 @@ class TestDataModelManager():
 
     def test_data_exists(self):
         DMM = setup_dmm_store()
+
         expect(
             DMM.data_model_exists('a')
         ).to(equal(True))
@@ -66,3 +67,33 @@ class TestDataModelManager():
         expect(
             DMM.data_model_exists('d')
         ).to(equal(False))
+
+    def test_data_changed(self):
+        DMM = setup_dmm_store()
+
+        expect(
+            DMM.data_model_changed('a', 'a')
+        ).to(equal(False))
+
+        expect(
+            DMM.data_model_changed('a', 'b')
+        ).to(equal(True))
+
+        expect(
+            DMM.data_model_changed('d', 'a')
+        ).to(equal(False))
+
+    def test_get_data_index(self):
+        DMM = setup_dmm_store()
+
+        expect(
+            DMM.get_data_model_index('a')
+        ).to(equal(0))
+
+        expect(
+            DMM.get_data_model_index('b')
+        ).to(equal(1))
+
+        expect(
+            DMM.get_data_model_index('d')
+        ).to(equal(-1))

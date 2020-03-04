@@ -41,10 +41,16 @@ class DataManager(object):
                 return True
         return False
 
-    def data_changed(self, data_name, checksum, name_getter, checksum_getter):
+    def data_changed(
+            self,
+            data_name: str,
+            checksum: str,
+            name_attr: str,
+            checksum_attr: str):
         for data_object in self.data_store:
-            same_name = name_getter(data_object).lower == data_name.lower
-            same_checksum = checksum_getter(data_object) != checksum
+            same_name = getattr(
+                data_object, name_attr).lower == data_name.lower
+            same_checksum = getattr(data_object, checksum_attr) != checksum
             if same_name and same_checksum:
                 return True
         return False

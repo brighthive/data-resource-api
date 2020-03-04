@@ -279,15 +279,8 @@ class DataResourceManagerSync(DataManager):
             bool: True if the data resource has been changed. False if not.
 
         """
-
-        def name_fn(thing):
-            return getattr(thing, 'data_resource_name')
-
-        def checksum_fn(thing):
-            return getattr(thing, 'checksum')
-
         return self.data_changed(
-            data_resource_name, checksum, name_fn, checksum_fn)
+            data_resource_name, checksum, 'data_resource_name', 'checksum')
 
     def get_data_resource_index(self, data_resource_name):
         """Retrieves the index of a specific data resource in the data resources dict.

@@ -279,14 +279,8 @@ class DataModelManagerSync(DataManager):
             bool: True if the data model has been changed. False if not.
 
         """
-        def name_fn(thing):
-            return getattr(thing, 'schema_filename')
-
-        def checksum_fn(thing):
-            return getattr(thing, 'model_checksum')
-
         return self.data_changed(
-            schema_filename, checksum, name_fn, checksum_fn)
+            schema_filename, checksum, 'schema_filename', 'model_checksum')
 
     def get_data_model_index(self, schema_filename):
         """Checks if the medata for a data model has been changed.

@@ -48,27 +48,17 @@ class DataManager(object):
                 return True
         return False
 
-# /////
+    def get_data_index(self, data_name, name_getter):
+        """Retrieves the index of a specific data resource in the data resources dict.
 
-    # def get_data_index(self, data_resource_name):
-    #     """Retrieves the index of a specific data resource in the data resources dict.
+        Args:
+           data_resource_name (str): Name of the data resource file on disk.
 
-    #     Args:
-    #        data_resource_name (str): Name of the data resource file on disk.
-
-    #     Returns:
-    #         int: Index of the data resource stored in memory, or -1 if not found.
-    #     """
-    #     index = -1
-    #     for idx, data_resource in enumerate(self.data_resources):
-    #         if data_resource.data_resource_name == data_resource_name.lower():
-    #             index = idx
-    #             break
-    #     return index
-
-    #     index = -1
-    #     for idx, data_model in enumerate(self.data_model_descriptors):
-    #         if data_model.schema_filename.lower() == schema_filename.lower():
-    #             index = idx
-    #             break
-    #     return index
+        Returns:
+            int: Index of the data resource stored in memory, or -1 if not found.
+        """
+        index = -1
+        for idx, data_object in enumerate(self.data_store):
+            if name_getter(data_object) == data_name.lower():
+                return idx
+        return index

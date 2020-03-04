@@ -301,12 +301,10 @@ class DataResourceManagerSync(DataManager):
         Returns:
             int: Index of the data resource stored in memory, or -1 if not found.
         """
-        index = -1
-        for idx, data_resource in enumerate(self.data_store):
-            if data_resource.data_resource_name == data_resource_name.lower():
-                index = idx
-                break
-        return index
+        def fn(thing):
+            return getattr(thing, 'data_resource_name')
+
+        return self.get_data_index(data_resource_name, fn)
 
 
 class DataResourceManager(Thread, DataResourceManagerSync):

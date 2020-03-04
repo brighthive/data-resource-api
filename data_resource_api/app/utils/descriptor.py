@@ -51,7 +51,9 @@ class DescriptorFileHelper():
             raise RunTimeError(f"Unable to locate schema directory '{dir_path}'")
 
     def _get_file_from_dir(self, directory):
-        yield from [f for f in os.listdir(directory) if f.endswith('.json')]
+        schema_files = [f for f in os.listdir(directory) if f.endswith('.json')]
+        schema_files.sort()
+        return schema_files
 
 
 class DescriptorFromFile():

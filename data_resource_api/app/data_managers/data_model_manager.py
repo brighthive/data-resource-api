@@ -187,7 +187,8 @@ class DataModelManagerSync(DataManager):
             remote_checksum = descriptor_master_list[table_name]['remote_checksum']
             local_json = descriptor_master_list[table_name]['local_json_descriptor']
             if remote_checksum is None and loadable_json is None and local_json is not None:
-                descriptor_master_list[table_name]['loadable_json_descriptor'] = local_json
+                descriptor_master_list[table_name] = {}
+                # descriptor_master_list[table_name]['loadable_json_descriptor'] = local_json
                 continue
 
             # If the remote and local checksum match then move the
@@ -208,6 +209,11 @@ class DataModelManagerSync(DataManager):
 
         # load each item into our models
         for table_name in descriptor_master_list.keys():
+            # Assumed to be new descriptor -- process normally -- do not load
+            # early
+            if not descriptor_master_list[table_name]:
+                continue
+
             self.load_descriptor_into_sql_alchemy_model(
                 descriptor_master_list[table_name]['loadable_json_descriptor'])
 

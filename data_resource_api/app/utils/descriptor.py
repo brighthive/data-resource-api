@@ -1,7 +1,7 @@
 import os
 import json
 from data_resource_api.logging import LogFactory
-import md5
+from hashlib import md5
 
 logger = LogFactory.get_console_logger('descriptor-utils')
 

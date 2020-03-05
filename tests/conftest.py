@@ -61,8 +61,8 @@ class PostgreSQLContainer(object):
         self.stop_if_running()
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
-        except Exception as e:
-            logger.error(e)
+        except Exception:
+            logger.exception('Failed to start test container')
 
         self.container = self.docker_client.containers.run(
             self.get_postgresql_image(),
@@ -129,7 +129,7 @@ class Client():
             self.upgrade_loop()
             return self.app.test_client()
         except UpgradeFail:
-            logger.error("Failed to upgrade database.")
+            logger.exception("Failed to upgrade database.")
 
     def initialize_test_client(self):
         self.data_resource_manager = DataResourceManagerSync(
@@ -157,8 +157,8 @@ class Client():
                     upgraded = True
                     return True
 
-            except Exception as e:
-                logger.error(e)
+            except Exception:
+                logger.exception('Failed to upgrade client')
 
                 sleep_time = exponential_time()
                 logger.info(

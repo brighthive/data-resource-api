@@ -118,6 +118,10 @@ class DataModelManagerSync(DataManager):
 
         self.logger.info('Base models initalized.')
 
+    def print_thing(self, text, obj):
+        self.logger.info(text)
+        self.logger.info(json.dumps(obj, indent=4))
+
     # TODO integration test
     def restore_models_from_database(self) -> None:
         """This method will load all stored descriptor files from DB
@@ -150,6 +154,8 @@ class DataModelManagerSync(DataManager):
                 "loadable_json_descriptor": None
             }
 
+        self.print_thing('loaded all local', descriptor_master_list)
+
         # Getting all remote json
         # presumably we want to put that json into the master list
         remote_descriptor_json = self.db.get_stored_descriptors()
@@ -162,13 +168,26 @@ class DataModelManagerSync(DataManager):
             # override json_descriptor
             descriptor_master_list[remote_descriptor.table_name]['loadable_json_descriptor'] = remote_descriptor.descriptor
 
+        self.print_thing('Loaded remote json', descriptor_master_list)
+
         # store remote checksums into our master list
         for table_name, remote_checksum in self.db.get_stored_checksums():
             descriptor_master_list[table_name]['remote_checksum'] = remote_checksum
 
+        self.print_thing('loaded remote checksums', descriptor_master_list)
+
         # find all items in master list that do not have json
         for table_name in descriptor_master_list.keys():
-            if descriptor_master_list[table_name]['loadable_json_descriptor'] is not None:
+            loadable_json = descriptor_master_list[table_name]['loadable_json_descriptor']
+            if loadable_json is not None:
+                continue
+
+            # if there is no remote checksum and no loadable that means this is
+            # a new file.
+            remote_checksum = descriptor_master_list[table_name]['remote_checksum']
+            local_json = descriptor_master_list[table_name]['local_json_descriptor']
+            if remote_checksum is None and loadable_json is None and local_json is not None:
+                descriptor_master_list[table_name]['loadable_json_descriptor'] = local_json
                 continue
 
             # If the remote and local checksum match then move the
@@ -184,6 +203,8 @@ class DataModelManagerSync(DataManager):
             raise RuntimeError(
                 f"Backwards compatability error -- you must find the descriptor with the matching checksum for table '{table_name}'")
             sys.exit(1337)
+
+        self.print_thing('Made it past panic', descriptor_master_list)
 
         # load each item into our models
         for table_name in descriptor_master_list.keys():

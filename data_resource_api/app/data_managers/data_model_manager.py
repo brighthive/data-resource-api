@@ -119,8 +119,9 @@ class DataModelManagerSync(DataManager):
         self.logger.info('Base models initalized.')
 
     def print_thing(self, text, obj):
-        self.logger.info(text)
-        self.logger.info(json.dumps(obj, indent=4))
+        #self.logger.info(text)
+        #self.logger.info(json.dumps(obj, indent=4))
+        pass
 
     # TODO integration test
     def restore_models_from_database(self) -> None:

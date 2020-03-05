@@ -7,6 +7,25 @@ from sqlalchemy import pool
 
 from alembic import context
 from data_resource_api.db import engine, Base
+from data_resource_api.app.utils.db_Handler import DBHandler
+
+from alembic.script import write_hooks
+import re
+import pickle
+import tempfile
+
+#def get_version_pickles_from_db():
+#    print("Getting versions from database")
+
+#get_version_pickles_from_db()
+
+@write_hooks.register("save_pickled_migration_script_to_db")
+def save_pickled_migration_script_to_db(filename, options):
+    with open(filename) as file_:
+        full_migration_script = pickle.dump(file_.readlines())
+        DBHandler.save_version_pickle(filename, full_migration_script)
+
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -83,3 +102,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+

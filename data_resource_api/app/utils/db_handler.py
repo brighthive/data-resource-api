@@ -1,4 +1,4 @@
-from data_resource_api.db import Session, Checksum
+from data_resource_api.db import Session, Checksum, Migrations
 from data_resource_api.logging import LogFactory
 from alembic import command
 
@@ -88,7 +88,10 @@ class DBHandler(object):
         try:
             query = session.query(Checksum)
             for _row in query.all():
+                if not _row.descriptor_json:
+                    continue
                 descriptor_list.append(_row.descriptor_json)
+
         except Exception:
             logger.error('Error retrieving stored models', exc_info=True)
         session.close()
@@ -136,3 +139,15 @@ class DBHandler(object):
                              message=message, autogenerate=True)
         else:
             logger.info('No migrations to run...')
+
+    @staticmethod
+    def save_version_pickle(file_name: str, file_pickle) -> None:
+        session = Session()
+        try:
+            new_migration = Migrations()
+            new_migration.file_name = file_name
+            new_migration.file_pickle = file_pickle
+            session.add(new_migration)
+            session.commit()
+        except Exception:
+            logger.error('Failed to save pickeled migration')

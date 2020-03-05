@@ -5,7 +5,7 @@ for the data resource under management. It is designed to run in it's own thread
 monitoring data resources on a regular interval.
 
 """
-
+import sys
 import json
 from hashlib import md5
 from threading import Thread
@@ -123,12 +123,75 @@ class DataModelManagerSync(DataManager):
         """This method will load all stored descriptor files from DB
         into SQL Alchemy ORM models.
         """
-        # query database for all jsonb in checksum table
-        json_descriptor_list = self.db.get_stored_descriptors()
+        # get a list of all descriptors that we are going to process locally
+        {
+            "table_name": {
+                "count": 0,
+                "local_checksum": "",
+                "remote_checksum": "",
+                "local_json_descriptor": "",
+                "loadable_json_descriptor": {}
+            }
+        }
+
+        descriptor_master_list = {}
+
+        local_descriptors = DescriptorsGetter(
+            self.descriptor_directories,
+            self.custom_descriptors)
+
+        # Compile local files into master list
+        for local_descriptor in local_descriptors.iter_descriptors():
+            local_checksum = local_descriptor.get_checksum()
+            local_json_descriptor = local_descriptor.descriptor
+            descriptor_master_list[local_descriptor.table_name] = {
+                "local_checksum": local_checksum,
+                "local_json_descriptor": local_json_descriptor,
+                "loadable_json_descriptor": None
+            }
+
+        # Getting all remote json
+        # presumably we want to put that json into the master list
+        remote_descriptor_json = self.db.get_stored_descriptors()
+        for remote_descriptor_json in remote_descriptor_json:
+            remote_descriptor = Descriptor(remote_descriptor_json)
+
+            if remote_descriptor.table_name not in descriptor_master_list:  # .keys()?
+                descriptor_master_list[remote_descriptor.table_name] = {}
+
+            # override json_descriptor
+            descriptor_master_list[remote_descriptor.table_name]['loadable_json_descriptor'] = remote_descriptor.descriptor
+
+        # store remote checksums into our master list
+        for table_name, remote_checksum in self.db.get_stored_checksums():
+            descriptor_master_list[table_name]['remote_checksum'] = remote_checksum
+
+        # pseduo code
+        # find all items in master list that do not have json
+        for table_name in descriptor_master_list.keys():
+            if descriptor_master_list[table_name]['loadable_json_descriptor'] is not None:
+                continue
+
+            # If the remote and local checksum match then move the
+            # local descriptor to loadable descriptor field
+            local_checksum = descriptor_master_list[table_name]['local_checksum']
+            remote_checksum = descriptor_master_list[table_name]['remote_checksum']
+            if local_checksum == remote_checksum:
+                descriptor_master_list[table_name]['loadable_json_descriptor'] = descriptor_master_list[table_name]['local_json_descriptor']
+                continue
+
+            # otherwise
+            # panic!!!
+            raise RuntimeError(
+                f"Backwards compatability error -- you must find the descriptor with the matching checksum for table '{table_name}'")
+            sys.exit(1337)
 
         # load each item into our models
-        for descriptor in json_descriptor_list:
-            self.load_descriptor_into_sql_alchemy_model(descriptor)
+        # for descriptor in json_descriptor_list:
+        # self.load_descriptor_into_sql_alchemy_model(descriptor)
+        for table_name in descriptor_master_list.keys():
+            self.load_descriptor_into_sql_alchemy_model(
+                descriptor_master_list[table_name]['loadable_json_descriptor'])
 
     def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
         desc = Descriptor(descriptor)

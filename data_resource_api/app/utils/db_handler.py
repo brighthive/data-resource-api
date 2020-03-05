@@ -95,6 +95,19 @@ class DBHandler(object):
 
         return descriptor_list
 
+    def get_stored_checksums(self) -> list:
+        session = Session()
+        checksums = []  # list of json dict
+        try:
+            query = session.query(Checksum)
+            for _row in query.all():
+                checksums.append((_row.data_resource, _row.model_checksum))
+        except Exception:
+            logger.error('Error retrieving stored models', exc_info=True)
+        session.close()
+
+        return checksums
+
     def upgrade(self):
         """Migrate up to head.
 

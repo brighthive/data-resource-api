@@ -124,15 +124,14 @@ class DataModelManagerSync(DataManager):
         into SQL Alchemy ORM models.
         """
         # get a list of all descriptors that we are going to process locally
-        {
-            "table_name": {
-                "count": 0,
-                "local_checksum": "",
-                "remote_checksum": "",
-                "local_json_descriptor": "",
-                "loadable_json_descriptor": {}
-            }
-        }
+        # {
+        #     "table_name": {
+        #         "local_checksum": "",
+        #         "remote_checksum": "",
+        #         "local_json_descriptor": "",
+        #         "loadable_json_descriptor": {}
+        #     }
+        # }
 
         descriptor_master_list = {}
 
@@ -146,6 +145,7 @@ class DataModelManagerSync(DataManager):
             local_json_descriptor = local_descriptor.descriptor
             descriptor_master_list[local_descriptor.table_name] = {
                 "local_checksum": local_checksum,
+                "remote_checksum": None,
                 "local_json_descriptor": local_json_descriptor,
                 "loadable_json_descriptor": None
             }
@@ -166,7 +166,6 @@ class DataModelManagerSync(DataManager):
         for table_name, remote_checksum in self.db.get_stored_checksums():
             descriptor_master_list[table_name]['remote_checksum'] = remote_checksum
 
-        # pseduo code
         # find all items in master list that do not have json
         for table_name in descriptor_master_list.keys():
             if descriptor_master_list[table_name]['loadable_json_descriptor'] is not None:
@@ -187,8 +186,6 @@ class DataModelManagerSync(DataManager):
             sys.exit(1337)
 
         # load each item into our models
-        # for descriptor in json_descriptor_list:
-        # self.load_descriptor_into_sql_alchemy_model(descriptor)
         for table_name in descriptor_master_list.keys():
             self.load_descriptor_into_sql_alchemy_model(
                 descriptor_master_list[table_name]['loadable_json_descriptor'])

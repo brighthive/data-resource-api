@@ -1,6 +1,7 @@
 from data_resource_api.db import Session, Checksum, Migrations
 from data_resource_api.logging import LogFactory
 from alembic import command
+import pickle
 
 logger = LogFactory.get_console_logger('db-handler')
 
@@ -141,13 +142,32 @@ class DBHandler(object):
             logger.info('No migrations to run...')
 
     @staticmethod
-    def save_version_pickle(file_name: str, file_pickle) -> None:
+    def save_migration(file_name: str, file_blob) -> None:
         session = Session()
         try:
             new_migration = Migrations()
             new_migration.file_name = file_name
-            new_migration.file_pickle = file_pickle
+            new_migration.file_blob = file_blob
             session.add(new_migration)
             session.commit()
         except Exception:
-            logger.error('Failed to save pickeled migration')
+            logger.exception('Failed to save pickeled migration')
+
+    # we need to get the stored migrations and run upgrade again
+    def get_migrations_from_db_and_save_locally(self):
+        logger.info('gettin files')
+        session = Session()
+        try:
+            query = session.query(Migrations)
+            for _row in query.all():
+                print(_row)
+                self.save_migrations_to_local_file(
+                    _row.file_name,
+                    _row.file_blob)
+        except Exception:
+            logger.exception('Failed to save pickeled migration')
+
+    def save_migrations_to_local_file(self, file_name: str, file_blob):
+        print(file_name)
+        with open(file_name, 'wb') as file_:
+            file_.write(file_blob)

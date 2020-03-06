@@ -14,17 +14,17 @@ import re
 import pickle
 import tempfile
 
-#def get_version_pickles_from_db():
+# def get_version_pickles_from_db():
 #    print("Getting versions from database")
 
-#get_version_pickles_from_db()
+# get_version_pickles_from_db()
+
 
 @write_hooks.register("save_pickled_migration_script_to_db")
 def save_pickled_migration_script_to_db(filename, options):
     with open(filename) as file_:
         full_migration_script = pickle.dump(file_.readlines())
-        DBHandler.save_version_pickle(filename, full_migration_script)
-
+        DBHandler.save_migration(filename, full_migration_script)
 
 
 # this is the Alembic Config object, which provides
@@ -102,4 +102,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

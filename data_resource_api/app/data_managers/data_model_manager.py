@@ -56,7 +56,7 @@ class DataModelManagerSync(DataManager):
 
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
-        self.restore_models_from_database()
+        # self.restore_models_from_database()
 
         def run_fn():
             self.logger.info('Data Model Manager Running...')
@@ -103,8 +103,15 @@ class DataModelManagerSync(DataManager):
                 if e.code == 'f405':
                     self.logger.info(
                         'Checksum table was not found; Creating checksum migration...')
-                    self.db.revision('checksum_and_logs')
+                    # The base checksum migration should always be present
+                    # in the migrations folder
+                    # No need to call this --
+                    # self.db.revision('checksum_and_logs')
                     self.db.upgrade()
+                    # we need to get the pickled migrations and run upgrade
+                    # again
+                    # sys.exit(1)
+
                     db_active = True
                     self.logger.info('Successfully created checksum.')
 
@@ -118,8 +125,11 @@ class DataModelManagerSync(DataManager):
 
         self.logger.info('Base models initalized.')
 
+        self.db.get_migrations_from_db_and_save_locally()
+        self.db.upgrade()
+
     def print_thing(self, text, obj):
-        #self.logger.info(text)
+        # self.logger.info(text)
         #self.logger.info(json.dumps(obj, indent=4))
         pass
 

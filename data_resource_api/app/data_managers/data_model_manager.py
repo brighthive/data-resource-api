@@ -133,11 +133,10 @@ class DataModelManagerSync(DataManager):
         # Getting all remote json
         # presumably we want to put that json into the master list
         remote_descriptors = self.db.get_stored_descriptors()
-
         for remote_descriptor_json in remote_descriptors:
-
             remote_descriptor = Descriptor(remote_descriptor_json)
-            self.logger.info(remote_descriptor.table_name)
+            self.logger.info(
+                f"Loading descriptor '{remote_descriptor.table_name}' from db.")
             # load it
             self.load_descriptor_into_sql_alchemy_model(
                 remote_descriptor.descriptor)

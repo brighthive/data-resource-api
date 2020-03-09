@@ -14,4 +14,5 @@ RUN chmod a+x cmd.sh
 ADD migrations migrations
 ADD schema schema
 ADD data_resource_api data_resource_api
+ADD 104_to_110.py 104_to_110.py
 ENTRYPOINT [ "/data-resource/cmd.sh" ]

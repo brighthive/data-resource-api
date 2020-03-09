@@ -103,13 +103,9 @@ class DataModelManagerSync(DataManager):
                 if e.code == 'f405':
                     self.logger.info(
                         'Checksum table was not found; Creating checksum migration...')
-                    # is there is no alembic table?
-                    # self.db.upgrade()
+                    # The migration file that describes checksums, logs, and migrations
+                    # is present in the migrations folder.
                     self.db.upgrade()
-
-                    # we need to get the pickled migrations and run upgrade
-                    # again
-                    # sys.exit(1)
 
                     db_active = True
                     self.logger.info('Successfully created checksum.')

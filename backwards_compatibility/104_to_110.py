@@ -20,7 +20,8 @@ from data_resource_api.app.utils.descriptor import Descriptor, DescriptorsGetter
 from data_resource_api.db import Session, Checksum, Migrations
 from data_resource_api.app.utils.db_handler import DBHandler
 
-# TODO specify the versions that this is compatabile with
+# This will upgrade the DB of a 1.0.4 version (or earlier?) database
+# to be compatible with the 1.1.0 version.
 SCHEMA_DIR = "/data-resource/schema"
 MIGRATION_DIR = "/data-resource/migrations/versions"
 

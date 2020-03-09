@@ -119,7 +119,6 @@ class Descriptor():
 
     def __init__(self, descriptor: dict, file_name: str = ""):
         # add validation checker here
-        logger.info(json.dumps(descriptor, indent=4))
 
         try:
             self.table_name = descriptor['datastore']['tablename']

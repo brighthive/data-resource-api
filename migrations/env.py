@@ -7,7 +7,7 @@ from sqlalchemy import pool
 
 from alembic import context
 from data_resource_api.db import engine, Base
-from data_resource_api.app.utils.db_Handler import DBHandler
+from data_resource_api.app.utils.db_handler import DBHandler
 
 from alembic.script import write_hooks
 import re

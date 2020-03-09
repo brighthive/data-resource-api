@@ -103,11 +103,10 @@ class DataModelManagerSync(DataManager):
                 if e.code == 'f405':
                     self.logger.info(
                         'Checksum table was not found; Creating checksum migration...')
-                    # The base checksum migration should always be present
-                    # in the migrations folder
-                    # No need to call this --
-                    # self.db.revision('checksum_and_logs')
+                    # is there is no alembic table?
+                    # self.db.upgrade()
                     self.db.upgrade()
+
                     # we need to get the pickled migrations and run upgrade
                     # again
                     # sys.exit(1)
@@ -126,6 +125,7 @@ class DataModelManagerSync(DataManager):
         self.logger.info('Base models initalized.')
 
         self.db.get_migrations_from_db_and_save_locally()
+        self.load_models_from_db()
         self.db.upgrade()
 
     def print_thing(self, text, obj):
@@ -133,7 +133,21 @@ class DataModelManagerSync(DataManager):
         #self.logger.info(json.dumps(obj, indent=4))
         pass
 
+    def load_models_from_db(self) -> None:
+        # Getting all remote json
+        # presumably we want to put that json into the master list
+        remote_descriptors = self.db.get_stored_descriptors()
+        for remote_descriptor_json in remote_descriptors:
+            remote_descriptor = Descriptor(remote_descriptor_json)
+
+            # load it
+            self.load_descriptor_into_sql_alchemy_model(
+                remote_descriptor.descriptor)
+
+        self.logger.info("Loaded remote descriptors.")
+
     # TODO integration test
+
     def restore_models_from_database(self) -> None:
         """This method will load all stored descriptor files from DB
         into SQL Alchemy ORM models.

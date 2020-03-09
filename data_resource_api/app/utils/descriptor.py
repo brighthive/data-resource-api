@@ -56,7 +56,8 @@ class DescriptorFileHelper():
                 f"Unable to locate schema directory '{dir_path}'")
 
     def _get_file_from_dir(self, directory):
-        yield from [f for f in os.listdir(directory) if f.endswith('.json')]
+        lol = sorted([f for f in os.listdir(directory) if f.endswith('.json')])
+        yield from lol
 
 
 class DescriptorFromFile():
@@ -118,6 +119,7 @@ class Descriptor():
 
     def __init__(self, descriptor: dict, file_name: str = ""):
         # add validation checker here
+        logger.info(json.dumps(descriptor, indent=4))
 
         try:
             self.table_name = descriptor['datastore']['tablename']

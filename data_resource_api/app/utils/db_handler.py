@@ -89,8 +89,13 @@ class DBHandler(object):
         try:
             query = session.query(Checksum)
             for _row in query.all():
-                if not _row.descriptor_json:
-                    continue
+                try:
+                    if not _row.descriptor_json:
+                        continue
+                except Exception:
+                    logger.exception(
+                        "Checksum table does not have descriptor_json column")
+
                 descriptor_list.append(_row.descriptor_json)
 
         except Exception:

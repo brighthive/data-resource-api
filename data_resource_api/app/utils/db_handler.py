@@ -30,7 +30,7 @@ class DBHandler(object):
             session.add(checksum)
             session.commit()
         except Exception:
-            logger.error('Error adding checksum', exc_info=True)
+            logger.exception('Error adding checksum')
         session.close()
 
     def update_model_checksum(self, table_name: str, model_checksum: str):
@@ -53,7 +53,7 @@ class DBHandler(object):
             session.commit()
             updated = True
         except Exception:
-            logger.error('Error updating checksum', exc_info=True)
+            logger.exception('Error updating checksum')
         session.close()
         return updated
 
@@ -73,7 +73,7 @@ class DBHandler(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
         except Exception:
-            logger.error('Error retrieving checksum', exc_info=True)
+            logger.exception('Error retrieving checksum')
         session.close()
         return checksum
 
@@ -94,7 +94,7 @@ class DBHandler(object):
                         continue
                 except Exception:
                     logger.exception(
-                        "Checksum table does not have descriptor_json column")
+                        "Checksum table or row does not have a value for the descriptor_json column.")
 
                 descriptor_list.append(_row.descriptor_json)
 
@@ -112,7 +112,7 @@ class DBHandler(object):
             for _row in query.all():
                 checksums.append((_row.data_resource, _row.model_checksum))
         except Exception:
-            logger.error('Error retrieving stored models', exc_info=True)
+            logger.exception('Error retrieving stored models')
         session.close()
 
         return checksums
@@ -148,6 +148,9 @@ class DBHandler(object):
 
     @staticmethod
     def save_migration(file_name: str, file_blob) -> None:
+        """ This function is called by alembic as a post write hook.
+        It will take a migration file and save it to the database.
+        """
         session = Session()
         try:
             new_migration = Migrations()
@@ -156,11 +159,10 @@ class DBHandler(object):
             session.add(new_migration)
             session.commit()
         except Exception:
-            logger.exception('Failed to save pickeled migration')
+            logger.exception('Failed to restore migration files from DB.')
 
-    # we need to get the stored migrations and run upgrade again
     def get_migrations_from_db_and_save_locally(self):
-        logger.info('gettin files')
+        logger.info('Restoring migration files from DB...')
         session = Session()
         try:
             query = session.query(Migrations)
@@ -170,9 +172,8 @@ class DBHandler(object):
                     _row.file_name,
                     _row.file_blob)
         except Exception:
-            logger.exception('Failed to save pickeled migration')
+            logger.exception('Failed to restore migration files from DB.')
 
     def save_migrations_to_local_file(self, file_name: str, file_blob):
-        print(file_name)
         with open(file_name, 'wb') as file_:
             file_.write(file_blob)

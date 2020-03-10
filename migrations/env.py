@@ -10,21 +10,11 @@ from data_resource_api.db import engine, Base
 from data_resource_api.app.utils.db_handler import DBHandler
 
 from alembic.script import write_hooks
-import re
-import pickle
-import tempfile
-
-# def get_version_pickles_from_db():
-#    print("Getting versions from database")
-
-# get_version_pickles_from_db()
-
 
 @write_hooks.register("save_pickled_migration_script_to_db")
 def save_pickled_migration_script_to_db(filename, options):
-    with open(filename) as file_:
-        full_migration_script = pickle.dump(file_.readlines())
-        DBHandler.save_migration(filename, full_migration_script)
+    with open(filename, 'rb') as file_:
+        DBHandler.save_migration(filename, file_.read())
 
 
 # this is the Alembic Config object, which provides

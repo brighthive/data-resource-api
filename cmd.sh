@@ -7,7 +7,7 @@ if [ "$APP_ENV" == "DEVELOPMENT" ] || [ -z "$APP_ENV" ]; then
     trap "kill -9 $DATA_MODEL_MANAGER_PID" EXIT
 else
     MODE=$@
-    if [ "$MODE" == "--upgrade" ]; then
+    if [ "$MODE" == "--upgrade-104-to-110" ]; then
         python 104_to_110.py
         exit 1
     fi

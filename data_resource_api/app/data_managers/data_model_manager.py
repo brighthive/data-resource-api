@@ -56,13 +56,15 @@ class DataModelManagerSync(DataManager):
 
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
-        # self.restore_models_from_database()
+        self.db.get_migrations_from_db_and_save_locally()
+        self.load_models_from_db()
+        self.db.upgrade()
 
         def run_fn():
             self.logger.info('Data Model Manager Running...')
             self.monitor_data_models()
 
-        if test_mode:  # Does not run in while loop
+        if test_mode:  # Do not run in while loop for tests
             run_fn()
             return
 
@@ -120,124 +122,18 @@ class DataModelManagerSync(DataManager):
 
         self.logger.info('Base models initalized.')
 
-        self.db.get_migrations_from_db_and_save_locally()
-        self.load_models_from_db()
-        self.db.upgrade()
-
-    def print_thing(self, text, obj):
-        # self.logger.info(text)
-        #self.logger.info(json.dumps(obj, indent=4))
-        pass
-
     def load_models_from_db(self) -> None:
         # Getting all remote json
-        # presumably we want to put that json into the master list
         remote_descriptors = self.db.get_stored_descriptors()
         for remote_descriptor_json in remote_descriptors:
             remote_descriptor = Descriptor(remote_descriptor_json)
             self.logger.info(
                 f"Loading descriptor '{remote_descriptor.table_name}' from db.")
-            # load it
+            
             self.load_descriptor_into_sql_alchemy_model(
                 remote_descriptor.descriptor)
 
         self.logger.info("Loaded remote descriptors.")
-
-    # TODO integration test
-
-    def restore_models_from_database(self) -> None:
-        """This method will load all stored descriptor files from DB
-        into SQL Alchemy ORM models.
-        """
-        # get a list of all descriptors that we are going to process locally
-        # {
-        #     "table_name": {
-        #         "local_checksum": "",
-        #         "remote_checksum": "",
-        #         "local_json_descriptor": "",
-        #         "loadable_json_descriptor": {}
-        #     }
-        # }
-
-        descriptor_master_list = {}
-
-        local_descriptors = DescriptorsGetter(
-            self.descriptor_directories,
-            self.custom_descriptors)
-
-        # Compile local files into master list
-        for local_descriptor in local_descriptors.iter_descriptors():
-            local_checksum = local_descriptor.get_checksum()
-            local_json_descriptor = local_descriptor.descriptor
-            descriptor_master_list[local_descriptor.table_name] = {
-                "local_checksum": local_checksum,
-                "remote_checksum": None,
-                "local_json_descriptor": local_json_descriptor,
-                "loadable_json_descriptor": None
-            }
-
-        self.print_thing('loaded all local', descriptor_master_list)
-
-        # Getting all remote json
-        # presumably we want to put that json into the master list
-        remote_descriptor_json = self.db.get_stored_descriptors()
-        for remote_descriptor_json in remote_descriptor_json:
-            remote_descriptor = Descriptor(remote_descriptor_json)
-
-            if remote_descriptor.table_name not in descriptor_master_list:  # .keys()?
-                descriptor_master_list[remote_descriptor.table_name] = {}
-
-            # override json_descriptor
-            descriptor_master_list[remote_descriptor.table_name]['loadable_json_descriptor'] = remote_descriptor.descriptor
-
-        self.print_thing('Loaded remote json', descriptor_master_list)
-
-        # store remote checksums into our master list
-        for table_name, remote_checksum in self.db.get_stored_checksums():
-            descriptor_master_list[table_name]['remote_checksum'] = remote_checksum
-
-        self.print_thing('loaded remote checksums', descriptor_master_list)
-
-        # find all items in master list that do not have json
-        for table_name in descriptor_master_list.keys():
-            loadable_json = descriptor_master_list[table_name]['loadable_json_descriptor']
-            if loadable_json is not None:
-                continue
-
-            # if there is no remote checksum and no loadable that means this is
-            # a new file.
-            remote_checksum = descriptor_master_list[table_name]['remote_checksum']
-            local_json = descriptor_master_list[table_name]['local_json_descriptor']
-            if remote_checksum is None and loadable_json is None and local_json is not None:
-                descriptor_master_list[table_name] = {}
-                # descriptor_master_list[table_name]['loadable_json_descriptor'] = local_json
-                continue
-
-            # If the remote and local checksum match then move the
-            # local descriptor to loadable descriptor field
-            local_checksum = descriptor_master_list[table_name]['local_checksum']
-            remote_checksum = descriptor_master_list[table_name]['remote_checksum']
-            if local_checksum == remote_checksum:
-                descriptor_master_list[table_name]['loadable_json_descriptor'] = descriptor_master_list[table_name]['local_json_descriptor']
-                continue
-
-            # otherwise
-            # panic!!!
-            raise RuntimeError(
-                f"Backwards compatability error -- you must find the descriptor with the matching checksum for table '{table_name}'")
-            sys.exit(1337)
-
-        self.print_thing('Made it past panic', descriptor_master_list)
-
-        # load each item into our models
-        for table_name in descriptor_master_list.keys():
-            # Assumed to be new descriptor -- process normally -- do not load
-            # early
-            if not descriptor_master_list[table_name]:
-                continue
-
-            self.load_descriptor_into_sql_alchemy_model(
-                descriptor_master_list[table_name]['loadable_json_descriptor'])
 
     def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
         desc = Descriptor(descriptor)

@@ -87,21 +87,13 @@ class DataResourceManagerSync(DataManager):
     # Core functions
     def run(self, test_mode: bool = True):
         self.wait_for_db()
-        # self.restore_models_from_database()
 
         def run_fn():
-            # try:
             self.logger.info('Data Resource Manager Running...')
             self.logger.debug(
                 f"Base metadata: {list(Base.metadata.tables.keys())}")
             self.monitor_data_models()
-            # except Exception as e:
-            #     if e.code == 'e3q8':
-            #         self.logger.info("Waiting for DB...")
-            #         sleep(1)
-            #         continue
 
-            #     self.logger.error(e)
 
         if test_mode:
             run_fn()

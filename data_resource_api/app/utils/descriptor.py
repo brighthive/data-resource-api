@@ -56,8 +56,7 @@ class DescriptorFileHelper():
                 f"Unable to locate schema directory '{dir_path}'")
 
     def _get_file_from_dir(self, directory):
-        lol = sorted([f for f in os.listdir(directory) if f.endswith('.json')])
-        yield from lol
+        yield from sorted([f for f in os.listdir(directory) if f.endswith('.json')])
 
 
 class DescriptorFromFile():
@@ -86,8 +85,7 @@ class DescriptorFromFile():
                     descriptor_dict = json.load(fh)
                 except ValueError as e:
                     logger.info(
-                        f"JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'")
-                    logger.error(e)
+                        f"Failed to load JSON file. JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'")
 
         except Exception as e:
             raise RuntimeError(f"Error opening schema {file_name}")
@@ -118,8 +116,6 @@ class Descriptor():
     """
 
     def __init__(self, descriptor: dict, file_name: str = ""):
-        # add validation checker here
-
         try:
             self.table_name = descriptor['datastore']['tablename']
         except KeyError:

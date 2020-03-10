@@ -8,18 +8,23 @@ logger = LogFactory.get_console_logger('backwards-compat')
 
 # This will upgrade the DB of a 1.0.4 version (or earlier?) database
 # to be compatible with the 1.1.0 version.
-
-# The first step to running this is to delete your checksum migration
-# and replace the first down revision from that deleted checksum migration
-# to e56a6f702357 -- e56a6f702357 is the included base migration file.
-# This script will get your DB up to date with that migration file and
-# replace your first checksum migration with the new included migration file.
+#
+# The following manual steps need to occur before running the upgrade script.
+#
+#     Update alembic version number to match the new first migration — e56a6f702357
+#     Change the down_revision for the second migration to the new first migration — e56a6f702357
+#     Change the alembic_version to the most recent migration you have
+#
+# DELETE FROM alembic_version;
+# INSERT INTO alembic_version(version_num) VALUES (‘123456789ABCDEF’);
+#
+# You can now run the upgrade script. Do this by when running the DMM setting the parameter from --data-model-manager to --upgrade
 
 SCHEMA_DIR = "/data-resource/schema"
 MIGRATION_DIR = "/data-resource/migrations/versions"
 
 
-# Error checking functions
+# Do we need to perform this upgrade checks
 def check_for_checksum_column():
     session = Session()
     query = """
@@ -59,9 +64,8 @@ def check_for_migrations_table():
 
     return False
 
-# create the things functions
 
-
+# Create the changes to DB
 def upgrade_checksum():
     session = Session()
     query = """
@@ -88,9 +92,8 @@ def create_migrations():
     except BaseException:
         logger.exception('Failed to create table migrations')
 
-# push the data functions
 
-
+# Push the required data to the DB
 def push_descriptors():
     session = Session()
 

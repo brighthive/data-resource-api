@@ -11,8 +11,8 @@ from data_resource_api.app.utils.db_handler import DBHandler
 from alembic.script import write_hooks
 
 
-@write_hooks.register("save_pickled_migration_script_to_db")
-def save_pickled_migration_script_to_db(full_file_path, options):
+@write_hooks.register("save_migrations_files_to_db")
+def save_migrations_files_to_db(full_file_path, options):
     with open(full_file_path, 'rb') as file_:
         file_name = os.path.basename(full_file_path)
         DBHandler.save_migration(file_name, file_.read())

@@ -8,7 +8,7 @@ if [ "$APP_ENV" == "DEVELOPMENT" ] || [ -z "$APP_ENV" ]; then
 else
     MODE=$@
     if [ "$MODE" == "--upgrade-104-to-110" ]; then
-        python 104_to_110.py
+        python ./data_resource_api/backwards_compatibility/104_to_110.py
         exit 1
     fi
     if [ "$MODE" == "--data-model-manager" ]; then

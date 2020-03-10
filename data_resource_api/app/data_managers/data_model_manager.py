@@ -5,8 +5,6 @@ for the data resource under management. It is designed to run in it's own thread
 monitoring data resources on a regular interval.
 
 """
-import json
-from hashlib import md5
 from threading import Thread
 from time import sleep
 from data_resource_api.app.utils.descriptor import (
@@ -21,15 +19,15 @@ class DataModelDescriptor(object):
     """A class for maintaining names and checksums for data models.
 
     Class Attributes:
-        schema_filename (str): Filename of the schema on disk.
+        descriptor_file_name (str): Filename of the schema on disk.
         schema_name (str): Name of the actual database table.
         model_checksum (str): MD5 checksum for the model.
 
     """
 
-    def __init__(self, schema_filename=None,
+    def __init__(self, descriptor_file_name=None,
                  schema_name=None, model_checksum=None):
-        self.schema_filename = schema_filename
+        self.descriptor_file_name = descriptor_file_name
         self.schema_name = schema_name
         self.model_checksum = model_checksum
 
@@ -48,6 +46,7 @@ class DataModelManagerSync(DataManager):
 
     # Core functions
 
+    # TODO refactor into base
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
 
@@ -127,7 +126,7 @@ class DataModelManagerSync(DataManager):
                 f"Loading descriptor '{remote_descriptor.table_name}' from db.")
 
             self.load_descriptor_into_sql_alchemy_model(
-                remote_descriptor.descriptor)
+                remote_descriptor)
 
         self.logger.info("Loaded remote descriptors.")
 
@@ -136,140 +135,103 @@ class DataModelManagerSync(DataManager):
         _ = self.orm_factory.create_orm_from_dict(
             desc.table_schema, desc.table_name, desc.api_schema)
 
-    def monitor_data_models(self):
-        """Wraps monitor data models for changes.
+    def process_descriptor(self, descriptor: Descriptor):
+        model_exists = self.data_model_exists(descriptor.file_name)
+        self._process_descriptor(descriptor, model_exists)
 
-        Note:
-            This method wraps the core worker for this class. This method has the
-            responsbility of iterating through a directory to find schema files to load.
-        """
-        self.logger.info('Checking data models')
-
-        descriptors = DescriptorsGetter(
-            self.descriptor_directories,
-            self.custom_descriptors)
-        for descriptor in descriptors.iter_descriptors():
-            self.process_descriptor(descriptor)
-
-        self.logger.info('Completed check of data models')
-
-    # TODO refactor this into smaller functions
-    def process_descriptor(self, schema_dict: object):
-        """Operate on a schema dict for data model changes.
-
-        Note:
-            This method is the core worker for this class. It has the responsibility of
-            monitoring all data resource models and determining if they have changed. If
-            changes are detected, it also has the responsibility of building and applying
-            new Alembic migrations to meet these changes. The data models will then have
-            to be reconstructed by each individual worker.
-        """
-        schema_filename = schema_dict.file_name
-        self.logger.debug(f"Looking at {schema_filename}")
-
+    def data_model_does_exist(self, descriptor: Descriptor):
         try:
-            # Extract data for easier use
-            table_name = schema_dict.table_name
-            table_schema = schema_dict.table_schema
-            api_schema = schema_dict.api_schema
+            descriptor_file_name = descriptor.file_name
+            table_name = descriptor.table_name
+            table_schema = descriptor.table_schema
+            api_schema = descriptor.api_schema
+            model_checksum = descriptor.get_checksum()
 
-            # calculate the checksum for this json
-            model_checksum = md5(
-                json.dumps(
-                    table_schema,
-                    sort_keys=True
-                ).encode('utf-8')
-            ).hexdigest()
+            self.logger.debug(f"{descriptor_file_name}: Found existing.")
+            # check if the cached db checksum has changed from the new file
+            # checksum
+            if not self.data_model_changed(
+                    descriptor_file_name, model_checksum):
+                self.logger.debug(f"{descriptor_file_name}: Unchanged.")
+                return
 
-            self.logger.debug('Pre: ' + str(Base.metadata.tables.keys()))
+            self.logger.debug(f"{descriptor_file_name}: Found changed.")
 
-            # Check if data model exists by checking if we have stored metadata
-            # about it
-            if self.data_model_exists(schema_filename):
-                self.logger.debug(f"{schema_filename}: Found existing.")
-                # check if the cached db checksum has changed from the new file
-                # checksum
-                if not self.data_model_changed(
-                        schema_filename, model_checksum):
-                    self.logger.debug(f"{schema_filename}: Unchanged.")
-                    return
+            # Get the index for this descriptor within our local metadata
+            data_model_index = self.get_data_model_index(
+                descriptor_file_name)
 
-                self.logger.debug(f"{schema_filename}: Found changed.")
+            # Create the sql alchemy orm
+            self.orm_factory.create_orm_from_dict(
+                table_schema, table_name, api_schema)
 
-                # Get the index for this descriptor within our local metadata
-                data_model_index = self.get_data_model_index(
-                    schema_filename)
+            # Something needs to be modified
+            self.db.revision(table_name, create_table=False)
+            self.db.upgrade()
+            self.db.update_model_checksum(
+                table_name, model_checksum)
 
-                # Create the sql alchemy orm
-                data_model = self.orm_factory.create_orm_from_dict(
-                    table_schema, table_name, api_schema)
-
-                # Something needs to be modified
-                self.db.revision(table_name, create_table=False)
-                self.db.upgrade()
-                self.db.update_model_checksum(
-                    table_name, model_checksum)
-                del data_model
-
-                self.logger.debug('Post1: ' + Base.metadata.tables.keys())
-
-                # store metadata for descriptor locally
-                self.data_store[data_model_index].model_checksum = model_checksum
-
-            else:
-                self.logger.debug(f"{schema_filename}: Unseen before now.")
-                # Create the metadata store for descriptor
-                data_model_descriptor = DataModelDescriptor(
-                    schema_filename, table_name, model_checksum)
-
-                # Store the metadata for descriptor locally
-                self.data_store.append(
-                    data_model_descriptor)
-                # get the databases checksum value
-                stored_checksum = self.db.get_model_checksum(
-                    table_name)
-
-                # create SqlAlchemy ORM models
-                data_model = self.orm_factory.create_orm_from_dict(
-                    table_schema, table_name, api_schema)
-
-                # if there is no checksum in the data base
-                # or the database checksum does not equal this files checksum
-                if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
-                    # perform a revision
-                    self.db.revision(table_name)
-                    self.db.upgrade()
-                    self.db.add_model_checksum(
-                        table_name, model_checksum, schema_dict.descriptor)
-
-                del data_model  # this can probably be removed?
-
-                self.logger.debug('Post2: ' + str(Base.metadata.tables.keys()))
-
-        except Exception as e:
+            # store metadata for descriptor locally
+            self.data_store[data_model_index].model_checksum = model_checksum
+        except Exception:
             self.logger.exception(
-                f"Error loading data resource schema '{schema_filename}'")
+                'Error checking data model')
 
-        self.logger.debug('Post3: ' + str(Base.metadata.tables.keys()))
+    def data_model_does_not_exist(self, descriptor: Descriptor):
+        try:
+            descriptor_file_name = descriptor.file_name
+            table_name = descriptor.table_name
+            table_schema = descriptor.table_schema
+            api_schema = descriptor.api_schema
+            model_checksum = descriptor.get_checksum()
+
+            self.logger.debug(
+                f"{descriptor_file_name}: Unseen before now.")
+            # Create the metadata store for descriptor
+            data_model_descriptor = DataModelDescriptor(
+                descriptor_file_name, table_name, model_checksum)
+
+            # Store the metadata for descriptor locally
+            self.data_store.append(
+                data_model_descriptor)
+            # get the databases checksum value
+            stored_checksum = self.db.get_model_checksum(
+                table_name)
+
+            # create SqlAlchemy ORM models
+            _ = self.orm_factory.create_orm_from_dict(
+                table_schema, table_name, api_schema)
+
+            # if there is no checksum in the data base
+            # or the database checksum does not equal this files checksum
+            if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
+                # perform a revision
+                self.db.revision(table_name)
+                self.db.upgrade()
+                self.db.add_model_checksum(
+                    table_name, model_checksum, descriptor.descriptor)
+        except Exception:
+            self.logger.exception(
+                'Error checking data resource')
 
     # Data store functions
-    def data_model_exists(self, schema_filename):
+    def data_model_exists(self, descriptor_file_name):
         """Checks if a data model is already registered with the data model manager.
 
         Args:
-            schema_filename (str): Name of the schema file on disk.
+            descriptor_file_name (str): Name of the schema file on disk.
 
         Returns:
             bool: True if the data model exists. False if not.
 
         """
-        return self.data_exists(schema_filename, 'schema_filename')
+        return self.data_exists(descriptor_file_name, 'descriptor_file_name')
 
-    def data_model_changed(self, schema_filename, checksum):
+    def data_model_changed(self, descriptor_file_name, checksum):
         """Checks if the medata for a data model has been changed.
 
         Args:
-            schema_filename (str): Name of the schema file on disk.
+            descriptor_file_name (str): Name of the schema file on disk.
             checksum (str): Computed MD5 checksum of the schema.
 
         Returns:
@@ -277,18 +239,19 @@ class DataModelManagerSync(DataManager):
 
         """
         return self.data_changed(
-            schema_filename, checksum, 'schema_filename', 'model_checksum')
+            descriptor_file_name, checksum, 'descriptor_file_name', 'model_checksum')
 
-    def get_data_model_index(self, schema_filename):
+    def get_data_model_index(self, descriptor_file_name):
         """Checks if the medata for a data model has been changed.
 
         Args:
-           schema_filename (str): Name of the schema file on disk.
+           descriptor_file_name (str): Name of the schema file on disk.
 
         Returns:
             int: Index of the schema stored in memory, or -1 if not found.
         """
-        return self.get_data_index(schema_filename, 'schema_filename')
+        return self.get_data_index(
+            descriptor_file_name, 'descriptor_file_name')
 
 
 class DataModelManager(Thread, DataModelManagerSync):

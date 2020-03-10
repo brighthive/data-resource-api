@@ -121,7 +121,7 @@ class Client():
             raise RuntimeError("Need at least one schema dict for test client")
 
     def run_and_return_test_client(self):
-        delete_migration_artifacts()
+        # delete_migration_artifacts()
 
         self.initialize_test_client()
 
@@ -146,7 +146,7 @@ class Client():
         upgraded = False
         self.counter = 1
         self.counter_max = 10
-        exponential_time = exponential_backoff(1, 1.5)
+        exponential_time = exponential_backoff(.1, 1.25)
 
         while not upgraded and self.counter <= self.counter_max:
             try:

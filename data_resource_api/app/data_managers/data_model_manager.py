@@ -50,9 +50,6 @@ class DataModelManagerSync(DataManager):
 
     def run(self, test_mode: bool = False):
         self.initalize_base_models()
-        self.db.get_migrations_from_db_and_save_locally()
-        self.load_models_from_db()
-        self.db.upgrade()
 
         def run_fn():
             self.logger.info('Data Model Manager Running...')
@@ -61,6 +58,11 @@ class DataModelManagerSync(DataManager):
         if test_mode:  # Do not run in while loop for tests
             run_fn()
             return
+
+        # Restore the DB state
+        self.db.get_migrations_from_db_and_save_locally()
+        self.load_models_from_db()
+        self.db.upgrade()
 
         while True:
             run_fn()
@@ -90,7 +92,7 @@ class DataModelManagerSync(DataManager):
             try:
                 self.logger.info('Looking for checksum...')
                 session = Session()
-                data = session.query(Checksum).all()
+                _ = session.query(Checksum).all()
                 db_active = True
                 self.logger.info('Successfully found checksum.')
             except Exception as e:
@@ -129,14 +131,10 @@ class DataModelManagerSync(DataManager):
 
         self.logger.info("Loaded remote descriptors.")
 
-    def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
-        desc = Descriptor(descriptor)
-        table_schema = desc.table_schema
-        table_name = desc.table_name
-        api_schema = desc.api_schema
-
-        data_model = self.orm_factory.create_orm_from_dict(
-            table_schema, table_name, api_schema)
+    def load_descriptor_into_sql_alchemy_model(
+            self, desc: Descriptor) -> None:
+        _ = self.orm_factory.create_orm_from_dict(
+            desc.table_schema, desc.table_name, desc.api_schema)
 
     def monitor_data_models(self):
         """Wraps monitor data models for changes.

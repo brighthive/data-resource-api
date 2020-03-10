@@ -5,7 +5,6 @@ for the data resource under management. It is designed to run in it's own thread
 monitoring data resources on a regular interval.
 
 """
-import sys
 import json
 from hashlib import md5
 from threading import Thread
@@ -13,12 +12,7 @@ from time import sleep
 from data_resource_api.app.utils.descriptor import (
     Descriptor,
     DescriptorsGetter)
-from data_resource_api.app.utils.db_handler import DBHandler
-from data_resource_api.app.utils.config import ConfigFunctions
-from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import Base, Session, Checksum
-from data_resource_api.factories import ORMFactory
-from data_resource_api.logging import LogFactory
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.data_managers.data_manager import DataManager
 
@@ -129,7 +123,7 @@ class DataModelManagerSync(DataManager):
             remote_descriptor = Descriptor(remote_descriptor_json)
             self.logger.info(
                 f"Loading descriptor '{remote_descriptor.table_name}' from db.")
-            
+
             self.load_descriptor_into_sql_alchemy_model(
                 remote_descriptor.descriptor)
 

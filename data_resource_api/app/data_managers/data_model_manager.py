@@ -100,13 +100,13 @@ class DataModelManagerSync(DataManager):
                 # UndefinedTable
                 if e.code == 'f405':
                     self.logger.info(
-                        'Checksum table was not found; Creating checksum migration...')
+                        'Checksum table was not found; Running inital migration...')
                     # The migration file that describes checksums, logs, and migrations
                     # is present in the migrations folder.
                     self.db.upgrade()
 
                     db_active = True
-                    self.logger.info('Successfully created checksum.')
+                    self.logger.info('Successfully ran upgrade.')
 
                 elif e.code == 'e3q8':
                     self.logger.info(

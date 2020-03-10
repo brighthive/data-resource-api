@@ -3,18 +3,19 @@ from __future__ import with_statement
 from logging.config import fileConfig
 
 # from sqlalchemy import engine_from_config
+import os
 from sqlalchemy import pool
-
 from alembic import context
 from data_resource_api.db import engine, Base
 from data_resource_api.app.utils.db_handler import DBHandler
-
 from alembic.script import write_hooks
 
+
 @write_hooks.register("save_pickled_migration_script_to_db")
-def save_pickled_migration_script_to_db(filename, options):
-    with open(filename, 'rb') as file_:
-        DBHandler.save_migration(filename, file_.read())
+def save_pickled_migration_script_to_db(full_file_path, options):
+    with open(full_file_path, 'rb') as file_:
+        file_name = os.path.basename(full_file_path)
+        DBHandler.save_migration(file_name, file_.read())
 
 
 # this is the Alembic Config object, which provides

@@ -1,2 +1,3 @@
 **/migrations/versions/*
+!**/migrations/versions/000000000000_create_table_checksum_and_logs.py
 **/schema/*.json

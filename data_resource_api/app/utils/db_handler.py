@@ -1,7 +1,7 @@
+import os
 from data_resource_api.db import Session, Checksum, Migrations
 from data_resource_api.logging import LogFactory
 from alembic import command
-import pickle
 
 logger = LogFactory.get_console_logger('db-handler')
 
@@ -29,7 +29,8 @@ class DBHandler(object):
             checksum.descriptor_json = descriptor_json
             session.add(checksum)
             session.commit()
-        except Exception:
+        except Exception as e:
+            logger.info(e.code)
             logger.exception('Error adding checksum')
         session.close()
 
@@ -52,7 +53,8 @@ class DBHandler(object):
             checksum.model_checksum = model_checksum
             session.commit()
             updated = True
-        except Exception:
+        except Exception as e:
+            logger.info(e.code)
             logger.exception('Error updating checksum')
         session.close()
         return updated
@@ -72,7 +74,8 @@ class DBHandler(object):
         try:
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
-        except Exception:
+        except Exception as e:
+            logger.info(e.code)
             logger.exception('Error retrieving checksum')
         session.close()
         return checksum
@@ -98,8 +101,9 @@ class DBHandler(object):
 
                 descriptor_list.append(_row.descriptor_json)
 
-        except Exception:
-            logger.error('Error retrieving stored models', exc_info=True)
+        except Exception as e:
+            logger.info(e.code)
+            logger.info('Error retrieving stored models')
         session.close()
 
         return descriptor_list
@@ -111,7 +115,8 @@ class DBHandler(object):
             query = session.query(Checksum)
             for _row in query.all():
                 checksums.append((_row.data_resource, _row.model_checksum))
-        except Exception:
+        except Exception as e:
+            logger.info(e.code)
             logger.exception('Error retrieving stored models')
         session.close()
 
@@ -158,22 +163,28 @@ class DBHandler(object):
             new_migration.file_blob = file_blob
             session.add(new_migration)
             session.commit()
-        except Exception:
+        except Exception as e:
+            logger.info(e.code)
             logger.exception('Failed to restore migration files from DB.')
 
-    def get_migrations_from_db_and_save_locally(self):
+    def get_migrations_from_db_and_save_locally(self) -> None:
         logger.info('Restoring migration files from DB...')
         session = Session()
         try:
             query = session.query(Migrations)
             for _row in query.all():
-                print(_row)
                 self.save_migrations_to_local_file(
                     _row.file_name,
                     _row.file_blob)
-        except Exception:
-            logger.exception('Failed to restore migration files from DB.')
+        except Exception as e:
+            logger.info(e.code)
+            logger.info('Failed to restore migration files from DB.')
 
-    def save_migrations_to_local_file(self, file_name: str, file_blob):
-        with open(file_name, 'wb') as file_:
+    def save_migrations_to_local_file(self, file_name: str, file_blob) -> None:
+        # Ensure this is only the file name
+        file_name = os.path.basename(file_name)
+        _, migration_file_dir = self.config.get_alembic_config
+        full_migration_file_path = os.path.join(migration_file_dir, file_name)
+
+        with open(full_migration_file_path, 'wb') as file_:
             file_.write(file_blob)

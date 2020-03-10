@@ -11,14 +11,15 @@ logger = LogFactory.get_console_logger('backwards-compat')
 #
 # The following manual steps need to occur before running the upgrade script.
 #
-#     Update alembic version number to match the new first migration — e56a6f702357
-#     Change the down_revision for the second migration to the new first migration — e56a6f702357
+#     Update alembic version number to match the new first migration — 000000000000
+#     Change the down_revision for the second migration to the new first migration — 000000000000
 #     Change the alembic_version to the most recent migration you have
 #
 # DELETE FROM alembic_version;
 # INSERT INTO alembic_version(version_num) VALUES (‘123456789ABCDEF’);
 #
-# You can now run the upgrade script. Do this by when running the DMM setting the parameter from --data-model-manager to --upgrade
+# You can now run the upgrade script. Do this by when running the DMM
+# setting the parameter from --data-model-manager to --upgrade
 
 SCHEMA_DIR = "/data-resource/schema"
 MIGRATION_DIR = "/data-resource/migrations/versions"

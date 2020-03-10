@@ -114,8 +114,10 @@ def push_migrations():
     for file_name in migrations:
         if 'create_table_checksum_and_logs' in file_name:
             continue
-        with open(os.path.join(MIGRATION_DIR, file_name), 'rb') as file_:
-            DBHandler.save_migration(file_name, file_.read())
+
+        full_file_path = os.path.join(MIGRATION_DIR, file_name)
+        with open(full_file_path, 'rb') as file_:
+            DBHandler.save_migration(full_file_path, file_.read())
 
 
 if not check_for_checksum_column():

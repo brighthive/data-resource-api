@@ -13,7 +13,7 @@ from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.app.utils.exception_handler import handle_errors
 from data_resource_api.app.utils.descriptor import (
     Descriptor,
-    DescriptorsGetter)
+    DescriptorsLoader)
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.data_managers.data_manager import DataManager
 

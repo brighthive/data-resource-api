@@ -1,6 +1,6 @@
 from data_resource_api.app.utils.descriptor import (
     Descriptor,
-    DescriptorsGetter)
+    DescriptorsLoader)
 from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.app.utils.config import ConfigFunctions
 from data_resource_api.config import ConfigurationFactory
@@ -44,7 +44,7 @@ class DataManager(object):
 
         # TODO this should wrap in a try except and tell us if any of the
         # properties will raise errors
-        descriptors = DescriptorsGetter(
+        descriptors = DescriptorsLoader(
             self.descriptor_directories,
             self.custom_descriptors)
         for descriptor in descriptors.iter_descriptors():

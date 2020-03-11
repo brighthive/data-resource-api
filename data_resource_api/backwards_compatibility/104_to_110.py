@@ -1,5 +1,5 @@
 import os
-from data_resource_api.app.utils.descriptor import DescriptorsGetter
+from data_resource_api.app.utils.descriptor import DescriptorsLoader
 from data_resource_api.db import Session, Checksum
 from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.logging import LogFactory
@@ -98,7 +98,7 @@ def create_migrations():
 def push_descriptors():
     session = Session()
 
-    descriptors = DescriptorsGetter([SCHEMA_DIR], [])
+    descriptors = DescriptorsLoader([SCHEMA_DIR], [])
     for desc in descriptors.iter_descriptors():
         try:
             row = session.query(Checksum).filter(

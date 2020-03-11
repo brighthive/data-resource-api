@@ -100,7 +100,7 @@ def delete_migration_artifacts():
 
     for file in os.listdir(os.fsencode(rootdir)):
         filename = os.fsdecode(file)
-        if "e56a6f702357_create_table_checksum_and_logs" in filename:
+        if "000000000000_create_table_checksum_and_logs.py" in filename:
             continue
 
         if filename.endswith(".py"):

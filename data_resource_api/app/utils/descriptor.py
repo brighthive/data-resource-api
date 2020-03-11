@@ -52,7 +52,7 @@ class DescriptorFileHelper():
 
     def _check_if_path_exists(self, dir_path):
         if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-            raise RunTimeError(
+            raise RuntimeError(
                 f"Unable to locate schema directory '{dir_path}'")
 
     def _get_file_from_dir(self, directory):
@@ -83,11 +83,11 @@ class DescriptorFromFile():
             with open(os.path.join(schema_dir, file_name), 'r') as fh:
                 try:
                     descriptor_dict = json.load(fh)
-                except ValueError as e:
+                except ValueError:
                     logger.info(
                         f"Failed to load JSON file. JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'")
 
-        except Exception as e:
+        except Exception:
             raise RuntimeError(f"Error opening schema {file_name}")
 
         return Descriptor(descriptor_dict, file_name)
@@ -114,44 +114,52 @@ class Descriptor():
 
     It reduces code reuse!
     """
-
     def __init__(self, descriptor: dict, file_name: str = ""):
+        self.descriptor = descriptor
+        self._set_file_name(file_name, self.table_name)
+
+    @property
+    def table_name(self):
         try:
-            self.table_name = descriptor['datastore']['tablename']
+            self.table_name = self.descriptor['datastore']['tablename']
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
 
+    @property
+    def table_schema(self):
         try:
-            self.table_schema = descriptor['datastore']['schema']
+            self.table_schema = self.descriptor['datastore']['schema']
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
 
+    @property
+    def api_schema(self):
         try:
-            self.api_schema = descriptor['api']['methods'][0]
+            self.api_schema = self.descriptor['api']['methods'][0]
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
 
+    @property
+    def data_resource_name(self):
         try:
-            self.data_resource_name = descriptor['api']['resource']
+            self.data_resource_name = self.descriptor['api']['resource']
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
 
+    @property
+    def restricted_fields(self):
         try:
-            self.restricted_fields = descriptor['datastore']['restricted_fields']
+            self.restricted_fields = self.descriptor['datastore']['restricted_fields']
         except KeyError:
             self.restricted_fields = []
 
-        try:
-            self.descriptor = descriptor
-        except KeyError:
-            raise RuntimeError(
-                "Error finding data in descritpor. Descriptor file may not be valid.")
-
-        self._set_file_name(file_name, self.table_name)
+    @property
+    def descriptor(self):
+        return self.descriptor
 
     def _set_file_name(self, file_name: str, table_name: str):
         if file_name == "":

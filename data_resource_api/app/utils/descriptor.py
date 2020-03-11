@@ -115,13 +115,13 @@ class Descriptor():
     It reduces code reuse!
     """
     def __init__(self, descriptor: dict, file_name: str = ""):
-        self.descriptor = descriptor
+        self._descriptor = descriptor
         self._set_file_name(file_name, self.table_name)
 
     @property
     def table_name(self):
         try:
-            self.table_name = self.descriptor['datastore']['tablename']
+            return self._descriptor['datastore']['tablename']
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
@@ -129,7 +129,7 @@ class Descriptor():
     @property
     def table_schema(self):
         try:
-            self.table_schema = self.descriptor['datastore']['schema']
+            return self._descriptor['datastore']['schema']
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
@@ -137,7 +137,7 @@ class Descriptor():
     @property
     def api_schema(self):
         try:
-            self.api_schema = self.descriptor['api']['methods'][0]
+            return self._descriptor['api']['methods'][0]
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
@@ -145,7 +145,7 @@ class Descriptor():
     @property
     def data_resource_name(self):
         try:
-            self.data_resource_name = self.descriptor['api']['resource']
+            return self._descriptor['api']['resource']
         except KeyError:
             raise RuntimeError(
                 "Error finding data in descriptor. Descriptor file may not be valid.")
@@ -153,19 +153,17 @@ class Descriptor():
     @property
     def restricted_fields(self):
         try:
-            self.restricted_fields = self.descriptor['datastore']['restricted_fields']
+            return self._descriptor['datastore']['restricted_fields']
         except KeyError:
-            self.restricted_fields = []
+            return []
 
     @property
     def descriptor(self):
-        return self.descriptor
+        return self._descriptor
 
-    def _set_file_name(self, file_name: str, table_name: str):
-        if file_name == "":
-            self.file_name = f"{table_name}.json"
-        else:
-            self.file_name = file_name
+    @property
+    def file_name(self):
+        return self._file_name
 
     def get_checksum(self) -> str:
         model_checksum = md5(
@@ -176,3 +174,9 @@ class Descriptor():
         ).hexdigest()
 
         return model_checksum
+
+    def _set_file_name(self, file_name: str, table_name: str):
+        if file_name == "":
+            self._file_name = f"{table_name}.json"
+        else:
+            self._file_name = file_name

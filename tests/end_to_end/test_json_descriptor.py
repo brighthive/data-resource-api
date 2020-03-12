@@ -1,6 +1,5 @@
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
 import json
-import pytest
 
 
 class ApiHelper:
@@ -27,20 +26,50 @@ class ApiHelper:
         return body
 
 
-class TestJson():
-    def test_json_posts_and_returns_correctly(self, json_client):
-        c = json_client
+def test_json_posts_and_returns_correctly(json_client):
+    c = json_client
 
-        json_body = {
-            "test": 1234,
-            "obj": {
-                "key": "value"
-            }
+    json_body = {
+        "test": 1234,
+        "obj": {
+            "key": "value"
         }
+    }
 
-        json_id = ApiHelper.post_a_json(c, json_body)
-        
-        resp = ApiHelper.get_a_json_by_id(c, json_id)
+    json_id = ApiHelper.post_a_json(c, json_body)
 
-        print(json.dumps(resp['json'], indent=4))
-        expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body,sort_keys=True)))
+    resp = ApiHelper.get_a_json_by_id(c, json_id)
+
+    expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body, sort_keys=True)))
+
+
+def test_nested_str_in_json_posts_and_returns_correctly(json_client):
+    c = json_client
+
+    json_body = {
+        "test": 1234,
+        "obj": "{\"key\": \"value\"\}"
+    }
+
+    json_id = ApiHelper.post_a_json(c, json_body)
+
+    resp = ApiHelper.get_a_json_by_id(c, json_id)
+
+    expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body, sort_keys=True)))
+
+
+def test_nested_nested_str_in_json_posts_and_returns_correctly(json_client):
+    c = json_client
+
+    json_body = {
+        "test": 1234,
+        "obj": {
+            "but what about this": "{\"key\": \"value\"\}"
+        }
+    }
+
+    json_id = ApiHelper.post_a_json(c, json_body)
+
+    resp = ApiHelper.get_a_json_by_id(c, json_id)
+
+    expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body, sort_keys=True)))

@@ -20,6 +20,7 @@ docs/build
 # alembic migrations
 **/migrations/versions/*
 !**/migrations/versions/.keep
+!**/migrations/versions/000000000000_create_table_checksum_and_logs.py
 
 # development crud
 **/*.old

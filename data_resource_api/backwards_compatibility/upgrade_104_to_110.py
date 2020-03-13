@@ -60,7 +60,7 @@ def check_for_migrations_table():
         count += 1
 
     if count == 1:
-        print("Found the descriptor_json column -- skipping import")
+        print("Found the migrations column -- skipping import")
         return True
 
     return False
@@ -121,7 +121,7 @@ def push_migrations():
 
         full_file_path = os.path.join(MIGRATION_DIR, file_name)
         with open(full_file_path, 'rb') as file_:
-            DBHandler.save_migration(full_file_path, file_.read())
+            DBHandler.save_migration(file_name, file_.read())
 
 
 def main():

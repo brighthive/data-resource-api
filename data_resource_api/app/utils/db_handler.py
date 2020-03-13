@@ -183,7 +183,7 @@ class DBHandler(object):
     def save_migrations_to_local_file(self, file_name: str, file_blob) -> None:
         # Ensure this is only the file name
         file_name = os.path.basename(file_name)
-        _, migration_file_dir = self.config.get_alembic_config
+        _, migration_file_dir = self.config.get_alembic_config()
         full_migration_file_path = os.path.join(migration_file_dir, file_name)
 
         with open(full_migration_file_path, 'wb') as file_:

@@ -4,10 +4,9 @@ from data_resource_api.app.utils.descriptor import (
 from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.app.utils.config import ConfigFunctions
 from data_resource_api.config import ConfigurationFactory
-from data_resource_api.db import Base, Session, Checksum
+from data_resource_api.db import Base
 from data_resource_api.factories import ORMFactory
 from data_resource_api.logging import LogFactory
-from data_resource_api.utils import exponential_backoff
 
 
 class DataManager(object):

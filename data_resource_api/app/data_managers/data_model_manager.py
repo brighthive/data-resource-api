@@ -7,10 +7,8 @@ monitoring data resources on a regular interval.
 """
 from threading import Thread
 from time import sleep
-from data_resource_api.app.utils.descriptor import (
-    Descriptor,
-    DescriptorsLoader)
-from data_resource_api.db import Base, Session, Checksum
+from data_resource_api.app.utils.descriptor import Descriptor
+from data_resource_api.db import Session, Checksum
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.data_managers.data_manager import DataManager
 

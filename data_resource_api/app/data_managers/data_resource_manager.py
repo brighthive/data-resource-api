@@ -11,9 +11,7 @@ from flask_restful import Api, Resource
 from data_resource_api.factories import DataResourceFactory
 from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.app.utils.exception_handler import handle_errors
-from data_resource_api.app.utils.descriptor import (
-    Descriptor,
-    DescriptorsLoader)
+from data_resource_api.app.utils.descriptor import Descriptor
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.data_managers.data_manager import DataManager
 

@@ -139,6 +139,8 @@ class DataResourceManagerSync(DataManager):
                         'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
                 else:
                     self.logger.exception(f'Error occured upgrading database.')
+            finally:
+                session.close()
 
         self.logger.info('Connected to DB.')
 

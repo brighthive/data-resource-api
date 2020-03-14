@@ -29,10 +29,10 @@ class DBHandler(object):
             checksum.descriptor_json = descriptor_json
             session.add(checksum)
             session.commit()
-        except Exception as e:
-            logger.info(e.code)
+        except Exception:
             logger.exception('Error adding checksum')
-        session.close()
+        finally:
+            session.close()
 
     def update_model_checksum(self, table_name: str, model_checksum: str):
         """Updates a checksum for a data model.
@@ -53,10 +53,10 @@ class DBHandler(object):
             checksum.model_checksum = model_checksum
             session.commit()
             updated = True
-        except Exception as e:
-            logger.info(e.code)
+        except Exception:
             logger.exception('Error updating checksum')
-        session.close()
+        finally:
+            session.close()
         return updated
 
     def get_model_checksum(self, table_name: str):
@@ -74,10 +74,10 @@ class DBHandler(object):
         try:
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
-        except Exception as e:
-            logger.info(e.code)
+        except Exception:
             logger.exception('Error retrieving checksum')
-        session.close()
+        finally:
+            session.close()
         return checksum
 
     def get_stored_descriptors(self) -> list:
@@ -101,10 +101,10 @@ class DBHandler(object):
 
                 descriptor_list.append(_row.descriptor_json)
 
-        except Exception as e:
-            logger.info(e.code)
+        except Exception:
             logger.info('Error retrieving stored models')
-        session.close()
+        finally:
+            session.close()
 
         return descriptor_list
 
@@ -115,10 +115,10 @@ class DBHandler(object):
             query = session.query(Checksum)
             for _row in query.all():
                 checksums.append((_row.data_resource, _row.model_checksum))
-        except Exception as e:
-            logger.info(e.code)
+        except Exception:
             logger.exception('Error retrieving stored models')
-        session.close()
+        finally:
+            session.close()
 
         return checksums
 
@@ -156,6 +156,7 @@ class DBHandler(object):
         """ This function is called by alembic as a post write hook.
         It will take a migration file and save it to the database.
         """
+        logger.info("Trying to save migration files to DB...")
         session = Session()
         try:
             new_migration = Migrations()
@@ -163,9 +164,10 @@ class DBHandler(object):
             new_migration.file_blob = file_blob
             session.add(new_migration)
             session.commit()
-        except Exception as e:
-            logger.info(e.code)
-            logger.exception('Failed to restore migration files from DB.')
+        except Exception:
+            logger.exception('Failed to save migration files to DB.')
+        finally:
+            session.close()
 
     def get_migrations_from_db_and_save_locally(self) -> None:
         logger.info('Restoring migration files from DB...')
@@ -176,12 +178,12 @@ class DBHandler(object):
                 self.save_migrations_to_local_file(
                     _row.file_name,
                     _row.file_blob)
-        except Exception as e:
-            logger.info(e.code)
+        except Exception:
             logger.info('Failed to restore migration files from DB.')
+        finally:
+            session.close()
 
     def save_migrations_to_local_file(self, file_name: str, file_blob) -> None:
-        # Ensure this is only the file name
         file_name = os.path.basename(file_name)
         _, migration_file_dir = self.config.get_alembic_config()
         full_migration_file_path = os.path.join(migration_file_dir, file_name)

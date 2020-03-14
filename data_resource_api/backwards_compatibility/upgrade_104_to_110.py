@@ -34,6 +34,7 @@ def check_for_checksum_column():
     WHERE table_name='checksums' and column_name='descriptor_json'
     """
     rs = session.execute(query)
+    session.close()
 
     count = 0
     for _row in rs:
@@ -54,6 +55,7 @@ def check_for_migrations_table():
     WHERE table_name='migrations';
     """
     rs = session.execute(query)
+    session.close()
 
     count = 0
     for _row in rs:
@@ -77,6 +79,8 @@ def upgrade_checksum():
         session.commit()
     except BaseException:
         logger.exception('Failed to upgrade checksum')
+    finally:
+        session.close()
 
 
 def create_migrations():
@@ -92,6 +96,8 @@ def create_migrations():
         session.commit()
     except BaseException:
         logger.exception('Failed to create table migrations')
+    finally:
+        session.close()
 
 
 # Push the required data to the DB
@@ -111,6 +117,8 @@ def push_descriptors():
         except Exception:
             logger.exception('Error pushing descriptors')
             continue
+        finally:
+            session.close()
 
 
 def push_migrations():

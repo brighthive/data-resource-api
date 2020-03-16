@@ -8,7 +8,7 @@ from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.logging import LogFactory
 import os
 
-logger = LogFactory.get_console_logger('db-handler')
+logger = LogFactory.get_console_logger('file-watcher')
 
 
 class MigrationFileWatcher:
@@ -21,7 +21,7 @@ class MigrationFileWatcher:
 
     def run(self):
         event_handler = Handler()
-        self.observer.schedule(event_handler, self.watchDirectory, recursive=True)
+        self.observer.schedule(event_handler, self.watchDirectory, recursive=False)
         self.observer.start()
         try:
             while True:

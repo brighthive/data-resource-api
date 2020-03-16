@@ -5,6 +5,7 @@ Create Date: 2020-02-14 20:31:39.065035
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 # revision identifiers, used by Alembic.
 revision = '000000000000'
 down_revision = None
@@ -16,6 +17,7 @@ def upgrade():
     sa.Column('data_resource', sa.String(), nullable=False),
     sa.Column('model_checksum', sa.String(), nullable=False),
     sa.Column('date_modified', sa.DateTime(), nullable=True),
+    sa.Column('descriptor_json', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.PrimaryKeyConstraint('data_resource')
     )
     op.create_table('logs',
@@ -26,6 +28,11 @@ def upgrade():
     sa.Column('msg', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('migrations',
+    sa.Column('file_name', sa.String(), nullable=False),
+    sa.Column('file_blob', sa.LargeBinary(), nullable=False),
+    sa.PrimaryKeyConstraint('file_name')
     )
     # ### end Alembic commands ###
 def downgrade():

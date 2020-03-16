@@ -7,13 +7,8 @@ in it's own thread and creates a Flask application.
 
 from threading import Thread
 from data_resource_api import DataResourceManager
-from data_resource_api import MigrationFileWatcher
 
-migration_file_watcher = MigrationFileWatcher()
-migration_file_watcher_thread = Thread(
-    target=migration_file_watcher.run, args=()
-)
-migration_file_watcher_thread.start()
+
 data_resource_manager = DataResourceManager()
 data_resource_manager_thread = Thread(
     target=data_resource_manager.run, args=())

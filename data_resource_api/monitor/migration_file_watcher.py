@@ -4,11 +4,12 @@ from data_resource_api.app.utils.config import ConfigFunctions
 from data_resource_api.config import ConfigurationFactory
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from data_resource_api.db import engine, Base
 from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.logging import LogFactory
+import os
 
 logger = LogFactory.get_console_logger('db-handler')
+
 
 class MigrationFileWatcher:
 
@@ -20,7 +21,7 @@ class MigrationFileWatcher:
 
     def run(self):
         event_handler = Handler()
-        self.observer.schedule(event_handler, self.watchDirectory, recursive = True)
+        self.observer.schedule(event_handler, self.watchDirectory, recursive=True)
         self.observer.start()
         try:
             while True:
@@ -51,10 +52,9 @@ class Handler(FileSystemEventHandler):
         if event.is_directory:
             return None
 
-        full_file_path =  event.src_path
+        full_file_path = event.src_path
         file_name = os.path.basename(full_file_path)
         logger.info("Attempting to oepn migration file...")
         with open(full_file_path, 'rb') as file_:
             logger.info("Attempting to run save_migration function...")
             DBHandler.save_migration(file_name, file_.read())
-

@@ -28,7 +28,7 @@ class MigrationFileWatcher:
                 time.sleep(5)
         except:
             self.observer.stop()
-            print("Observer Stopped")
+            logger.debug("Observer Stopped")
 
         self.observer.join()
 
@@ -42,10 +42,10 @@ class Handler(FileSystemEventHandler):
 
         elif event.event_type == 'created':
             # Event is created, you can process it now
-            print("Watchdog received created event - % s." % event.src_path)
+            logger.debug("Watchdog received created event - % s." % event.src_path)
         elif event.event_type == 'modified':
             # Event is modified, you can process it now
-            print("Watchdog received modified event - % s." % event.src_path)
+            logger.debug("Watchdog received modified event - % s." % event.src_path)
 
     @staticmethod
     def on_created(event):
@@ -54,7 +54,7 @@ class Handler(FileSystemEventHandler):
 
         full_file_path = event.src_path
         file_name = os.path.basename(full_file_path)
-        logger.info("Attempting to oepn migration file...")
+        logger.debug("Attempting to open migration file...")
         with open(full_file_path, 'rb') as file_:
-            logger.info("Attempting to run save_migration function...")
+            logger.debug("Attempting to run save_migration function...")
             DBHandler.save_migration(file_name, file_.read())

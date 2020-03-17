@@ -17,6 +17,7 @@ brighthive-authlib = "*"
 pip = "*"
 gevent = "*"
 pytest-env = "*"
+watchdog = "*"
 
 [dev-packages]
 pytest = "*"

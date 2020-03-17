@@ -3,23 +3,9 @@ from __future__ import with_statement
 from logging.config import fileConfig
 
 # from sqlalchemy import engine_from_config
-import os
 from sqlalchemy import pool
 from alembic import context
 from data_resource_api.db import engine, Base
-from data_resource_api.app.utils.db_handler import DBHandler
-from alembic.script import write_hooks
-
-
-@write_hooks.register("save_migrations_files_to_db")
-def save_migrations_files_to_db(full_file_path, options):
-    print("Extracting the basename from the migrations full_file_path...")
-    file_name = os.path.basename(full_file_path)
-    print("Attempting to oepn migration file...")
-    with open(full_file_path, 'rb') as file_:
-        print("Attempting to run save_migration function...")
-        DBHandler.save_migration(file_name, file_.read())
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

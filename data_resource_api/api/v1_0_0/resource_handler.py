@@ -582,7 +582,6 @@ class ResourceHandler(object):
         Return:
             dict, int: The response object and the HTTP status code.
         """
-
         try:
             request_obj = request_obj.json
         except Exception:
@@ -599,8 +598,6 @@ class ResourceHandler(object):
                     f"Resource with id '{id}' not found.", 404)
         except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
-        finally:
-            session.close()
 
         _ = Schema(table_schema)
         errors = []

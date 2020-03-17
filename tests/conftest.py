@@ -63,8 +63,8 @@ class PostgreSQLContainer(object):
         self.stop_if_running()
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
-        except Exception as e:
-            logger.error(e)
+        except Exception:
+            logger.exception('Failed to start test container')
 
         self.container = self.docker_client.containers.run(
             self.get_postgresql_image(),
@@ -102,6 +102,9 @@ def delete_migration_artifacts():
 
     for file in os.listdir(os.fsencode(rootdir)):
         filename = os.fsdecode(file)
+        if "000000000000_create_table_checksum_and_logs.py" in filename:
+            continue
+
         if filename.endswith(".py"):
             os.remove(os.path.join(rootdir, filename))
         else:
@@ -131,7 +134,7 @@ class Client():
             self.upgrade_loop()
             return self.app.test_client()
         except UpgradeFail:
-            logger.error("Failed to upgrade database.")
+            logger.exception("Failed to upgrade database.")
 
     def initialize_test_client(self):
         self.data_resource_manager = DataResourceManagerSync(
@@ -148,7 +151,7 @@ class Client():
         upgraded = False
         self.counter = 1
         self.counter_max = 10
-        exponential_time = exponential_backoff(1, 1.5)
+        exponential_time = exponential_backoff(.1, 1.25)
 
         while not upgraded and self.counter <= self.counter_max:
             try:
@@ -159,8 +162,8 @@ class Client():
                     upgraded = True
                     return True
 
-            except Exception as e:
-                logger.error(e)
+            except Exception:
+                logger.exception('Failed to upgrade client')
 
                 sleep_time = exponential_time()
                 logger.info(
@@ -175,6 +178,7 @@ class Client():
             raise UpgradeFail
 
     def stop_container(self):
+        delete_migration_artifacts()
         self.postgres.stop_container()
 
 

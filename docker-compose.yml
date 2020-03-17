@@ -1,7 +1,7 @@
-version: '3'
+version: "3"
 services:
   data-model-manager:
-    image: brighthive/data-resource-api:1.0.0-alpha
+    image: brighthive/data-resource-api:1.1.0-alpha
     environment:
       - APP_ENV=SANDBOX
       - POSTGRES_USER=test_user
@@ -9,11 +9,12 @@ services:
       - POSTGRES_DATABASE=data_resource_dev
       - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
-    command: '--data-model-manager'
+    command: "--data-model-manager"
     volumes:
+      - ./migrations:/data-resource/migrations:rw
       - ./schema:/data-resource/schema
   data-resource-api:
-    image: brighthive/data-resource-api:1.0.0-alpha
+    image: brighthive/data-resource-api:1.1.0-alpha
     ports:
       - 8000:8000
     environment:

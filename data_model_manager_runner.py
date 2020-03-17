@@ -8,6 +8,13 @@ workers.
 
 from threading import Thread
 from data_resource_api import DataModelManager
+from data_resource_api import MigrationFileWatcher
+
+migration_file_watcher = MigrationFileWatcher()
+migration_file_watcher_thread = Thread(
+    target=migration_file_watcher.run, args=()
+)
+migration_file_watcher_thread.start()
 
 data_model_manager = DataModelManager()
 data_model_manager_thread = Thread(target=data_model_manager.run, args=())

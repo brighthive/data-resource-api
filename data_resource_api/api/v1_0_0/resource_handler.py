@@ -394,6 +394,8 @@ class ResourceHandler(object):
             return response, 200
         except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
+        finally:
+            session.close()
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
     def get_many_one_secure(self, id: int, parent: str, child: str):
@@ -441,6 +443,9 @@ class ResourceHandler(object):
         except Exception:
             raise InternalServerError()
 
+        finally:
+            session.close()
+
         return {f'{child}': children}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
@@ -466,7 +471,6 @@ class ResourceHandler(object):
             parent (str): Type of parent
             child (str): Type of child
         """
-        _ = JuncHolder.lookup_table(parent, child)
         try:
             session = Session()
             junc_table = JuncHolder.lookup_table(parent, child)
@@ -492,6 +496,9 @@ class ResourceHandler(object):
 
         except Exception:
             raise InternalServerError()
+
+        finally:
+            session.close()
 
         return self.get_many_one(id, parent, child)
 
@@ -539,6 +546,9 @@ class ResourceHandler(object):
         except Exception:
             raise InternalServerError()
 
+        finally:
+            session.close()
+
         return self.get_many_one(id, parent, child)
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
@@ -572,7 +582,6 @@ class ResourceHandler(object):
         Return:
             dict, int: The response object and the HTTP status code.
         """
-
         try:
             request_obj = request_obj.json
         except Exception:
@@ -584,6 +593,7 @@ class ResourceHandler(object):
             data_obj = session.query(data_model).filter(
                 getattr(data_model, primary_key) == id).first()
             if data_obj is None:
+                session.close()
                 raise ApiUnhandledError(
                     f"Resource with id '{id}' not found.", 404)
         except Exception:
@@ -602,9 +612,11 @@ class ResourceHandler(object):
                     errors.append(
                         f"Cannot update restricted field '{field}'.")
         else:
+            session.close()
             raise ApiError('Data schema validation error.', 400)
 
         if len(errors) > 0:
+            session.close()
             raise ApiError('Invalid request body.', 400, errors)
 
         if mode == 'PATCH':
@@ -618,11 +630,14 @@ class ResourceHandler(object):
                         f"Required field '{field['name']}' is missing.")
 
             if len(errors) > 0:
+                session.close()
                 raise ApiError('Invalid request body.', 400, errors)
 
             for key, value in request_obj.items():
                 setattr(data_obj, key, value)
             session.commit()
+
+        session.close()
         return {'message': f"Successfully updated resource '{id}'."}, 201
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
@@ -682,5 +697,8 @@ class ResourceHandler(object):
         except Exception:
             session.rollback()
             raise InternalServerError()
+
+        finally:
+            session.close()
 
         return self.get_many_one(id, parent, child)

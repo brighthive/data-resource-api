@@ -17,6 +17,7 @@ brighthive-authlib = "*"
 pip = "*"
 gevent = "*"
 pytest-env = "*"
+watchdog = "*"
 
 [dev-packages]
 pytest = "*"
@@ -26,6 +27,7 @@ pycodestyle = "*"
 sphinx = "*"
 expects = "*"
 docker = "*"
+flake8 = "*"
 
 [requires]
 python_version = "3.7"

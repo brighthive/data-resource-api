@@ -4,16 +4,16 @@
 
 import math
 import re
-import json
 from collections import OrderedDict
-from tableschema import Table, Schema, validate
+from tableschema import Schema, validate
 from brighthive_authlib import token_required
-from data_resource_api import ConfigurationFactory
+from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import Session
-from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.app.utils.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
-from data_resource_api.app.exception_handler import ApiError, ApiUnhandledError, InternalServerError
+from data_resource_api.app.utils.exception_handler import ApiError, ApiUnhandledError, InternalServerError
 from sqlalchemy import and_
+from data_resource_api.app.utils.exception_handler import SchemaValidationFailure
 
 
 class ResourceHandler(object):
@@ -122,7 +122,8 @@ class ResourceHandler(object):
         return is_valid
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
-    def get_all_secure(self, data_model, data_resource_name, restricted_fields, offset=0, limit=1):
+    def get_all_secure(self, data_model, data_resource_name,
+                       restricted_fields, offset=0, limit=1):
         """Wrapper method for get_all method.
 
         Args:
@@ -135,9 +136,11 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.get_all(data_model, data_resource_name, restricted_fields, offset, limit)
+        return self.get_all(data_model, data_resource_name,
+                            restricted_fields, offset, limit)
 
-    def get_all(self, data_model, data_resource_name, restricted_fields, offset=0, limit=1):
+    def get_all(self, data_model, data_resource_name,
+                restricted_fields, offset=0, limit=1):
         """ Retrieve a paginated list of items.
 
         Args:
@@ -173,11 +176,14 @@ class ResourceHandler(object):
         return response, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
-    def query_secure(self, data_model, data_resource_name, restricted_fields, table_schema, request_obj):
+    def query_secure(self, data_model, data_resource_name,
+                     restricted_fields, table_schema, request_obj):
         """Wrapper method for query."""
-        return self.query(data_model, data_resource_name, restricted_fields, table_schema, request_obj)
+        return self.query(data_model, data_resource_name,
+                          restricted_fields, table_schema, request_obj)
 
-    def query(self, data_model, data_resource_name, restricted_fields, table_schema, request_obj):
+    def query(self, data_model, data_resource_name,
+              restricted_fields, table_schema, request_obj):
         """Query the data resource."""
 
         try:
@@ -186,7 +192,7 @@ class ResourceHandler(object):
             raise ApiError('No request body found.', 400)
 
         errors = []
-        schema = Schema(table_schema)
+        _ = Schema(table_schema)
         accepted_fields = []
         response = OrderedDict()
         response['results'] = []
@@ -213,8 +219,9 @@ class ResourceHandler(object):
                         return {'message': 'No matches found'}, 404
                     else:
                         return response, 200
-                except Exception as e:
-                    raise ApiUnhandledError('Failed to create new resource.', 400)
+                except Exception:
+                    raise ApiUnhandledError(
+                        'Failed to create new resource.', 400)
                 finally:
                     session.close()
         else:
@@ -223,7 +230,8 @@ class ResourceHandler(object):
         return {'message': 'querying data resource'}, 200
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
-    def insert_one_secure(self, data_model, data_resource_name, table_schema, request_obj):
+    def insert_one_secure(
+            self, data_model, data_resource_name, table_schema, request_obj):
         """Wrapper method for insert one method.
 
         Args:
@@ -236,9 +244,11 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.insert_one(data_model, data_resource_name, table_schema, request_obj)
+        return self.insert_one(
+            data_model, data_resource_name, table_schema, request_obj)
 
-    def insert_one(self, data_model, data_resource_name, table_schema, request_obj):
+    def insert_one(self, data_model, data_resource_name,
+                   table_schema, request_obj):
         """Insert a new object.
 
         Args:
@@ -255,7 +265,7 @@ class ResourceHandler(object):
         except Exception:
             raise ApiError('No request body found.', 400)
 
-        schema = Schema(table_schema)
+        _ = Schema(table_schema)
         errors = []
         accepted_fields = []
 
@@ -304,15 +314,18 @@ class ResourceHandler(object):
 
             # process the many_query
             for field, values, table in many_query:
-                self.process_many_query(session, table, id_value, field, data_resource_name, values)
+                self.process_many_query(
+                    session, table, id_value, field, data_resource_name, values)
 
-            return {'message': 'Successfully added new resource.', 'id': id_value}, 201
-        except Exception as e:
+            return {'message': 'Successfully added new resource.',
+                    'id': id_value}, 201
+        except Exception:
             raise ApiUnhandledError('Failed to create new resource.', 400)
         finally:
             session.close()
 
-    def process_many_query(self, session: object, table, id_value: int, field: str, data_resource_name: str, values: list):
+    def process_many_query(self, session: object, table, id_value: int,
+                           field: str, data_resource_name: str, values: list):
         """Iterates over values and adds the items to the junction table
 
         Args:
@@ -395,7 +408,8 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.get_many_one(id, data_model, data_resource_name, table_schema)
+        return self.get_many_one(
+            id, parent, child)
 
     def get_many_one(self, id: int, parent: str, child: str):
         """Retrieve the many to many relationship data of a parent and child.
@@ -409,7 +423,7 @@ class ResourceHandler(object):
 
         # This should not be reachable
         # if join_table is None:
-        #     return {'error': f"relationship '{child}' of '{parent}' not found."}
+        # return {'error': f"relationship '{child}' of '{parent}' not found."}
         try:
             session = Session()
             parent_col_str = f'{parent}_id'
@@ -420,7 +434,8 @@ class ResourceHandler(object):
 
             children = []
             for row in query:
-                row_dict = row._asdict()  # example - {'programs_id': 2, 'credentials_id': 3}
+                # example - {'programs_id': 2, 'credentials_id': 3}
+                row_dict = row._asdict()
                 children.append(row_dict[child_col_str])
 
         except Exception:
@@ -451,7 +466,7 @@ class ResourceHandler(object):
             parent (str): Type of parent
             child (str): Type of child
         """
-        join_table = JuncHolder.lookup_table(parent, child)
+        _ = JuncHolder.lookup_table(parent, child)
         try:
             session = Session()
             junc_table = JuncHolder.lookup_table(parent, child)
@@ -461,7 +476,7 @@ class ResourceHandler(object):
             del_st = junc_table.delete().where(
                 parent_col == id)
 
-            res = session.execute(del_st)
+            _ = session.execute(del_st)
 
             # put the items
             many_query = []
@@ -472,7 +487,8 @@ class ResourceHandler(object):
                 many_query.append([child, values, junc_table])
 
             for field, values, table in many_query:
-                self.process_many_query(session, table, id, field, parent, values)
+                self.process_many_query(
+                    session, table, id, field, parent, values)
 
         except Exception:
             raise InternalServerError()
@@ -493,7 +509,7 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.patch_many_one(id, parent, child, value)
+        return self.patch_many_one(id, parent, child, values)
 
     def patch_many_one(self, id: int, parent: str, child: str, values):
         """put data for a many to many relationship of a parent and child.
@@ -517,15 +533,17 @@ class ResourceHandler(object):
 
             for field, values, table in many_query:
                 # TODO this should only insert when it doesnt already exist
-                self.process_many_query(session, table, id, field, parent, values)
+                self.process_many_query(
+                    session, table, id, field, parent, values)
 
-        except Exception as e:
+        except Exception:
             raise InternalServerError()
 
         return self.get_many_one(id, parent, child)
 
     @token_required(ConfigurationFactory.get_config().get_oauth2_provider())
-    def update_one_secure(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
+    def update_one_secure(self, id, data_model, data_resource_name,
+                          table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Wrapper method for update one method.
 
         Args:
@@ -538,9 +556,11 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.update_one(id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode)
+        return self.update_one(id, data_model, data_resource_name,
+                               table_schema, restricted_fields, request_obj, mode)
 
-    def update_one(self, id, data_model, data_resource_name, table_schema, restricted_fields, request_obj, mode='PATCH'):
+    def update_one(self, id, data_model, data_resource_name,
+                   table_schema, restricted_fields, request_obj, mode='PATCH'):
         """Update a single object from the data model based on it's primary key.
 
         Args:
@@ -564,11 +584,12 @@ class ResourceHandler(object):
             data_obj = session.query(data_model).filter(
                 getattr(data_model, primary_key) == id).first()
             if data_obj is None:
-                raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
-        except Exception as e:
+                raise ApiUnhandledError(
+                    f"Resource with id '{id}' not found.", 404)
+        except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
 
-        schema = Schema(table_schema)
+        _ = Schema(table_schema)
         errors = []
         accepted_fields = []
         if validate(table_schema):
@@ -593,7 +614,8 @@ class ResourceHandler(object):
         elif mode == 'PUT':
             for field in table_schema['fields']:
                 if field['required'] and field['name'] not in request_obj.keys():
-                    errors.append(f"Required field '{field['name']}' is missing.")
+                    errors.append(
+                        f"Required field '{field['name']}' is missing.")
 
             if len(errors) > 0:
                 raise ApiError('Invalid request body.', 400, errors)

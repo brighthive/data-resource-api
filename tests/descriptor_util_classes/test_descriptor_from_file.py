@@ -1,4 +1,4 @@
-from data_resource_api.app.descriptor import DescriptorFromFile
+from data_resource_api.app.utils.descriptor import DescriptorFromFile
 from tests.schemas import (
     frameworks_descriptor)
 from expects import expect, equal

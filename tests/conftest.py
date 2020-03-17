@@ -3,10 +3,9 @@
 import os
 import pytest
 import docker
-from data_resource_api import ConfigurationFactory
-from data_resource_api.app.data_resource_manager import DataResourceManagerSync
-from data_resource_api.app.data_model_manager import DataModelManagerSync
-from pathlib import Path
+from data_resource_api.config import ConfigurationFactory
+from data_resource_api.app.data_managers.data_resource_manager import DataResourceManagerSync
+from data_resource_api.app.data_managers.data_model_manager import DataModelManagerSync
 from time import sleep
 from tests.schemas import (
     frameworks_descriptor,
@@ -18,8 +17,7 @@ from tests.schemas import (
 from sqlalchemy.ext.declarative import declarative_base
 from data_resource_api.logging import LogFactory
 from data_resource_api.utils import exponential_backoff
-from data_resource_api.app.descriptor import Descriptor
-from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.app.utils.junc_holder import JuncHolder
 
 logger = LogFactory.get_console_logger('conftest')
 
@@ -57,7 +55,8 @@ class PostgreSQLContainer(object):
         Returns:
             str: The PostgreSQL image name and version tag.
         """
-        return '{}:{}'.format(self.config.IMAGE_NAME, self.config.IMAGE_VERSION)
+        return '{}:{}'.format(self.config.IMAGE_NAME,
+                              self.config.IMAGE_VERSION)
 
     def start_container(self):
         """Start PostgreSQL Container."""
@@ -77,8 +76,10 @@ class PostgreSQLContainer(object):
 
     def stop_if_running(self):
         try:
-            running = self.docker_client.containers.get(self.config.CONTAINER_NAME)
-            logger.info(f"Killing running container '{self.config.CONTAINER_NAME}'")
+            running = self.docker_client.containers.get(
+                self.config.CONTAINER_NAME)
+            logger.info(
+                f"Killing running container '{self.config.CONTAINER_NAME}'")
             running.stop()
         except Exception as e:
             if "404 Client Error: Not Found" in str(e):
@@ -113,7 +114,7 @@ class UpgradeFail(Exception):
 
 class Client():
     def __init__(self, schema_dicts=None):
-        if schema_dicts is not None and type(schema_dicts) != list:
+        if schema_dicts is not None and not isinstance(schema_dicts, list):
             schema_dicts = [schema_dicts]
 
         self.schema_dicts = schema_dicts
@@ -162,7 +163,8 @@ class Client():
                 logger.error(e)
 
                 sleep_time = exponential_time()
-                logger.info(f"Not upgraded, sleeping {sleep_time} seconds... {self.counter}/{self.counter_max} time(s)")
+                logger.info(
+                    f"Not upgraded, sleeping {sleep_time} seconds... {self.counter}/{self.counter_max} time(s)")
 
                 self.counter += 1
                 sleep(sleep_time)

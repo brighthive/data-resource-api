@@ -1,6 +1,6 @@
 from data_resource_api.api.core.versioned_resource import VersionedResourceMany
 from expects import expect, be_an, raise_error, have_property, equal, be_empty, be
-from data_resource_api.app.exception_handler import MethodNotAllowed
+from data_resource_api.app.utils.exception_handler import MethodNotAllowed
 import pytest
 
 resource_one = '/programs/skills'
@@ -83,12 +83,22 @@ class TestIsSecure(object):
         vr = VersionedResourceMany()
 
         expect(vr.is_secured('put', resource_one, api_schema)).to(equal(True))
-        expect(vr.is_secured('delete', resource_one, api_schema)).to(equal(True))
+        expect(
+            vr.is_secured(
+                'delete',
+                resource_one,
+                api_schema)).to(
+            equal(True))
         expect(vr.is_secured('put', resource_two, api_schema)).to(equal(True))
 
     def test_fails_when_not_secure(self):
         vr = VersionedResourceMany()
 
         expect(vr.is_secured('get', resource_one, api_schema)).to(equal(False))
-        expect(vr.is_secured('patch', resource_one, api_schema)).to(equal(False))
+        expect(
+            vr.is_secured(
+                'patch',
+                resource_one,
+                api_schema)).to(
+            equal(False))
         expect(vr.is_secured('get', resource_two, api_schema)).to(equal(False))

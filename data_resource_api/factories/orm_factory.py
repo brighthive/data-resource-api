@@ -6,9 +6,9 @@ A factory for building SQLAlchemy ORM models from a Frictionless TableSchema spe
 
 import warnings
 from tableschema import Schema
-from sqlalchemy import Column, ForeignKey, MetaData, String, exc, Table, Integer
+from sqlalchemy import Column, ForeignKey, String, exc, Table, Integer
 from data_resource_api.factories import TABLESCHEMA_TO_SQLALCHEMY_TYPES
-from data_resource_api.app.junc_holder import JuncHolder
+from data_resource_api.app.utils.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
 
 logger = LogFactory.get_console_logger('orm-factory')
@@ -22,6 +22,7 @@ class ORMFactory(object):
         factories and modules.
 
     """
+
     def __init__(self, base):
         self.base = base
 
@@ -70,7 +71,8 @@ class ORMFactory(object):
                 return True, foreign_key_reference
         return False, None
 
-    def create_sqlalchemy_fields(self, fields: dict, primary_key, foreign_keys=[]):
+    def create_sqlalchemy_fields(
+            self, fields: dict, primary_key, foreign_keys=[]):
         """Build SQLAlchemy fields to be added to new table object.
 
         Args:
@@ -87,7 +89,7 @@ class ORMFactory(object):
             primary_key = [primary_key]
         for field in fields:
             if ('required' in field.keys() and field['required']) or \
-                ('constraints' in field.keys() and 'required' in field['constraints'].keys() and field['constraints']['required']):
+                    ('constraints' in field.keys() and 'required' in field['constraints'].keys() and field['constraints']['required']):
                 nullable = False
             else:
                 nullable = True
@@ -106,7 +108,8 @@ class ORMFactory(object):
                             self.get_sqlalchemy_type(
                                 field['type']), ForeignKey(reference_table, onupdate='CASCADE', ondelete='CASCADE'))
                     except Exception as e:
-                        logger.error("Error in create_sqlalchemy_fields", exc_info=True)
+                        logger.error(
+                            "Error in create_sqlalchemy_fields", exc_info=True)
         return sqlalchemy_fields
 
     def get_sqlalchemy_type(self, data_type: str):
@@ -123,7 +126,8 @@ class ORMFactory(object):
         except Exception:
             return String
 
-    def create_orm_from_dict(self, table_schema: dict, model_name: str, api_schema: dict):
+    def create_orm_from_dict(self, table_schema: dict,
+                             model_name: str, api_schema: dict):
         """Create a SQLAlchemy model from a Frictionless Table Schema spec.
 
         Args:
@@ -191,11 +195,21 @@ class ORMFactory(object):
             association_table = Table(
                 join_table,
                 self.base.metadata,
-                Column(f'{tables[0]}_id', Integer, ForeignKey(f'{tables[0]}.id'), primary_key=True),
-                Column(f'{tables[1]}_id', Integer, ForeignKey(f'{tables[1]}.id'), primary_key=True),
+                Column(
+                    f'{tables[0]}_id',
+                    Integer,
+                    ForeignKey(f'{tables[0]}.id'),
+                    primary_key=True),
+                Column(
+                    f'{tables[1]}_id',
+                    Integer,
+                    ForeignKey(f'{tables[1]}.id'),
+                    primary_key=True),
                 extend_existing=True
             )
         except Exception as e:
-            logger.error(f"Error on create junc table '{join_table}'", exc_info=True)
+            logger.error(
+                f"Error on create junc table '{join_table}'",
+                exc_info=True)
 
         JuncHolder.add_table(join_table, association_table)

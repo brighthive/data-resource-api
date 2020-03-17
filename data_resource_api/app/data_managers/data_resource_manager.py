@@ -4,7 +4,6 @@ The Data Resource Manager manages the lifecycles of all data resources. It is re
 creating the Flask application that sits at the front of the data resource.
 
 """
-import os
 import json
 import hashlib
 from threading import Thread
@@ -13,15 +12,15 @@ from flask import Flask
 from flask_restful import Api, Resource
 from data_resource_api.factories import ORMFactory, DataResourceFactory
 from data_resource_api.config import ConfigurationFactory
-from data_resource_api.db import engine, Base, Session, Checksum
+from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.logging import LogFactory
-from data_resource_api.app.exception_handler import handle_errors
-from data_resource_api.app.descriptor import (
-    Descriptor,
-    DescriptorFileHelper,
-    DescriptorFromFile,
+from data_resource_api.app.utils.exception_handler import handle_errors
+from data_resource_api.app.utils.descriptor import (
     DescriptorsGetter)
 from data_resource_api.utils import exponential_backoff
+from data_resource_api.app.utils.db_handler import DBHandler
+from data_resource_api.app.utils.config import ConfigFunctions
+from data_resource_api.app.data_managers.data_manager import DataManager
 
 
 class DataResource(object):
@@ -66,7 +65,7 @@ class AvailableServicesResource(Resource):
         return {'endpoints': self.endpoints}, 200
 
 
-class DataResourceManagerSync(object):
+class DataResourceManagerSync(DataManager):
     """Data Resource Manager.
 
     Attributes:
@@ -76,25 +75,16 @@ class DataResourceManagerSync(object):
     """
 
     def __init__(self, **kwargs):
-        base = kwargs.get('base', Base)
-        use_local_dirs = kwargs.get('use_local_dirs', True)
-        descriptors = kwargs.get('descriptors', [])
+        super().__init__('data-resource-manager', **kwargs)
 
-        self.data_resources: DataResource = []
-        self.app_config = ConfigurationFactory.from_env()
+        self.data_store: DataResource = []
+
         self.app = None
         self.api = None
         self.available_services = AvailableServicesResource()
-        self.orm_factory = ORMFactory(Base)
         self.data_resource_factory = DataResourceFactory()
-        self.logger = LogFactory.get_console_logger('data-resource-manager')
 
-        self.descriptor_directories = []
-        if use_local_dirs:
-            self.descriptor_directories.append(self.get_data_resource_schema_path())
-
-        self.custom_descriptors = descriptors
-
+    # Core functions
     def run(self, test_mode: bool = True):
         self.wait_for_db()
         # self.restore_models_from_database()
@@ -102,8 +92,9 @@ class DataResourceManagerSync(object):
         def run_fn():
             # try:
             self.logger.info('Data Resource Manager Running...')
-            self.logger.debug(f"Base metadata: {list(Base.metadata.tables.keys())}")
-            self.monitor_data_models()   
+            self.logger.debug(
+                f"Base metadata: {list(Base.metadata.tables.keys())}")
+            self.monitor_data_models()
             # except Exception as e:
             #     if e.code == 'e3q8':
             #         self.logger.info("Waiting for DB...")
@@ -119,8 +110,9 @@ class DataResourceManagerSync(object):
         while True:
             run_fn()
             sleep_time = 10
-            # sleep_time = self.get_sleep_interval()
-            self.logger.info(f'Data Resource Manager Sleeping for {sleep_time} seconds...')
+            # sleep_time = self.config.get_sleep_interval()
+            self.logger.info(
+                f'Data Resource Manager Sleeping for {sleep_time} seconds...')
             sleep(sleep_time)
 
     def wait_for_db(self):
@@ -133,7 +125,8 @@ class DataResourceManagerSync(object):
         while not db_active and retries <= max_retries:
             if retries != 0:
                 sleep_time = exponential_time()
-                self.logger.info(f'Sleeping for {sleep_time} with exponential backoff...')
+                self.logger.info(
+                    f'Sleeping for {sleep_time} with exponential backoff...')
                 sleep(sleep_time)
 
             retries += 1
@@ -153,52 +146,14 @@ class DataResourceManagerSync(object):
                     self.logger.info('Successfully connected to DB.')
 
                 elif e.code == 'e3q8':
-                    self.logger.info('Database is not available yet exception.')
+                    self.logger.info(
+                        'Database is not available yet exception.')
                     self.logger.info(
                         'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
                 else:
                     self.logger.exception(f'Error occured upgrading database.')
 
         self.logger.info('Connected to DB.')
-
-    # def restore_models_from_database(self) -> None:
-    #     """This method will load all stored descriptor files from DB
-    #     into SQL Alchemy ORM models.
-    #     """
-    #     # query database for all jsonb in checksum table
-    #     json_descriptor_list = self.get_stored_descriptors()
-
-    #     # load each item into our models
-    #     for descriptor in json_descriptor_list:
-    #         self.load_descriptor_into_sql_alchemy_model(descriptor)
-
-    # def load_descriptor_into_sql_alchemy_model(self, descriptor: dict) -> None:
-    #     desc = Descriptor(descriptor)
-    #     table_schema = desc.table_schema
-    #     table_name = desc.table_name
-    #     api_schema = desc.api_schema
-
-    #     data_model = self.orm_factory.create_orm_from_dict(
-    #         table_schema, table_name, api_schema)
-
-    # def get_stored_descriptors(self) -> list:
-    #     """
-    #     Gets stored json models from database.
-
-    #     Returns:
-    #         list: List of JSON dictionaries
-    #     """
-    #     session = Session()
-    #     descriptor_list = []  # list of json dict
-    #     try:
-    #         query = session.query(Checksum)
-    #         for _row in query.all():
-    #             descriptor_list.append(_row.descriptor_json)
-    #     except Exception as e:
-    #         self.logger.exception('Error retrieving stored models')
-    #     session.close()
-
-    #     return descriptor_list
 
     def create_app(self):
         """Create the base Flask application.
@@ -216,108 +171,6 @@ class DataResourceManagerSync(object):
 
         return self.app
 
-    def get_sleep_interval(self):
-        """Retrieve the thread's sleep interval.
-
-        Note:
-            The method will look for an enviroment variable (SLEEP_INTERVAL).
-            If the environment variable isn't set or cannot be parsed as an integer,
-            the method returns the default interval of 30 seconds.
-
-        Returns:
-            int: The sleep interval (in seconds) for the thread.
-
-        """
-
-        return self.app_config.DATA_RESOURCE_SLEEP_INTERVAL
-
-    def get_data_resource_schema_path(self):
-        """Retrieve the path to look for data resource specifications.
-
-        Returns:
-            str: The search path for data resource schemas.
-
-        Note:
-            The application will look for an environment variable named DATA_RESOURCE_PATH
-            and if it is not found will revert to the default path (i.e. /path/to/application/schema).
-
-        """
-
-        return os.getenv(
-            'DATA_RESOURCE_PATH', os.path.join(self.app_config.ROOT_PATH, 'schema'))
-
-    def data_resource_exists(self, data_resource_name):
-        """Checks if a data resource is already registered with the data resource manager.
-
-        Args:
-            data_resource_name (str): Name of the data resource.
-
-        Returns:
-            bool: True if the data resource exists. False if not.
-
-        """
-        exists = False
-        for data_resource in self.data_resources:
-            if data_resource.data_resource_name.lower() == data_resource_name.lower():
-                exists = True
-                break
-        return exists
-
-    def data_resource_changed(self, data_resource_name, checksum):
-        """Checks if the medata for a data model has been changed.
-
-        Args:
-            data_resource_name (str): Name of the data resource.
-            checksum (str): Computed MD5 checksum of the data resource schema.
-
-        Returns:
-            bool: True if the data resource has been changed. False if not.
-
-        """
-        changed = False
-        for data_resource in self.data_resources:
-            if data_resource.data_resource_name.lower() == data_resource_name.lower():
-                if data_resource.checksum != checksum:
-                    changed = True
-                break
-        return changed
-
-    def get_data_resource_index(self, data_resource_name):
-        """Retrieves the index of a specific data resource in the data resources dict.
-
-        Args:
-           data_resource_name (str): Name of the data resource file on disk.
-
-        Returns:
-            int: Index of the data resource stored in memory, or -1 if not found.
-        """
-        index = -1
-        for idx, data_resource in enumerate(self.data_resources):
-            if data_resource.data_resource_name == data_resource_name.lower():
-                index = idx
-                break
-        return index
-
-    def get_model_checksum(self, table_name: str):
-        """Retrieves a checksum by table name.
-
-        Args:
-            table_name (str): Name of the table to add the checksum.
-
-        Returns:
-            object: The checksum object if it exists, None otherwise.
-
-        """
-        session = Session()
-        checksum = None
-        try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
-        except Exception as e:
-            self.logger.error('Error retrieving checksum', exc_info=True)
-        session.close()
-        return checksum
-
     def monitor_data_models(self):
         """Wraps monitor data models for changes.
 
@@ -327,7 +180,9 @@ class DataResourceManagerSync(object):
         """
         self.logger.info('Checking data models')
 
-        descriptors = DescriptorsGetter(self.descriptor_directories, self.custom_descriptors)
+        descriptors = DescriptorsGetter(
+            self.descriptor_directories,
+            self.custom_descriptors)
         for descriptor in descriptors.iter_descriptors():
             self.process_descriptor(descriptor)
 
@@ -359,25 +214,26 @@ class DataResourceManagerSync(object):
             if self.data_resource_exists(data_resource_name):
 
                 # determine if api changed
-                model = self.get_model_checksum(table_name)
+                model = self.db.get_model_checksum(table_name)
                 data_resource_index = self.get_data_resource_index(
                     data_resource_name)
                 try:
-                    if self.data_resource_changed(data_resource_name, data_resource_checksum):
-                        data_resource = self.data_resources[data_resource_index]
+                    if self.data_resource_changed(
+                            data_resource_name, data_resource_checksum):
+                        data_resource = self.data_store[data_resource_index]
                         data_resource.checksum = data_resource_checksum
                         data_resource.data_resource_methods = api_schema
                         data_resource.data_model_name = table_name
                         data_resource.data_model_schema = table_schema
                         data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
                             table_schema, table_name, api_schema)
-                        data_resource.model_checksum = self.get_model_checksum(
+                        data_resource.model_checksum = self.db.get_model_checksum(
                             table_name)
                         data_resource.data_resource_object.data_model = data_resource.data_model_object
                         data_resource.data_resource_object.table_schema = table_schema
                         data_resource.data_resource_object.api_schema = api_schema
                         data_resource.data_resource_object.restricted_fields = restricted_fields
-                        self.data_resources[data_resource_index] = data_resource
+                        self.data_store[data_resource_index] = data_resource
                 except Exception as e:
                     self.logger.exception(
                         'Error checking data resource')
@@ -390,14 +246,52 @@ class DataResourceManagerSync(object):
                 data_resource.data_model_schema = table_schema
                 data_resource.data_model_object = self.orm_factory.create_orm_from_dict(
                     table_schema, table_name, api_schema)
-                data_resource.model_checksum = self.get_model_checksum(
+                data_resource.model_checksum = self.db.get_model_checksum(
                     table_name)
                 data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
                     api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
-                self.data_resources.append(data_resource)
+                self.data_store.append(data_resource)
 
         except Exception as e:
             self.logger.exception(f"Error loading schema '{schema_file}'")
+
+    # Data store functions
+    def data_resource_exists(self, data_resource_name):
+        """Checks if a data resource is already registered with the data resource manager.
+
+        Args:
+            data_resource_name (str): Name of the data resource.
+
+        Returns:
+            bool: True if the data resource exists. False if not.
+
+        """
+        return self.data_exists(data_resource_name, 'data_resource_name')
+
+    def data_resource_changed(self, data_resource_name, checksum):
+        """Checks if the medata for a data model has been changed.
+
+        Args:
+            data_resource_name (str): Name of the data resource.
+            checksum (str): Computed MD5 checksum of the data resource schema.
+
+        Returns:
+            bool: True if the data resource has been changed. False if not.
+
+        """
+        return self.data_changed(
+            data_resource_name, checksum, 'data_resource_name', 'checksum')
+
+    def get_data_resource_index(self, data_resource_name):
+        """Retrieves the index of a specific data resource in the data resources dict.
+
+        Args:
+           data_resource_name (str): Name of the data resource file on disk.
+
+        Returns:
+            int: Index of the data resource stored in memory, or -1 if not found.
+        """
+        return self.get_data_index(data_resource_name, 'data_resource_name')
 
 
 class DataResourceManager(Thread, DataResourceManagerSync):

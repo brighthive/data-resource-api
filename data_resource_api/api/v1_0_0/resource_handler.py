@@ -13,15 +13,15 @@ from data_resource_api.app.utils.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
 from data_resource_api.app.utils.exception_handler import ApiError, ApiUnhandledError, InternalServerError
 from sqlalchemy import and_
+from data_resource_api.app.utils.exception_handler import SchemaValidationFailure
 
 
 class ResourceHandler(object):
     def __init__(self):
         self.logger = LogFactory.get_console_logger('resource-handler')
 
-    def build_json_from_object(self, obj: object,
-                               restricted_fields: dict = []):
-        resp = {key: str(value) if value is not None else '' for key, value in obj.__dict__.items(
+    def build_json_from_object(self, obj: object, restricted_fields: dict = []):
+        resp = {key: value if value is not None else '' for key, value in obj.__dict__.items(
         ) if not key.startswith('_') and not callable(key) and key not in restricted_fields}
         return resp
 
@@ -192,7 +192,7 @@ class ResourceHandler(object):
             raise ApiError('No request body found.', 400)
 
         errors = []
-        schema = Schema(table_schema)
+        _ = Schema(table_schema)
         accepted_fields = []
         response = OrderedDict()
         response['results'] = []
@@ -219,7 +219,7 @@ class ResourceHandler(object):
                         return {'message': 'No matches found'}, 404
                     else:
                         return response, 200
-                except Exception as e:
+                except Exception:
                     raise ApiUnhandledError(
                         'Failed to create new resource.', 400)
                 finally:
@@ -265,7 +265,7 @@ class ResourceHandler(object):
         except Exception:
             raise ApiError('No request body found.', 400)
 
-        schema = Schema(table_schema)
+        _ = Schema(table_schema)
         errors = []
         accepted_fields = []
 
@@ -319,7 +319,7 @@ class ResourceHandler(object):
 
             return {'message': 'Successfully added new resource.',
                     'id': id_value}, 201
-        except Exception as e:
+        except Exception:
             raise ApiUnhandledError('Failed to create new resource.', 400)
         finally:
             session.close()
@@ -411,7 +411,7 @@ class ResourceHandler(object):
 
         """
         return self.get_many_one(
-            id, data_model, data_resource_name, table_schema)
+            id, parent, child)
 
     def get_many_one(self, id: int, parent: str, child: str):
         """Retrieve the many to many relationship data of a parent and child.
@@ -516,7 +516,7 @@ class ResourceHandler(object):
             function: The wrapped method.
 
         """
-        return self.patch_many_one(id, parent, child, value)
+        return self.patch_many_one(id, parent, child, values)
 
     def patch_many_one(self, id: int, parent: str, child: str, values):
         """put data for a many to many relationship of a parent and child.
@@ -543,7 +543,7 @@ class ResourceHandler(object):
                 self.process_many_query(
                     session, table, id, field, parent, values)
 
-        except Exception as e:
+        except Exception:
             raise InternalServerError()
 
         finally:
@@ -597,12 +597,12 @@ class ResourceHandler(object):
                 session.close()
                 raise ApiUnhandledError(
                     f"Resource with id '{id}' not found.", 404)
-        except Exception as e:
+        except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
         finally:
             session.close()
 
-        schema = Schema(table_schema)
+        _ = Schema(table_schema)
         errors = []
         accepted_fields = []
         if validate(table_schema):

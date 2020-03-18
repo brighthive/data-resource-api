@@ -1,6 +1,6 @@
 FROM python:3.7.3-slim
 WORKDIR /data-resource
-RUN apt-get update && apt-get install -y python3-dev build-essential &&\ 
+RUN apt-get update && apt-get install -y python3-dev build-essential vim &&\ 
     pip install --upgrade pipenv
 ADD Pipfile Pipfile
 ADD Pipfile.lock Pipfile.lock

@@ -162,8 +162,10 @@ class DBHandler(object):
             new_migration = Migrations()
             new_migration.file_name = file_name
             new_migration.file_blob = file_blob
-            session.add(new_migration)
-            session.commit()
+            result = session.query(Migrations).filter(Migrations.file_name == file_name).count()
+            if result == 0:
+                session.add(new_migration)
+                session.commit()
         except Exception:
             logger.exception('Failed to save migration files to DB.')
         finally:

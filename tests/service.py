@@ -5,9 +5,15 @@ for the DR API test code.
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
 import json
 
+
+CREDENTIALS_ROUTE = '/credentials'
+PROGRAMS_ROUTE = '/programs'
+
 JSON_ROUTE = '/json'
+
 SKILLS_ROUTE = '/skills'
 FRAMEWORKS_ROUTE = '/frameworks'
+
 MANY_TO_MANY_ROUTE = '{parent}/{parent_id}/{child}'
 
 
@@ -26,6 +32,61 @@ def MN_SKILLS_FRAMEWORK_ROUTE(parent_id):
 
 
 class ApiHelper:
+    # test_default_descriptor
+    @staticmethod
+    def get(route, client, id):
+        if id is None:
+            response = client.get(route)
+        else:
+            response = client.get(f'{route}/{id}')
+
+        body = json.loads(response.data)
+
+        expect(response.status_code).to(equal(200))
+        return body
+
+    @staticmethod
+    def get_credential(client, credential_id=None, pagination=None):
+        route = CREDENTIALS_ROUTE
+        if pagination is not None:
+            route = f"{route}{pagination}"
+
+        return ApiHelper.get(route, client, credential_id)
+
+    @staticmethod
+    def get_program(client, program_id=None):
+        route = PROGRAMS_ROUTE
+        return ApiHelper.get(route, client, program_id)
+
+    @staticmethod
+    def post_a_credential(client, post_body, status_code=201):  # this refactor allows us to assert status codes and prevent errors
+        route = CREDENTIALS_ROUTE
+
+        response = client.post(route, json=post_body)
+        expect(response.status_code).to(equal(status_code))
+
+        if response.status_code == 201:
+            body = json.loads(response.data)
+            return body['id']
+
+    @staticmethod
+    def put_a_credential(client, put_body, credential_id):
+        route = CREDENTIALS_ROUTE
+
+        response = client.put(
+            f'{route}/{credential_id}', json=put_body)
+        
+        expect(response.status_code).to(equal(201))
+
+    @staticmethod
+    def patch_a_credential(client, patch_body, credential_id):
+        route = CREDENTIALS_ROUTE
+
+        response = client.patch(
+            f'{route}/{credential_id}', json=patch_body)
+
+        expect(response.status_code).to(equal(201))
+
     # test_json_descriptor
     @staticmethod
     def post_a_json(client, json_dict: dict):

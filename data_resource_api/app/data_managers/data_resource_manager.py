@@ -78,7 +78,7 @@ class DataResourceManagerSync(DataManager):
         self.data_resource_factory = DataResourceFactory()
 
     # Core functions
-    def run(self, test_mode: bool = True):
+    def run(self, test_mode: bool = False):
         self.wait_for_db()
 
         def run_fn():
@@ -228,7 +228,10 @@ class DataResourceManagerSync(DataManager):
             data_resource.model_checksum = self.db.get_model_checksum(
                 table_name)
             data_resource.data_resource_object = self.data_resource_factory.create_api_from_dict(
-                api_schema, data_resource_name, table_name, self.api, data_resource.data_model_object, table_schema, restricted_fields)
+                api_schema, 
+                data_resource_name, 
+                table_name, 
+                self.api, data_resource.data_model_object, table_schema, restricted_fields)
             self.data_store.append(data_resource)
         except Exception:
             self.logger.exception(

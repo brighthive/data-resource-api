@@ -3,7 +3,6 @@ from __future__ import with_statement
 from logging.config import fileConfig
 
 # from sqlalchemy import engine_from_config
-import os
 from sqlalchemy import pool
 from alembic import context
 from data_resource_api.db import engine, Base

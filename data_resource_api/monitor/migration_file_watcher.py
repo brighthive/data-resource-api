@@ -57,5 +57,4 @@ class Handler(FileSystemEventHandler):
         logger.debug("Attempting to open migration file...")
         with open(full_file_path, 'rb') as file_:
             logger.debug("Attempting to run save_migration function...")
-
             DBHandler.save_migration(file_name, file_.read())

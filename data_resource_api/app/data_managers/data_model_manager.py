@@ -142,9 +142,6 @@ class DataModelManagerSync(DataManager):
     def data_model_does_exist(self, descriptor: Descriptor):
         try:
             descriptor_file_name = descriptor.file_name
-            table_name = descriptor.table_name
-            table_schema = descriptor.table_schema
-            api_schema = descriptor.api_schema
             model_checksum = descriptor.get_checksum()
 
             self.logger.debug(f"{descriptor_file_name}: Found existing.")
@@ -154,6 +151,19 @@ class DataModelManagerSync(DataManager):
                     descriptor_file_name, model_checksum):
                 self.logger.debug(f"{descriptor_file_name}: Unchanged.")
                 return
+
+            self.update_data_model(descriptor)
+        except Exception:
+            self.logger.exception(
+                'Error checking data model')
+
+    def update_data_model(self, descriptor: Descriptor):
+        try:
+            descriptor_file_name = descriptor.file_name
+            table_name = descriptor.table_name
+            table_schema = descriptor.table_schema
+            api_schema = descriptor.api_schema
+            model_checksum = descriptor.get_checksum()
 
             self.logger.debug(f"{descriptor_file_name}: Found changed.")
 
@@ -169,7 +179,7 @@ class DataModelManagerSync(DataManager):
             self.db.revision(table_name, create_table=False)
             self.db.upgrade()
             self.db.update_model_checksum(
-                table_name, model_checksum)
+                table_name, model_checksum, descriptor.descriptor)
 
             # store metadata for descriptor locally
             self.data_store[data_model_index].model_checksum = model_checksum

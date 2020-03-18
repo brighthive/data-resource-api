@@ -1,29 +1,6 @@
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
 import json
-
-
-class ApiHelper:
-    @staticmethod
-    def post_a_json(c, json_dict: dict):
-        route = '/json'
-        post_body = {
-            "json": dict(json_dict)
-        }
-        response = c.post(route, json=post_body)
-        body = json.loads(response.data)
-
-        expect(response.status_code).to(equal(201))
-        return body['id']
-
-    @staticmethod
-    def get_a_json_by_id(c, id: int):
-        route = '/json'
-        response = c.get(f'{route}/{id}')
-        body = json.loads(response.data)
-
-        expect(response.status_code).to(equal(200))
-
-        return body
+from tests.service import ApiHelper
 
 
 def test_json_posts_and_returns_correctly(json_client):

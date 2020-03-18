@@ -493,3 +493,137 @@ json_descriptor = {
       }
     }
   }
+
+everything_descriptor = {
+  "api": {
+    "resource": "alltypes",
+    "methods": [
+      {
+        "get": {
+          "enabled": True,
+          "secured": False,
+          "grants": ["get:users"]
+        },
+        "post": {
+          "enabled": True,
+          "secured": False,
+          "grants": []
+        },
+        "put": {
+          "enabled": True,
+          "secured": False,
+          "grants": []
+        },
+        "patch": {
+          "enabled": True,
+          "secured": False,
+          "grants": []
+        },
+        "delete": {
+          "enabled": True,
+          "secured": False,
+          "grants": []
+        }
+      }
+    ]
+  },
+  "datastore": {
+    "tablename": "alltypes",
+    "restricted_fields": [],
+    "schema": {
+      "fields": [
+        {
+            "name": "string",
+            "title": "string",
+            "type": "string",
+            "required": False
+        },
+        {
+            "name": "number",
+            "title": "number",
+            "type": "number",
+            "required": False
+        },
+        {
+            "name": "integer",
+            "title": "integer",
+            "type": "integer",
+            "required": False
+        },
+        {
+            "name": "boolean",
+            "title": "boolean",
+            "type": "boolean",
+            "required": False
+        },
+        {
+            "name": "object",
+            "title": "object",
+            "type": "object",
+            "required": False
+        },
+        {
+            "name": "array",
+            "title": "array",
+            "type": "array",
+            "required": False
+        },
+        {
+            "name": "date",
+            "title": "date",
+            "type": "date",
+            "required": False
+        },
+        {
+            "name": "time",
+            "title": "time",
+            "type": "time",
+            "required": False
+        },
+        {
+            "name": "datetime",
+            "title": "datetime",
+            "type": "datetime",
+            "required": False
+        },
+        {
+            "name": "year",
+            "title": "year",
+            "type": "year",
+            "required": False
+        },
+        {
+            "name": "yearmonth",
+            "title": "yearmonth",
+            "type": "yearmonth",
+            "required": False
+        },
+        {
+            "name": "duration",
+            "title": "duration",
+            "type": "duration",
+            "required": False
+        },
+        {
+            "name": "geopoint",
+            "title": "geopoint",
+            "type": "geopoint",
+            "required": False
+        },
+        {
+            "name": "geojson",
+            "title": "geojson",
+            "type": "geojson",
+            "required": False
+        },
+        {
+            "name": "any",
+            "title": "any",
+            "type": "any",
+            "required": False
+        }
+      ],
+      "primaryKey": "id"
+    }
+  }
+}

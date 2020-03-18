@@ -12,7 +12,8 @@ from tests.schemas import (
     skills_descriptor,
     credentials_descriptor,
     programs_descriptor,
-    json_descriptor)
+    json_descriptor,
+    everything_descriptor)
 
 from sqlalchemy.ext.declarative import declarative_base
 from data_resource_api.logging import LogFactory
@@ -204,6 +205,13 @@ def frameworks_skills_client():
 @pytest.fixture(scope='module')
 def json_client():
     client = Client([json_descriptor])
+    yield client.run_and_return_test_client()
+    client.stop_container()
+
+
+@pytest.fixture(scope='module')
+def everything_client():
+    client = Client([everything_descriptor])
     yield client.run_and_return_test_client()
     client.stop_container()
 

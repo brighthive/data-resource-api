@@ -598,8 +598,6 @@ class ResourceHandler(object):
                     f"Resource with id '{id}' not found.", 404)
         except Exception:
             raise ApiUnhandledError(f"Resource with id '{id}' not found.", 404)
-        finally:
-            session.close()
 
         _ = Schema(table_schema)
         errors = []

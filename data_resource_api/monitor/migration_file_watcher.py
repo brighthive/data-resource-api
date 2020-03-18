@@ -28,7 +28,7 @@ class MigrationFileWatcher:
                 time.sleep(5)
         except:
             self.observer.stop()
-            print("Observer Stopped")
+            logger.debug("Observer Stopped")
 
         self.observer.join()
 
@@ -42,10 +42,10 @@ class Handler(FileSystemEventHandler):
 
         elif event.event_type == 'created':
             # Event is created, you can process it now
-            print("Watchdog received created event - % s." % event.src_path)
+            logger.debug("Watchdog received created event - % s." % event.src_path)
         elif event.event_type == 'modified':
             # Event is modified, you can process it now
-            print("Watchdog received modified event - % s." % event.src_path)
+            logger.debug("Watchdog received modified event - % s." % event.src_path)
 
     @staticmethod
     def on_created(event):

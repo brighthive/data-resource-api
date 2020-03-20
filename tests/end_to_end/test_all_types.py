@@ -79,7 +79,7 @@ def test_object(everything_client):
     run_query(everything_client, "object", {"json": "test"})
 
 
-@pytest.mark.skip
+@pytest.mark.skip  # Unsure how this should return
 def test_array(everything_client):
     # {
     #     "name": "array",

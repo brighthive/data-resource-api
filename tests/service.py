@@ -73,7 +73,7 @@ class ApiHelper:
         return ApiHelper.get(route, client, program_id)
 
     @staticmethod
-    def post_a_credential(client, post_body, status_code):  # this refactor allows us to assert status codes and prevent errors
+    def post_a_credential(client, post_body, status_code=201):
         route = CREDENTIALS_ROUTE
 
         response = client.post(route, json=post_body)

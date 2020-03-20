@@ -1,4 +1,4 @@
-from data_resource_api.api.v1_0_0.utils import safe_json_dumps
+from data_resource_api.app.utils.json_converter import safe_json_dumps
 from datetime import datetime
 import json
 

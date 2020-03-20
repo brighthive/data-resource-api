@@ -90,7 +90,7 @@ def test_array(everything_client):
     run_query(everything_client, "array", ['one', 'two', 'three'])
 
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 def test_date(everything_client):
     # {
     #     "name": "date",
@@ -111,6 +111,16 @@ def test_time(everything_client):
     # },
     run_query(everything_client, "time", "18:25:43.511Z")
 
+
+# @pytest.mark.xfail
+def test_datetime(everything_client):
+    # {
+    #     "name": "datetime",
+    #     "title": "datetime",
+    #     "type": "datetime",
+    #     "required": False
+    # },
+    run_query(everything_client, "datetime", "2012-04-23T18:25:43Z")
 
 @pytest.mark.xfail
 def test_datetime(everything_client):

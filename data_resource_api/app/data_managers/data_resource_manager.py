@@ -6,12 +6,13 @@ creating the Flask application that sits at the front of the data resource.
 """
 from threading import Thread
 from time import sleep
-from flask import Flask
+from flask import Flask, make_response
 from flask_restful import Api, Resource
 from data_resource_api.factories import DataResourceFactory
 from data_resource_api.db import Base, Session, Checksum
 from data_resource_api.app.utils.exception_handler import handle_errors
 from data_resource_api.app.utils.descriptor import Descriptor
+from data_resource_api.app.utils.json_converter import safe_json_dumps
 from data_resource_api.utils import exponential_backoff
 from data_resource_api.app.data_managers.data_manager import DataManager
 
@@ -155,6 +156,14 @@ class DataResourceManagerSync(DataManager):
         self.api.add_resource(self.available_services,
                               '/', endpoint='all_services_ep')
         self.app.register_error_handler(Exception, handle_errors)
+
+        @self.api.representation('application/json')
+        def output_json(data, code, headers=None):
+            print("-----asdf-as-df-as-df--asd-f-adf----------")
+            resp = make_response(safe_json_dumps(data), code)
+            print(safe_json_dumps(data))
+            resp.headers.extend(headers or {})
+            return resp
 
         return self.app
 

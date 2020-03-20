@@ -533,94 +533,100 @@ everything_descriptor = {
     "schema": {
       "fields": [
         {
-            "name": "string",
-            "title": "string",
-            "type": "string",
-            "required": False
+          "name": "id",
+          "type": "integer",
+          "title": "id",
+          "required": True
         },
         {
-            "name": "number",
-            "title": "number",
-            "type": "number",
-            "required": False
+          "name": "string",
+          "title": "string",
+          "type": "string",
+          "required": False
         },
         {
-            "name": "integer",
-            "title": "integer",
-            "type": "integer",
-            "required": False
+          "name": "number",
+          "title": "number",
+          "type": "number",
+          "required": False
         },
         {
-            "name": "boolean",
-            "title": "boolean",
-            "type": "boolean",
-            "required": False
+          "name": "integer",
+          "title": "integer",
+          "type": "integer",
+          "required": False
         },
         {
-            "name": "object",
-            "title": "object",
-            "type": "object",
-            "required": False
+          "name": "boolean",
+          "title": "boolean",
+          "type": "boolean",
+          "required": False
         },
         {
-            "name": "array",
-            "title": "array",
-            "type": "array",
-            "required": False
+          "name": "object",
+          "title": "object",
+          "type": "object",
+          "required": False
         },
         {
-            "name": "date",
-            "title": "date",
-            "type": "date",
-            "required": False
+          "name": "array",
+          "title": "array",
+          "type": "array",
+          "required": False
         },
         {
-            "name": "time",
-            "title": "time",
-            "type": "time",
-            "required": False
+          "name": "date",
+          "title": "date",
+          "type": "date",
+          "required": False
         },
         {
-            "name": "datetime",
-            "title": "datetime",
-            "type": "datetime",
-            "required": False
+          "name": "time",
+          "title": "time",
+          "type": "time",
+          "required": False
         },
         {
-            "name": "year",
-            "title": "year",
-            "type": "year",
-            "required": False
+          "name": "datetime",
+          "title": "datetime",
+          "type": "datetime",
+          "required": False
         },
         {
-            "name": "yearmonth",
-            "title": "yearmonth",
-            "type": "yearmonth",
-            "required": False
+          "name": "year",
+          "title": "year",
+          "type": "year",
+          "required": False
         },
         {
-            "name": "duration",
-            "title": "duration",
-            "type": "duration",
-            "required": False
+          "name": "yearmonth",
+          "title": "yearmonth",
+          "type": "yearmonth",
+          "required": False
         },
         {
-            "name": "geopoint",
-            "title": "geopoint",
-            "type": "geopoint",
-            "required": False
+          "name": "duration",
+          "title": "duration",
+          "type": "duration",
+          "required": False
         },
         {
-            "name": "geojson",
-            "title": "geojson",
-            "type": "geojson",
-            "required": False
+          "name": "geopoint",
+          "title": "geopoint",
+          "type": "geopoint",
+          "required": False
         },
         {
-            "name": "any",
-            "title": "any",
-            "type": "any",
-            "required": False
+          "name": "geojson",
+          "title": "geojson",
+          "type": "geojson",
+          "required": False
+        },
+        {
+          "name": "any",
+          "title": "any",
+          "type": "any",
+          "required": False
         }
       ],
       "primaryKey": "id"

@@ -536,7 +536,7 @@ everything_descriptor = {
           "name": "id",
           "type": "integer",
           "title": "id",
-          "required": True
+          "required": False
         },
         {
           "name": "string",

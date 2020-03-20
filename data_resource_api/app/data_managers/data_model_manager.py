@@ -125,15 +125,10 @@ class DataModelManagerSync(DataManager):
             self.logger.info(
                 f"Loading descriptor '{remote_descriptor.table_name}' from db.")
 
-            self.load_descriptor_into_sql_alchemy_model(
+            self.load_model_to_data_store(
                 remote_descriptor)
 
         self.logger.info("Loaded remote descriptors.")
-
-    def load_descriptor_into_sql_alchemy_model(
-            self, desc: Descriptor) -> None:
-        _ = self.orm_factory.create_orm_from_dict(
-            desc.table_schema, desc.table_name, desc.api_schema)
 
     def process_descriptor(self, descriptor: Descriptor):
         model_exists = self.data_model_exists(descriptor.file_name)
@@ -142,20 +137,31 @@ class DataModelManagerSync(DataManager):
     def data_model_does_exist(self, descriptor: Descriptor):
         try:
             descriptor_file_name = descriptor.file_name
+            model_checksum = descriptor.get_checksum()
+            self.logger.info(f"{descriptor_file_name}: {model_checksum}")
+
+            self.logger.info(f"{descriptor_file_name}: Found existing.")
+            # check if the cached db checksum has changed from the new file
+            # checksum
+            if not self.data_model_changed(
+                    descriptor_file_name, model_checksum):
+                self.logger.info(f"{descriptor_file_name}: Unchanged.")
+                return
+
+            self.update_data_model(descriptor)
+        except Exception:
+            self.logger.exception(
+                'Error checking data model')
+
+    def update_data_model(self, descriptor: Descriptor):
+        try:
+            descriptor_file_name = descriptor.file_name
             table_name = descriptor.table_name
             table_schema = descriptor.table_schema
             api_schema = descriptor.api_schema
             model_checksum = descriptor.get_checksum()
 
-            self.logger.debug(f"{descriptor_file_name}: Found existing.")
-            # check if the cached db checksum has changed from the new file
-            # checksum
-            if not self.data_model_changed(
-                    descriptor_file_name, model_checksum):
-                self.logger.debug(f"{descriptor_file_name}: Unchanged.")
-                return
-
-            self.logger.debug(f"{descriptor_file_name}: Found changed.")
+            self.logger.info(f"{descriptor_file_name}: Found changed.")
 
             # Get the index for this descriptor within our local metadata
             data_model_index = self.get_data_model_index(
@@ -169,7 +175,7 @@ class DataModelManagerSync(DataManager):
             self.db.revision(table_name, create_table=False)
             self.db.upgrade()
             self.db.update_model_checksum(
-                table_name, model_checksum)
+                table_name, model_checksum, descriptor.descriptor)
 
             # store metadata for descriptor locally
             self.data_store[data_model_index].model_checksum = model_checksum
@@ -181,26 +187,16 @@ class DataModelManagerSync(DataManager):
         try:
             descriptor_file_name = descriptor.file_name
             table_name = descriptor.table_name
-            table_schema = descriptor.table_schema
-            api_schema = descriptor.api_schema
             model_checksum = descriptor.get_checksum()
 
-            self.logger.debug(
+            self.logger.info(
                 f"{descriptor_file_name}: Unseen before now.")
-            # Create the metadata store for descriptor
-            data_model_descriptor = DataModelDescriptor(
-                descriptor_file_name, table_name, model_checksum)
 
-            # Store the metadata for descriptor locally
-            self.data_store.append(
-                data_model_descriptor)
+            self.load_model_to_data_store(descriptor)
+
             # get the databases checksum value
             stored_checksum = self.db.get_model_checksum(
                 table_name)
-
-            # create SqlAlchemy ORM models
-            _ = self.orm_factory.create_orm_from_dict(
-                table_schema, table_name, api_schema)
 
             # if there is no checksum in the data base
             # or the database checksum does not equal this files checksum
@@ -215,6 +211,21 @@ class DataModelManagerSync(DataManager):
                 'Error checking data resource')
 
     # Data store functions
+    def load_model_to_data_store(self, descriptor):
+        """Adds descriptor to data store AND loads SQL Alchemy model
+        """
+        # Create the metadata store for descriptor
+        data_model_descriptor = DataModelDescriptor(
+            descriptor.file_name, descriptor.table_name, descriptor.get_checksum())
+
+        # Store the metadata for descriptor locally
+        self.data_store.append(
+            data_model_descriptor)
+
+        # create SqlAlchemy ORM models
+        _ = self.orm_factory.create_orm_from_dict(
+            descriptor.table_schema, descriptor.table_name, descriptor.api_schema)
+
     def data_model_exists(self, descriptor_file_name):
         """Checks if a data model is already registered with the data model manager.
 

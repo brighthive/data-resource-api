@@ -208,6 +208,14 @@ def json_client():
     client.stop_container()
 
 
+@pytest.fixture(scope='module')
+def no_db_dmm():
+    dmm = DataModelManagerSync(
+        use_local_dirs=False,
+        descriptors=None)
+    yield dmm
+
+
 @pytest.fixture
 def base():
     JuncHolder.reset()

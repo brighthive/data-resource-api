@@ -34,7 +34,7 @@ class DBHandler(object):
         finally:
             session.close()
 
-    def update_model_checksum(self, table_name: str, model_checksum: str):
+    def update_model_checksum(self, table_name: str, model_checksum: str, descriptor_json: dict = {}):
         """Updates a checksum for a data model.
 
         Args:
@@ -51,6 +51,7 @@ class DBHandler(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
             checksum.model_checksum = model_checksum
+            checksum.descriptor_json = descriptor_json
             session.commit()
             updated = True
         except Exception:

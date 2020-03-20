@@ -213,7 +213,6 @@ def no_db_dmm():
     dmm = DataModelManagerSync(
         use_local_dirs=False,
         descriptors=None)
-    print("test fixture")
     yield dmm
 
 

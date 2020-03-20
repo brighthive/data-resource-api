@@ -37,17 +37,6 @@ def test_add_checksum(no_db_dmm, mocker):
     fn_update_model_checksum.assert_called()
 
 
-def test_add_checksum(no_db_dmm, mocker):
-    mocker.patch('data_resource_api.app.utils.db_handler.DBHandler.revision', return_value=True)
-    mocker.patch('data_resource_api.app.utils.db_handler.DBHandler.upgrade', return_value=True)
-    fn_update_model_checksum = mocker.patch('data_resource_api.app.utils.db_handler.DBHandler.update_model_checksum', return_value=True)
-    desc = Descriptor(frameworks_descriptor)
-
-    no_db_dmm.update_data_model(desc)
-
-    fn_update_model_checksum.assert_called()
-
-
 class TestDataModelManager():
     @pytest.mark.xfail  # this is failing because of a strange interaction with juncholder
     # this test will pass if run by itself -- if run with all other tests it

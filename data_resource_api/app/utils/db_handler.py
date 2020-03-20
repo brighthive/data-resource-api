@@ -34,7 +34,7 @@ class DBHandler(object):
         finally:
             session.close()
 
-    def update_model_checksum(self, table_name: str, model_checksum: str):
+    def update_model_checksum(self, table_name: str, model_checksum: str, descriptor_json: dict = {}):
         """Updates a checksum for a data model.
 
         Args:
@@ -51,6 +51,7 @@ class DBHandler(object):
             checksum = session.query(Checksum).filter(
                 Checksum.data_resource == table_name).first()
             checksum.model_checksum = model_checksum
+            checksum.descriptor_json = descriptor_json
             session.commit()
             updated = True
         except Exception:
@@ -162,8 +163,10 @@ class DBHandler(object):
             new_migration = Migrations()
             new_migration.file_name = file_name
             new_migration.file_blob = file_blob
-            session.add(new_migration)
-            session.commit()
+            result = session.query(Migrations).filter(Migrations.file_name == file_name).count()
+            if result == 0:
+                session.add(new_migration)
+                session.commit()
         except Exception:
             logger.exception('Failed to save migration files to DB.')
         finally:

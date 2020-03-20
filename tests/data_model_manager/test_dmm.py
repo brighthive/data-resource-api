@@ -8,6 +8,7 @@ from tests.schemas import (
     credentials_descriptor,
     programs_descriptor)
 import pytest
+from data_resource_api.app.utils.descriptor import Descriptor
 
 
 def setup_dmm_store():
@@ -23,6 +24,17 @@ def setup_dmm_store():
     DMM.data_store.append(d3)
 
     return DMM
+
+# @pytest.mark.skip
+# def test_add_checksum(no_db_dmm, mocker):
+#     mocker.patch('data_resource_api.app.utils.db_handler.DBHandler.revision', return_value=True)
+#     mocker.patch('data_resource_api.app.utils.db_handler.DBHandler.upgrade', return_value=True)
+#     fn_update_model_checksum = mocker.patch('data_resource_api.app.utils.db_handler.DBHandler.add_model_checksum', return_value=True)
+#     desc = Descriptor(frameworks_descriptor)
+
+#     no_db_dmm.update_data_model(desc)
+
+#     fn_update_model_checksum.assert_called()
 
 
 class TestDataModelManager():

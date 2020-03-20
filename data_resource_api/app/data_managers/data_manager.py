@@ -99,10 +99,9 @@ class DataManager(object):
             name_attr: str,
             checksum_attr: str):
         for data_object in self.data_store:
-            same_name = getattr(
-                data_object, name_attr).lower == data_name.lower
-            same_checksum = getattr(data_object, checksum_attr) != checksum
-            if same_name and same_checksum:
+            same_name = getattr(data_object, name_attr).lower() == data_name.lower()
+            same_checksum = getattr(data_object, checksum_attr) == checksum
+            if same_name and not same_checksum:
                 return True
         return False
 

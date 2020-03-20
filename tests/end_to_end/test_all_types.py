@@ -1,19 +1,10 @@
-# {
-#     "name": "id",
-#     "type": "integer",
-#     "title": "id",
-#     "required": True
-# },
-
 import pytest
 import json
 from tests.service import ApiHelper
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
-# import the converter function?
+
 
 ROUTE = '/alltypes'
-
-expected_string = {"date": "", "datetime": "", "yearmonth": "", "geopoint": "", "string": "asdf1234", "number": "", "boolean": "", "array": "", "time": "", "year": "", "duration": "", "geojson": "", "any": "", "id": 1, "integer": "", "object": ""}
 
 
 def run_query(client, key, value, expected_value=None):

@@ -4,9 +4,9 @@ import datetime
 
 def unknown_field_json_converter(o):
     if isinstance(o, datetime.datetime):
-        print(str(o))
-        print(o.__str__())
         return str(o.isoformat()) + "Z"
+    if isinstance(o, datetime.date):
+        return str(o.isoformat())
 
 
 def safe_json_dumps(json_dict):

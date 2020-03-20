@@ -101,7 +101,7 @@ def test_date(everything_client):
     run_query(everything_client, "date", "2012-04-23")
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail  # TODO cannot save to database
 def test_time(everything_client):
     # {
     #     "name": "time",
@@ -122,8 +122,9 @@ def test_datetime(everything_client):
     # },
     run_query(everything_client, "datetime", "2012-04-23T18:25:43Z")
 
+
 @pytest.mark.xfail
-def test_datetime(everything_client):
+def test_datetime_with_miliseconds(everything_client):
     # {
     #     "name": "datetime",
     #     "title": "datetime",
@@ -144,7 +145,7 @@ def test_year(everything_client):
     run_query(everything_client, "year", 2012)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail  # TODO does not save to database
 def test_yearmonth(everything_client):
     # {
     #     "name": "yearmonth",

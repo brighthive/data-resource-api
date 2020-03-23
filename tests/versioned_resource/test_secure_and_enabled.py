@@ -58,6 +58,7 @@ api_schema = {
 
 
 class TestErrorIfResourceIsDisabled(object):
+    @pytest.mark.unit
     def test_error_if_resource_is_disabled(self):
         vr = VersionedResourceMany()
 
@@ -70,6 +71,7 @@ class TestErrorIfResourceIsDisabled(object):
         with pytest.raises(MethodNotAllowed):
             vr.error_if_resource_is_disabled('get', resource_two, api_schema)
 
+    @pytest.mark.unit
     def test_does_not_error_if_resource_is_enabled(self):
         vr = VersionedResourceMany()
 
@@ -79,6 +81,7 @@ class TestErrorIfResourceIsDisabled(object):
 
 
 class TestIsSecure(object):
+    @pytest.mark.unit
     def test_passes_when_secure(self):
         vr = VersionedResourceMany()
 
@@ -91,6 +94,7 @@ class TestIsSecure(object):
             equal(True))
         expect(vr.is_secured('put', resource_two, api_schema)).to(equal(True))
 
+    @pytest.mark.unit
     def test_fails_when_not_secure(self):
         vr = VersionedResourceMany()
 

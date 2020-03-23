@@ -8,9 +8,11 @@ test_descriptor_dir = './tests/io_test_files/'
 
 
 class TestDescriptorGetterWithNothing():
+    @pytest.mark.unit
     def test_load_with_nothing(self):
-        desc = DescriptorsLoader()
+        _ = DescriptorsLoader()
 
+    @pytest.mark.unit
     def test_yields_descriptors_from_dir(self):
         desc = DescriptorsLoader()
         descriptors = desc.iter_descriptors()
@@ -20,9 +22,11 @@ class TestDescriptorGetterWithNothing():
 
 
 class TestDescriptorGetterWithDir():
+    @pytest.mark.unit
     def test_load_with_dir(self):
-        desc = DescriptorsLoader([test_descriptor_dir])
+        _ = DescriptorsLoader([test_descriptor_dir])
 
+    @pytest.mark.unit
     def test_yields_descriptors_from_dir(self):
         desc = DescriptorsLoader([test_descriptor_dir])
         descriptors = desc.iter_descriptors()
@@ -36,9 +40,11 @@ class TestDescriptorGetterWithDir():
 
 
 class TestDescriptorGetterWithCustom():
+    @pytest.mark.unit
     def test_load_with_custom(self):
-        desc = DescriptorsLoader([], [frameworks_descriptor])
+        _ = DescriptorsLoader([], [frameworks_descriptor])
 
+    @pytest.mark.unit
     def test_yields_descriptors_from_custom(self):
         desc = DescriptorsLoader([], [frameworks_descriptor])
         descriptors = desc.iter_descriptors()
@@ -47,11 +53,13 @@ class TestDescriptorGetterWithCustom():
 
 
 class TestDescriptorGetterWithDirAndCustom():
+    @pytest.mark.unit
     def test_load_with_dir_and_custom(self):
-        desc = DescriptorsLoader(
+        _ = DescriptorsLoader(
             [test_descriptor_dir],
             [frameworks_descriptor])
 
+    @pytest.mark.unit
     def test_yields_descriptors_from_dir_and_custom(self):
         desc = DescriptorsLoader(
             [test_descriptor_dir],

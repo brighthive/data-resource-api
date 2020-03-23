@@ -1,8 +1,10 @@
 from expects import expect, be_an, raise_error, have_property, equal, be_empty
 import json
 from tests.service import ApiHelper
+import pytest
 
 
+@pytest.mark.requiresdb
 def test_json_posts_and_returns_correctly(json_client):
     c = json_client
 
@@ -20,6 +22,7 @@ def test_json_posts_and_returns_correctly(json_client):
     expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body, sort_keys=True)))
 
 
+@pytest.mark.requiresdb
 def test_nested_str_in_json_posts_and_returns_correctly(json_client):
     c = json_client
 
@@ -35,6 +38,7 @@ def test_nested_str_in_json_posts_and_returns_correctly(json_client):
     expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body, sort_keys=True)))
 
 
+@pytest.mark.requiresdb
 def test_nested_nested_str_in_json_posts_and_returns_correctly(json_client):
     c = json_client
 
@@ -52,6 +56,7 @@ def test_nested_nested_str_in_json_posts_and_returns_correctly(json_client):
     expect(json.dumps(resp['json'], sort_keys=True)).to(equal(json.dumps(json_body, sort_keys=True)))
 
 
+@pytest.mark.requiresdb
 def test_long_str(json_client):
     c = json_client
 

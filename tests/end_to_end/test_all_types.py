@@ -1,7 +1,7 @@
 import pytest
 import json
 from tests.service import ApiHelper
-from expects import expect, be_an, raise_error, have_property, equal, be_empty
+from expects import expect, equal
 
 
 ROUTE = '/alltypes'
@@ -23,6 +23,7 @@ def run_query(client, key, value, expected_value=None):
     assert type(resp[key]) == type(expected_value)
 
 
+@pytest.mark.requiresdb
 def test_string(everything_client):
     # {
     #     "name": "string",
@@ -34,6 +35,7 @@ def test_string(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_number(everything_client):
     # {
     #     "name": "number",
@@ -46,6 +48,7 @@ def test_number(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_integer(everything_client):
     # {
     #     "name": "integer",
@@ -57,6 +60,7 @@ def test_integer(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_boolean(everything_client):
     # {
     #     "name": "boolean",
@@ -69,6 +73,7 @@ def test_boolean(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_object(everything_client):
     # {
     #     "name": "object",
@@ -80,6 +85,7 @@ def test_object(everything_client):
 
 
 @pytest.mark.skip  # Unsure how this should return
+@pytest.mark.requiresdb
 def test_array(everything_client):
     # {
     #     "name": "array",
@@ -91,6 +97,7 @@ def test_array(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_date(everything_client):
     # {
     #     "name": "date",
@@ -102,6 +109,7 @@ def test_date(everything_client):
 
 
 @pytest.mark.xfail  # TODO cannot save to database
+@pytest.mark.requiresdb
 def test_time(everything_client):
     # {
     #     "name": "time",
@@ -113,6 +121,7 @@ def test_time(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_datetime(everything_client):
     # {
     #     "name": "datetime",
@@ -124,6 +133,7 @@ def test_datetime(everything_client):
 
 
 @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_datetime_with_miliseconds(everything_client):
     # {
     #     "name": "datetime",
@@ -135,6 +145,7 @@ def test_datetime_with_miliseconds(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_year(everything_client):
     # {
     #     "name": "year",
@@ -146,6 +157,7 @@ def test_year(everything_client):
 
 
 @pytest.mark.xfail  # TODO does not save to database
+@pytest.mark.requiresdb
 def test_yearmonth(everything_client):
     # {
     #     "name": "yearmonth",
@@ -157,6 +169,7 @@ def test_yearmonth(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_duration(everything_client):
     # {
     #     "name": "duration",
@@ -168,6 +181,7 @@ def test_duration(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_geopoint(everything_client):
     # {
     #     "name": "geopoint",
@@ -179,6 +193,7 @@ def test_geopoint(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_geojson(everything_client):
     # {
     #     "name": "geojson",
@@ -191,6 +206,7 @@ def test_geojson(everything_client):
 
 
 # @pytest.mark.xfail
+@pytest.mark.requiresdb
 def test_any(everything_client):
     # {
     #     "name": "any",

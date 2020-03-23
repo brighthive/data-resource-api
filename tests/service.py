@@ -32,6 +32,20 @@ def MN_SKILLS_FRAMEWORK_ROUTE(parent_id):
 
 
 class ApiHelper:
+    # test_all_types
+    @staticmethod
+    def everything_post(route, client, post_body, status_code=201):
+        response = client.post(route, json=post_body)
+        expect(response.status_code).to(equal(status_code))
+        body = json.loads(response.data)
+        return body['id']
+
+    @staticmethod
+    def everything_get(route, client, id):
+        response = client.get(f'{route}/{id}')
+        expect(response.status_code).to(equal(200))
+        return response.data
+
     # test_default_descriptor
     @staticmethod
     def get(route, client, id):
@@ -59,7 +73,7 @@ class ApiHelper:
         return ApiHelper.get(route, client, program_id)
 
     @staticmethod
-    def post_a_credential(client, post_body, status_code=201):  # this refactor allows us to assert status codes and prevent errors
+    def post_a_credential(client, post_body, status_code=201):
         route = CREDENTIALS_ROUTE
 
         response = client.post(route, json=post_body)

@@ -128,15 +128,15 @@ TABLESCHEMA_TO_SQLALCHEMY_TYPES = {
     'integer': Integer,
     'boolean': Boolean,
     'object': String,
-    'array': String,
+    'array': String, # Not supported yet
     'date': Date,
-    'time': DateTime,
+    'time': DateTime, # Not supported yet
     'datetime': DateTime,
     'year': Integer,
-    'yearmonth': Integer,
+    'yearmonth': Integer, # Not supported yet
     'duration': Integer,
     'geopoint': String,
-    'geojson': String,
+    'geojson': String, # Not supported yet
     'any': String
 }
 ```

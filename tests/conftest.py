@@ -126,16 +126,18 @@ class Client():
         if len(self.schema_dicts) == 0:
             raise RuntimeError("Need at least one schema dict for test client")
 
-    def run_and_return_test_client(self):
+    def start(self):
         delete_migration_artifacts()
 
         self.initialize_test_client()
 
         try:
             self.upgrade_loop()
-            return self.app.test_client()
         except UpgradeFail:
             logger.exception("Failed to upgrade database.")
+
+    def get_test_client(self):
+        return self.app.test_client()
 
     def initialize_test_client(self):
         self.data_resource_manager = DataResourceManagerSync(
@@ -178,50 +180,79 @@ class Client():
             self.postgres.stop_container()
             raise UpgradeFail
 
+    def clear_database(self):
+        import contextlib
+        from data_resource_api.db.base import Base, engine
+        # from sqlalchemy import MetaData
+
+        # meta = MetaData()
+
+        with contextlib.closing(engine.connect()) as con:
+            trans = con.begin()
+            for table in reversed(Base.metadata.sorted_tables):
+                con.execute(table.delete())
+            trans.commit()
+
     def stop_container(self):
         delete_migration_artifacts()
         self.postgres.stop_container()
 
 
+def setup_client(descriptors: list):
+    client = Client(descriptors)
+    client.start()
+    yield client
+    client.stop_container()
+
+
+def clear_db_and_get_test_client(client):
+    client.clear_database()
+    yield client.get_test_client()
+
+
 @pytest.fixture(scope='module')
-def regular_client():
+def _regular_client():
     """Setup the PostgreSQL database instance and run migrations.
 
     Returns:
         client (object): The Flask test client for the application.
     """
-    client = Client([credentials_descriptor, programs_descriptor])
-    yield client.run_and_return_test_client()
-    client.stop_container()
+    yield from setup_client([credentials_descriptor, programs_descriptor])
+
+
+@pytest.fixture(scope='function')
+def regular_client(_regular_client):
+    yield from clear_db_and_get_test_client(_regular_client)
 
 
 @pytest.fixture(scope='module')
-def frameworks_skills_client():
-    client = Client([frameworks_descriptor, skills_descriptor])
-    yield client.run_and_return_test_client()
-    client.stop_container()
+def _frameworks_skills_client():
+    yield from setup_client([frameworks_descriptor, skills_descriptor])
+
+
+@pytest.fixture(scope='function')
+def frameworks_skills_client(_frameworks_skills_client):
+    yield from clear_db_and_get_test_client(_frameworks_skills_client)
 
 
 @pytest.fixture(scope='module')
-def json_client():
-    client = Client([json_descriptor])
-    yield client.run_and_return_test_client()
-    client.stop_container()
+def _json_client():
+    yield from setup_client([json_descriptor])
+
+
+@pytest.fixture(scope='function')
+def json_client(_json_client):
+    yield from clear_db_and_get_test_client(_json_client)
 
 
 @pytest.fixture(scope='module')
-def everything_client():
-    client = Client([everything_descriptor])
-    yield client.run_and_return_test_client()
-    client.stop_container()
+def _everything_client():
+    yield from setup_client([everything_descriptor])
 
 
-# @pytest.fixture(scope='module')
-# def no_db_dmm():
-#     dmm = DataModelManagerSync(
-#         use_local_dirs=False,
-#         descriptors=None)
-#     yield dmm
+@pytest.fixture(scope='function')
+def everything_client(_everything_client):
+    yield from clear_db_and_get_test_client(_everything_client)
 
 
 @pytest.fixture

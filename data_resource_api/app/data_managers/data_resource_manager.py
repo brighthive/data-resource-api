@@ -159,9 +159,7 @@ class DataResourceManagerSync(DataManager):
 
         @self.api.representation('application/json')
         def output_json(data, code, headers=None):
-            print("-----asdf-as-df-as-df--asd-f-adf----------")
             resp = make_response(safe_json_dumps(data), code)
-            print(safe_json_dumps(data))
             resp.headers.extend(headers or {})
             return resp
 

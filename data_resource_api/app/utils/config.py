@@ -56,5 +56,5 @@ class ConfigFunctions:
                 migrations_dir = None
             return alembic_config, migrations_dir
         except Exception:
-            logger.error("Error loading alembic config", exc_info=True)
+            logger.exception("Error loading alembic config")
             return None, None

@@ -1,6 +1,8 @@
 import os
+import sys
+import time
 from data_resource_api.app.utils.descriptor import DescriptorsLoader
-from data_resource_api.db import Session, Checksum
+from data_resource_api.db import Session, Checksum, Migrations
 from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.logging import LogFactory
 
@@ -50,7 +52,7 @@ def check_for_checksum_column():
 def check_for_migrations_table():
     session = Session()
     query = """
-    SELECT 1
+    SELECT *
     FROM information_schema.tables
     WHERE table_name='migrations';
     """
@@ -62,11 +64,10 @@ def check_for_migrations_table():
         count += 1
 
     if count == 1:
-        print("Found the migrations column -- skipping import")
+        print("Found the migrations table -- skipping import")
         return True
 
     return False
-
 
 # Create the changes to DB
 def upgrade_checksum():
@@ -120,17 +121,33 @@ def push_descriptors():
         finally:
             session.close()
 
+def is_migrations_loaded():
+    session = Session()
+    result = session.query(Migrations).count()
+    logger.info(f'Found {result} rows in migrations table')
+    if result == 0:
+        session.close()
+        return False
+    session.close()
+    return True
+
 
 def push_migrations():
-    migrations = [f for f in os.listdir(MIGRATION_DIR) if f.endswith('.py')]
+    logger.info('Waiting 60s for migrations directory to load.......')
+    time.sleep(60)
+    migrations = [f for f in os.listdir(MIGRATION_DIR) if f.endswith(".py")]
+    logger.info(f'Found {len(migrations)} in {MIGRATION_DIR} directory')
     for file_name in migrations:
-        if 'create_table_checksum_and_logs' in file_name:
+        try:
+            if 'create_table_checksum_and_logs' in file_name:
+                continue
+
+            full_file_path = os.path.join(MIGRATION_DIR, file_name)
+            with open(full_file_path, 'rb') as file_:
+                DBHandler.save_migration(file_name, file_.read())
+        except Exception as e:
+            logger.exception(f'Error pushing migration files {e}')
             continue
-
-        full_file_path = os.path.join(MIGRATION_DIR, file_name)
-        with open(full_file_path, 'rb') as file_:
-            DBHandler.save_migration(file_name, file_.read())
-
 
 def main():
     if not check_for_checksum_column():
@@ -144,7 +161,9 @@ def main():
         # create migration table
         create_migrations()
         # iter over dir --- push all migrations
+    if not is_migrations_loaded():
         push_migrations()
         logger.info("Done with migrations...")
 
     logger.info("Done! You are ready to run the normal Data Model Manager :D")
+    sys.exit(0)

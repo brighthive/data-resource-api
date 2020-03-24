@@ -61,11 +61,13 @@ class PostgreSQLContainer(object):
 
     def start_container(self):
         """Start PostgreSQL Container."""
-        self.stop_if_running()
+        if self.get_db_if_running():
+            return
+
         try:
             self.docker_client.images.pull(self.get_postgresql_image())
         except Exception:
-            logger.exception('Failed to start test container')
+            logger.exception('Failed to pull postgres image')
 
         self.container = self.docker_client.containers.run(
             self.get_postgresql_image(),
@@ -76,6 +78,9 @@ class PostgreSQLContainer(object):
             ports=self.db_ports)
 
     def stop_if_running(self):
+        if os.getenv('DR_LEAVE_DB', False):
+            return
+
         try:
             running = self.docker_client.containers.get(
                 self.config.CONTAINER_NAME)
@@ -87,14 +92,22 @@ class PostgreSQLContainer(object):
                 return
             raise e
 
-    def stop_container(self):
-        """Stop PostgreSQL Container."""
-        if self.container is None:
-            self.container = self.docker_client.containers.get(
+    def get_db_if_running(self):
+        """Returns None or the db
+        """
+        try:
+            return self.docker_client.containers.get(
                 self.config.CONTAINER_NAME)
+        except Exception as e:
+            if "404 Client Error: Not Found" in str(e):
+                return
 
-        if self.container is not None:
-            self.container.stop()
+
+@pytest.fixture(scope='session', autouse=True)
+def run_the_database(autouse=True):
+    postgres = PostgreSQLContainer()
+    yield postgres.start_container()
+    postgres.stop_if_running()
 
 
 def delete_migration_artifacts():
@@ -144,8 +157,12 @@ class Client():
             use_local_dirs=False,
             descriptors=self.schema_dicts)
         self.app = self.data_resource_manager.create_app()
-        self.postgres = PostgreSQLContainer()
-        self.postgres.start_container()
+        # self.postgres = PostgreSQLContainer()
+        # try:
+            # self.postgres.start_container()
+        # except:
+        #     logger.exception('could not start database?')
+
         self.data_model_manager = DataModelManagerSync(
             use_local_dirs=False,
             descriptors=self.schema_dicts)
@@ -154,7 +171,7 @@ class Client():
         upgraded = False
         self.counter = 1
         self.counter_max = 10
-        exponential_time = exponential_backoff(.1, 1.25)
+        exponential_time = exponential_backoff(.1, 1.05)
 
         while not upgraded and self.counter <= self.counter_max:
             try:
@@ -177,7 +194,7 @@ class Client():
 
         if self.counter > self.counter_max:
             logger.info("Max fail reached; stopping postgres container")
-            self.postgres.stop_container()
+            # self.postgres.stop_container()
             raise UpgradeFail
 
     def clear_database(self):
@@ -194,8 +211,12 @@ class Client():
             trans.commit()
 
     def stop_container(self):
+        from data_resource_api.db.base import Base, engine
         delete_migration_artifacts()
-        self.postgres.stop_container()
+        Base.metadata.drop_all(engine)
+        with engine.connect() as con:
+            con.execute('DROP TABLE alembic_version')
+        # self.postgres.stop_container()
 
 
 def setup_client(descriptors: list):

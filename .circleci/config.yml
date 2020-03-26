@@ -7,7 +7,7 @@ jobs: # A basic unit of work in a run
       # CircleCI Python images available at: https://hub.docker.com/r/circleci/python/
       - image: circleci/python:3.7.3
         environment: # environment variables for primary container
-          R_LEAVE_DB: true
+          DR_LEAVE_DB: true
           PIPENV_VENV_IN_PROJECT: true
           APP_ENV: SANDBOX
           POSTGRES_USER: test_user

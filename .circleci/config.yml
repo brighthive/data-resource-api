@@ -13,7 +13,7 @@ jobs: # A basic unit of work in a run
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
           POSTGRES_DATABASE: data_resource_dev
-          POSTGRES_HOSTNAME: postgres
+          POSTGRES_HOSTNAME: 0.0.0.0
           POSTGRES_PORT: 5432
           # DATABASE_URL: postgresql://root@localhost/circle_test?sslmode=disable
       # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
@@ -36,7 +36,7 @@ jobs: # A basic unit of work in a run
       - save_cache: # cache Python dependencies using checksum of Pipfile as the cache-key
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
-            - "venv"
+            - ".venv"
       - run:
           command: |
             pipenv --venv

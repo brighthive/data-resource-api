@@ -13,7 +13,7 @@ jobs: # A basic unit of work in a run
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
           POSTGRES_DATABASE: data_resource_dev
-          POSTGRES_HOSTNAME: 0.0.0.0
+          POSTGRES_HOSTNAME: localhost
           POSTGRES_PORT: 5432
           # DATABASE_URL: postgresql://root@localhost/circle_test?sslmode=disable
       # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
@@ -28,13 +28,13 @@ jobs: # A basic unit of work in a run
       # - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
       - restore_cache:
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          key: v1-deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
             sudo pip install pipenv
             pipenv install --dev
       - save_cache: # cache Python dependencies using checksum of Pipfile as the cache-key
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          key: v1-deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
             - ".venv"
       - run:

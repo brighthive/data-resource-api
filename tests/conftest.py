@@ -61,6 +61,9 @@ class PostgreSQLContainer(object):
 
     def start_container(self):
         """Start PostgreSQL Container."""
+        if os.getenv('DR_LEAVE_DB', False):
+            return
+
         if self.get_db_if_running():
             return
 
@@ -95,6 +98,9 @@ class PostgreSQLContainer(object):
     def get_db_if_running(self):
         """Returns None or the db
         """
+        if os.getenv('DR_LEAVE_DB', False):
+            return
+
         try:
             return self.docker_client.containers.get(
                 self.config.CONTAINER_NAME)

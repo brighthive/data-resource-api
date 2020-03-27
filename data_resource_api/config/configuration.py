@@ -75,7 +75,7 @@ class Config(object):
 
 
 class TestConfig(Config):
-    """Unit testing configuration class."""
+    """Unit testing configuration class.""" ## This can probably be safely removed
 
     def __init__(self):
         super().__init__()
@@ -86,7 +86,6 @@ class TestConfig(Config):
     IMAGE_NAME = 'postgres'
     IMAGE_VERSION = '11.1'
     POSTGRES_DATABASE = 'data_resource_test'
-    POSTGRES_PORT = 5433
     SQLALCHEMY_DATABASE_URI = 'postgresql://{}:{}@{}:{}/{}'.format(
         Config.POSTGRES_USER,
         Config.POSTGRES_PASSWORD,
@@ -194,5 +193,5 @@ class ConfigurationFactory(object):
             Config: Configuration object based on the configuration environment supplied in the `APP_ENV` environment variable.
 
         """
-        return ConfigurationFactory.get_config(
-            os.getenv('APP_ENV', 'DEVELOPMENT'))
+        app_env = os.getenv('APP_ENV', 'DEVELOPMENT')
+        return ConfigurationFactory.get_config(app_env)

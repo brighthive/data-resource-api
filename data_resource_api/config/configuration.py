@@ -81,12 +81,11 @@ class TestConfig(Config):
         super().__init__()
 
     os.environ['FLASK_ENV'] = 'testing'
-    POSTGRES_PORT = 5433
+    POSTGRES_PORT = 5432
     CONTAINER_NAME = 'postgres-test'
     IMAGE_NAME = 'postgres'
     IMAGE_VERSION = '11.1'
     POSTGRES_DATABASE = 'data_resource_test'
-    POSTGRES_PORT = 5433
     SQLALCHEMY_DATABASE_URI = 'postgresql://{}:{}@{}:{}/{}'.format(
         Config.POSTGRES_USER,
         Config.POSTGRES_PASSWORD,
@@ -169,7 +168,8 @@ class ConfigurationFactory(object):
 
         config_type = config_type.upper()
         if config_type == 'TEST':
-            return TestConfig()
+            return SandboxConfig()
+            # return TestConfig()
         elif config_type == 'INTEGRATION':
             return IntegrationTestConfig()
         elif config_type == 'DEVELOPMENT':

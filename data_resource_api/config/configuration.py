@@ -168,8 +168,7 @@ class ConfigurationFactory(object):
 
         config_type = config_type.upper()
         if config_type == 'TEST':
-            return SandboxConfig()
-            # return TestConfig()
+            return TestConfig()
         elif config_type == 'INTEGRATION':
             return IntegrationTestConfig()
         elif config_type == 'DEVELOPMENT':
@@ -194,5 +193,5 @@ class ConfigurationFactory(object):
             Config: Configuration object based on the configuration environment supplied in the `APP_ENV` environment variable.
 
         """
-        return ConfigurationFactory.get_config(
-            os.getenv('APP_ENV', 'DEVELOPMENT'))
+        app_env = os.getenv('APP_ENV', 'DEVELOPMENT')
+        return ConfigurationFactory.get_config(app_env)

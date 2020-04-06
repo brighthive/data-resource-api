@@ -126,10 +126,12 @@ class VersionedResourceMany(VersionedResourceParent):
 
 
 class VersionedResource(VersionedResourceParent):
+    _query_route = '/query'
+
     def get(self, id=None):
         if not self.api_schema['get']['enabled']:
             raise MethodNotAllowed()
-        if request.path.endswith('/query'):
+        if request.path.endswith(self._query_route):
             raise MethodNotAllowed()
 
         offset = 0
@@ -160,12 +162,12 @@ class VersionedResource(VersionedResourceParent):
             raise MethodNotAllowed()
 
         if self.api_schema['post']['secured']:
-            if request.path.endswith('/query'):
+            if request.path.endswith(self._query_route):
                 return self.get_resource_handler(request.headers).query_secure(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
             else:
                 return self.get_resource_handler(request.headers).insert_one_secure(self.data_model, self.data_resource_name, self.table_schema, request)
         else:
-            if request.path.endswith('/query'):
+            if request.path.endswith(self._query_route):
                 return self.get_resource_handler(request.headers).query(self.data_model, self.data_resource_name, self.restricted_fields, self.table_schema, request)
             else:
                 return self.get_resource_handler(request.headers).insert_one(self.data_model, self.data_resource_name, self.table_schema, request)
@@ -173,7 +175,7 @@ class VersionedResource(VersionedResourceParent):
     def put(self, id):
         if not self.api_schema['put']['enabled']:
             raise MethodNotAllowed()
-        if request.path.endswith('/query'):
+        if request.path.endswith(self._query_route):
             raise MethodNotAllowed()
 
         if self.api_schema['put']['secured']:
@@ -184,7 +186,7 @@ class VersionedResource(VersionedResourceParent):
     def patch(self, id):
         if not self.api_schema['patch']['enabled']:
             raise MethodNotAllowed()
-        if request.path.endswith('/query'):
+        if request.path.endswith(self._query_route):
             raise MethodNotAllowed()
 
         if self.api_schema['patch']['secured']:
@@ -195,7 +197,7 @@ class VersionedResource(VersionedResourceParent):
     def delete(self, id):
         if self.api_schema['delete']['enabled']:
             raise MethodNotAllowed()
-        if request.path.endswith('/query'):
+        if request.path.endswith(self._query_route):
             raise MethodNotAllowed()
 
         if self.api_schema['delete']['secured']:

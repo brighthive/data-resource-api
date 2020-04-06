@@ -59,6 +59,13 @@ class SchemaValidationFailure(ApiError):
         ApiError.__init__(self, message, status_code)
 
 
+class NoRequestBodyFound(ApiError):
+    def __init__(self):
+        message = "No request body found."
+        status_code = 400
+        ApiError.__init__(self, message, status_code)
+
+
 def handle_errors(e):
     """Flask App Error Handler
 

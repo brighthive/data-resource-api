@@ -11,7 +11,7 @@ from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import Session
 from data_resource_api.app.utils.junc_holder import JuncHolder
 from data_resource_api.logging import LogFactory
-from data_resource_api.app.utils.exception_handler import ApiError, ApiUnhandledError, InternalServerError
+from data_resource_api.app.utils.exception_handler import ApiError, ApiUnhandledError, InternalServerError, NoRequestBodyFound
 from sqlalchemy import and_
 from data_resource_api.app.utils.exception_handler import SchemaValidationFailure
 
@@ -189,7 +189,7 @@ class ResourceHandler(object):
         try:
             request_obj = request_obj.json
         except Exception:
-            raise ApiError('No request body found.', 400)
+            raise NoRequestBodyFound()
 
         errors = []
         _ = Schema(table_schema)
@@ -263,7 +263,7 @@ class ResourceHandler(object):
         try:
             request_obj = request_obj.json
         except Exception:
-            raise ApiError('No request body found.', 400)
+            raise NoRequestBodyFound()
 
         _ = Schema(table_schema)
         errors = []
@@ -585,7 +585,7 @@ class ResourceHandler(object):
         try:
             request_obj = request_obj.json
         except Exception:
-            raise ApiError('No request body found.', 400)
+            raise NoRequestBodyFound()
 
         try:
             primary_key = table_schema['primaryKey']

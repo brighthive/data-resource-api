@@ -1,22 +1,20 @@
-"""A data model for tracking the state of data resources.
-
-"""
+"""A data model for tracking the state of data resources."""
 
 from data_resource_api.db import Base
-from sqlalchemy import Column, String, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql import func
 
 
 class Checksum(Base):
-    """Data Resource Checksum
+    """Data Resource Checksum.
 
-    This class is used for keeping track of the checksums associated with each data resource.
-    It is used to prevent data migrations for data resources from being overwritten if they
-    haven't been changed.
-
+    This class is used for keeping track of the checksums associated
+    with each data resource. It is used to prevent data migrations for
+    data resources from being overwritten if they haven't been changed.
     """
-    __tablename__ = 'checksums'
+
+    __tablename__ = "checksums"
     data_resource = Column(String, primary_key=True)
     model_checksum = Column(String, nullable=False)
     date_modified = Column(DateTime, default=func.now())

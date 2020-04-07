@@ -1,30 +1,29 @@
-"""Data Model Manager
+"""Data Model Manager.
 
-The Data Model Manager is responsible for managing the lifecycle of data models
-for the data resource under management. It is designed to run in it's own thread,
-monitoring data resources on a regular interval.
-
+The Data Model Manager is responsible for managing the lifecycle of data
+models for the data resource under management. It is designed to run in
+it's own thread, monitoring data resources on a regular interval.
 """
 from threading import Thread
 from time import sleep
-from data_resource_api.app.utils.descriptor import Descriptor
-from data_resource_api.db import Session, Checksum
-from data_resource_api.utils import exponential_backoff
+
 from data_resource_api.app.data_managers.data_manager import DataManager
+from data_resource_api.app.utils.descriptor import Descriptor
+from data_resource_api.db import Checksum, Session
+from data_resource_api.utils import exponential_backoff
 
 
-class DataModelDescriptor(object):
+class DataModelDescriptor:
     """A class for maintaining names and checksums for data models.
 
-    Class Attributes:
-        descriptor_file_name (str): Filename of the schema on disk.
-        schema_name (str): Name of the actual database table.
-        model_checksum (str): MD5 checksum for the model.
-
+    Class Attributes:     descriptor_file_name (str): Filename of the
+    schema on disk.     schema_name (str): Name of the actual database
+    table.     model_checksum (str): MD5 checksum for the model.
     """
 
-    def __init__(self, descriptor_file_name=None,
-                 schema_name=None, model_checksum=None):
+    def __init__(
+        self, descriptor_file_name=None, schema_name=None, model_checksum=None
+    ):
         self.descriptor_file_name = descriptor_file_name
         self.schema_name = schema_name
         self.model_checksum = model_checksum
@@ -33,13 +32,13 @@ class DataModelDescriptor(object):
 class DataModelManagerSync(DataManager):
     """Data Model Manager Class.
 
-    This class extends the Thread base class and is intended to be run in its own thread.
-    It will monitor the data resource schemas for changes and update the tables as needed.
-
+    This class extends the Thread base class and is intended to be run
+    in its own thread. It will monitor the data resource schemas for
+    changes and update the tables as needed.
     """
 
     def __init__(self, **kwargs):
-        super().__init__('data-model-manager', **kwargs)
+        super().__init__("data-model-manager", **kwargs)
         self.data_store: DataModelDescriptor = []
 
     # Core functions
@@ -49,7 +48,7 @@ class DataModelManagerSync(DataManager):
         self.initalize_base_models()
 
         def run_fn():
-            self.logger.info('Data Model Manager Running...')
+            self.logger.info("Data Model Manager Running...")
             self.monitor_data_models()
 
         if test_mode:  # Do not run in while loop for tests
@@ -63,8 +62,11 @@ class DataModelManagerSync(DataManager):
 
         while True:
             run_fn()
-            self.logger.info('Data Model Manager Sleeping for {} seconds...'.format(
-                self.config.get_sleep_interval()))
+            self.logger.info(
+                "Data Model Manager Sleeping for {} seconds...".format(
+                    self.config.get_sleep_interval()
+                )
+            )
             sleep(self.config.get_sleep_interval())
 
     def initalize_base_models(self):
@@ -80,42 +82,46 @@ class DataModelManagerSync(DataManager):
             if retries != 0:
                 sleep_time = exponential_time()
                 self.logger.info(
-                    f'Sleeping for {sleep_time} with exponential backoff...')
+                    f"Sleeping for {sleep_time} with exponential backoff..."
+                )
                 sleep(sleep_time)
 
             retries += 1
 
-            self.logger.info('Checking database availability...')
+            self.logger.info("Checking database availability...")
             try:
-                self.logger.info('Looking for checksum...')
+                self.logger.info("Looking for checksum...")
                 session = Session()
                 _ = session.query(Checksum).all()
                 db_active = True
-                self.logger.info('Successfully found checksum.')
+                self.logger.info("Successfully found checksum.")
             except Exception as e:
-                self.logger.info('Hit exception looking for checksum...')
+                self.logger.info("Hit exception looking for checksum...")
                 # UndefinedTable
-                if e.code == 'f405':
+                if e.code == "f405":
                     self.logger.info(
-                        'Checksum table was not found; Running inital migration...')
+                        "Checksum table was not found; Running inital migration..."
+                    )
                     # The migration file that describes checksums, logs, and migrations
                     # is present in the migrations folder.
                     self.db.upgrade()
 
                     db_active = True
-                    self.logger.info('Successfully ran upgrade.')
+                    self.logger.info("Successfully ran upgrade.")
 
-                elif e.code == 'e3q8':
+                elif e.code == "e3q8":
+                    self.logger.info("Database is not available yet exception.")
                     self.logger.info(
-                        'Database is not available yet exception.')
-                    self.logger.info(
-                        'Waiting on database to become available.... {}/{}'.format(retries, max_retries))
+                        "Waiting on database to become available.... {}/{}".format(
+                            retries, max_retries
+                        )
+                    )
                 else:
-                    self.logger.exception(f'Error occured upgrading database.')
+                    self.logger.exception(f"Error occured upgrading database.")
             finally:
                 session.close()
 
-        self.logger.info('Base models initalized.')
+        self.logger.info("Base models initalized.")
 
     def load_models_from_db(self) -> None:
         # Getting all remote json
@@ -123,10 +129,10 @@ class DataModelManagerSync(DataManager):
         for remote_descriptor_json in remote_descriptors:
             remote_descriptor = Descriptor(remote_descriptor_json)
             self.logger.info(
-                f"Loading descriptor '{remote_descriptor.table_name}' from db.")
+                f"Loading descriptor '{remote_descriptor.table_name}' from db."
+            )
 
-            self.load_model_to_data_store(
-                remote_descriptor)
+            self.load_model_to_data_store(remote_descriptor)
 
         self.logger.info("Loaded remote descriptors.")
 
@@ -143,15 +149,13 @@ class DataModelManagerSync(DataManager):
             self.logger.info(f"{descriptor_file_name}: Found existing.")
             # check if the cached db checksum has changed from the new file
             # checksum
-            if not self.data_model_changed(
-                    descriptor_file_name, model_checksum):
+            if not self.data_model_changed(descriptor_file_name, model_checksum):
                 self.logger.info(f"{descriptor_file_name}: Unchanged.")
                 return
 
             self.update_data_model(descriptor)
         except Exception:
-            self.logger.exception(
-                'Error checking data model')
+            self.logger.exception("Error checking data model")
 
     def update_data_model(self, descriptor: Descriptor):
         try:
@@ -164,24 +168,22 @@ class DataModelManagerSync(DataManager):
             self.logger.info(f"{descriptor_file_name}: Found changed.")
 
             # Get the index for this descriptor within our local metadata
-            data_model_index = self.get_data_model_index(
-                descriptor_file_name)
+            data_model_index = self.get_data_model_index(descriptor_file_name)
 
             # Create the sql alchemy orm
-            self.orm_factory.create_orm_from_dict(
-                table_schema, table_name, api_schema)
+            self.orm_factory.create_orm_from_dict(table_schema, table_name, api_schema)
 
             # Something needs to be modified
             self.db.revision(table_name, create_table=False)
             self.db.upgrade()
             self.db.update_model_checksum(
-                table_name, model_checksum, descriptor.descriptor)
+                table_name, model_checksum, descriptor.descriptor
+            )
 
             # store metadata for descriptor locally
             self.data_store[data_model_index].model_checksum = model_checksum
         except Exception:
-            self.logger.exception(
-                'Error checking data model')
+            self.logger.exception("Error checking data model")
 
     def data_model_does_not_exist(self, descriptor: Descriptor):
         try:
@@ -189,54 +191,55 @@ class DataModelManagerSync(DataManager):
             table_name = descriptor.table_name
             model_checksum = descriptor.get_checksum()
 
-            self.logger.info(
-                f"{descriptor_file_name}: Unseen before now.")
+            self.logger.info(f"{descriptor_file_name}: Unseen before now.")
 
             self.load_model_to_data_store(descriptor)
 
             # get the databases checksum value
-            stored_checksum = self.db.get_model_checksum(
-                table_name)
+            stored_checksum = self.db.get_model_checksum(table_name)
 
             # if there is no checksum in the data base
             # or the database checksum does not equal this files checksum
-            if stored_checksum is None or stored_checksum.model_checksum != model_checksum:
+            if (
+                stored_checksum is None
+                or stored_checksum.model_checksum != model_checksum
+            ):
                 # perform a revision
                 self.db.revision(table_name)
                 self.db.upgrade()
                 self.db.add_model_checksum(
-                    table_name, model_checksum, descriptor.descriptor)
+                    table_name, model_checksum, descriptor.descriptor
+                )
         except Exception:
-            self.logger.exception(
-                'Error checking data resource')
+            self.logger.exception("Error checking data resource")
 
     # Data store functions
     def load_model_to_data_store(self, descriptor):
-        """Adds descriptor to data store AND loads SQL Alchemy model
-        """
+        """Adds descriptor to data store AND loads SQL Alchemy model."""
         # Create the metadata store for descriptor
         data_model_descriptor = DataModelDescriptor(
-            descriptor.file_name, descriptor.table_name, descriptor.get_checksum())
+            descriptor.file_name, descriptor.table_name, descriptor.get_checksum()
+        )
 
         # Store the metadata for descriptor locally
-        self.data_store.append(
-            data_model_descriptor)
+        self.data_store.append(data_model_descriptor)
 
         # create SqlAlchemy ORM models
         _ = self.orm_factory.create_orm_from_dict(
-            descriptor.table_schema, descriptor.table_name, descriptor.api_schema)
+            descriptor.table_schema, descriptor.table_name, descriptor.api_schema
+        )
 
     def data_model_exists(self, descriptor_file_name):
-        """Checks if a data model is already registered with the data model manager.
+        """Checks if a data model is already registered with the data model
+        manager.
 
         Args:
             descriptor_file_name (str): Name of the schema file on disk.
 
         Returns:
             bool: True if the data model exists. False if not.
-
         """
-        return self.data_exists(descriptor_file_name, 'descriptor_file_name')
+        return self.data_exists(descriptor_file_name, "descriptor_file_name")
 
     def data_model_changed(self, descriptor_file_name, checksum):
         """Checks if the medata for a data model has been changed.
@@ -247,10 +250,10 @@ class DataModelManagerSync(DataManager):
 
         Returns:
             bool: True if the data model has been changed. False if not.
-
         """
         return self.data_changed(
-            descriptor_file_name, checksum, 'descriptor_file_name', 'model_checksum')
+            descriptor_file_name, checksum, "descriptor_file_name", "model_checksum"
+        )
 
     def get_data_model_index(self, descriptor_file_name):
         """Checks if the medata for a data model has been changed.
@@ -261,8 +264,7 @@ class DataModelManagerSync(DataManager):
         Returns:
             int: Index of the schema stored in memory, or -1 if not found.
         """
-        return self.get_data_index(
-            descriptor_file_name, 'descriptor_file_name')
+        return self.get_data_index(descriptor_file_name, "descriptor_file_name")
 
 
 class DataModelManager(Thread, DataModelManagerSync):

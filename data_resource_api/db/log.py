@@ -1,14 +1,12 @@
-"""Log Table
-
-"""
+"""Log Table."""
 
 from data_resource_api.db import Base
-from sqlalchemy import Column, String, DateTime, Integer
+from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
 
 class Log(Base):
-    """Log
+    """Log.
 
     This class represents a log entry managed by the database.
 
@@ -18,9 +16,9 @@ class Log(Base):
         trace (object): Full traceback printout.
         msg (object): Custom log message.
         created_at (object): Date and time the log entry was made.
-
     """
-    __tablename__ = 'logs'
+
+    __tablename__ = "logs"
     id = Column(Integer, primary_key=True)
     logger = Column(String)
     level = Column(String)
@@ -38,4 +36,6 @@ class Log(Base):
         return self.__repr__()
 
     def __repr__(self):
-        return "<Log: %s - %s>" % (self.created_at.strftime('%m/%d/%Y-%H:%M:%S'), self.msg[:50])
+        return "<Log: {} - {}>".format(
+            self.created_at.strftime("%m/%d/%Y-%H:%M:%S"), self.msg[:50]
+        )

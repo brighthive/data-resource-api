@@ -1,8 +1,8 @@
-from data_resource_api.app.utils.descriptor import DescriptorFromFile
-from tests.schemas import (
-    frameworks_descriptor)
-from expects import expect, equal
+from tests.schemas import frameworks_descriptor
+
 import pytest
+from data_resource_api.app.utils.descriptor import DescriptorFromFile
+from expects import equal, expect
 
 
 @pytest.mark.skip

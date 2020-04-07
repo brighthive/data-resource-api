@@ -29,6 +29,7 @@ expects = "*"
 docker = "*"
 flake8 = "*"
 pytest-mock = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.7"

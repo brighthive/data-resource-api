@@ -1,6 +1,6 @@
-from data_resource_api.utils import exponential_backoff
-from expects import expect, equal
 import pytest
+from data_resource_api.utils import exponential_backoff
+from expects import equal, expect
 
 
 @pytest.mark.unit

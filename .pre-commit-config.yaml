@@ -1,0 +1,51 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+        exclude: invalid.json
+      - id: pretty-format-json
+        args: [--autofix]
+        exclude: invalid.json, .lock
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: debug-statements
+      - id: check-executables-have-shebangs
+      - id: detect-aws-credentials
+      - id: detect-private-key
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.1.0
+    hooks:
+      - id: pyupgrade
+        name: Upgrade old python code to current (pyupgrade)
+        args: [--py3-plus]
+  - repo: https://github.com/psf/black
+    rev: 19.3b0
+    hooks:
+      - id: black
+        name: Autocode formatter (black)
+  - repo: https://github.com/myint/docformatter
+    rev: v1.3.1
+    hooks:
+      - id: docformatter
+        name: Format docstrings (docformatter)
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
+    rev: v1.0.4
+    hooks:
+      - id: python-bandit-vulnerability-check
+        name: Security analysis (bandit)
+        args: [-l, --recursive, -x, tests]
+        files: .py$
+  - repo: local
+    hooks:
+      - id: tests
+        name: Run pytest
+        entry: pipenv run pytest -v
+        language: system
+        # types: [python]
+        require_serial: true
+        pass_filenames: false
+        # stages: [push]

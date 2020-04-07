@@ -1,1 +1,4 @@
-from data_resource_api.config.configuration import ConfigurationFactory, InvalidConfigurationError
+from data_resource_api.config.configuration import (
+    ConfigurationFactory,
+    InvalidConfigurationError,
+)

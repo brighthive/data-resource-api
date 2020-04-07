@@ -26,5 +26,5 @@ docs/build
 **/*.old
 **/docker-compose.local.yml
 
-# Sonarqube
+# sonarqube
 .scannerwork/

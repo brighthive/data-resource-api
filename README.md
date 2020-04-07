@@ -10,7 +10,6 @@
 ![GitHub](https://img.shields.io/github/license/brighthive/data-resource-api)
 
 <!-- ![Coveralls github](https://img.shields.io/coveralls/github/brighthive/data-resource-api) -->
-
 ![Twitter Follow](https://img.shields.io/twitter/follow/brighthiveio?style=social)
 
 An elegant, opinionated framework for deploying BrightHive Data Resources (declarative database and API) with zero coding.

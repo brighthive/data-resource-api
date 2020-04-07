@@ -1,18 +1,18 @@
-import pytest
 import json
+
 from tests.service import ApiHelper
-from expects import expect, equal
+
+import pytest
+from expects import equal, expect
 
 
-ROUTE = '/alltypes'
+ROUTE = "/alltypes"
 
 
 def run_query(client, key, value, expected_value=None):
     if not expected_value:
         expected_value = value
-    post_body = {
-        key: value
-    }
+    post_body = {key: value}
     id_ = ApiHelper.everything_post(ROUTE, client, post_body)
     resp_data = ApiHelper.everything_get(ROUTE, client, id_)
     resp = json.loads(resp_data)
@@ -93,7 +93,7 @@ def test_array(everything_client):
     #     "type": "array",
     #     "required": False
     # },
-    run_query(everything_client, "array", ['one', 'two', 'three'])
+    run_query(everything_client, "array", ["one", "two", "three"])
 
 
 # @pytest.mark.xfail

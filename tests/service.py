@@ -1,34 +1,35 @@
-"""
-This should encapsulate all of the http services
-for the DR API test code.
-"""
-from expects import expect, be_an, raise_error, have_property, equal, be_empty
+"""This should encapsulate all of the http services for the DR API test
+code."""
 import json
 
+from expects import be_an, be_empty, equal, expect, have_property, raise_error
 
-CREDENTIALS_ROUTE = '/credentials'
-PROGRAMS_ROUTE = '/programs'
 
-JSON_ROUTE = '/json'
+CREDENTIALS_ROUTE = "/credentials"
+PROGRAMS_ROUTE = "/programs"
 
-SKILLS_ROUTE = '/skills'
-FRAMEWORKS_ROUTE = '/frameworks'
+JSON_ROUTE = "/json"
 
-MANY_TO_MANY_ROUTE = '{parent}/{parent_id}/{child}'
+SKILLS_ROUTE = "/skills"
+FRAMEWORKS_ROUTE = "/frameworks"
+
+MANY_TO_MANY_ROUTE = "{parent}/{parent_id}/{child}"
 
 
 def MN_FRAMEWORKS_SKILLS_ROUTE(parent_id):
     return MANY_TO_MANY_ROUTE.format(
         parent=FRAMEWORKS_ROUTE.replace("/", ""),
         parent_id=parent_id,
-        child=SKILLS_ROUTE.replace("/", ""))
+        child=SKILLS_ROUTE.replace("/", ""),
+    )
 
 
 def MN_SKILLS_FRAMEWORK_ROUTE(parent_id):
     return MANY_TO_MANY_ROUTE.format(
         parent=SKILLS_ROUTE.replace("/", ""),
         parent_id=parent_id,
-        child=FRAMEWORKS_ROUTE.replace("/", ""))
+        child=FRAMEWORKS_ROUTE.replace("/", ""),
+    )
 
 
 class ApiHelper:
@@ -38,11 +39,11 @@ class ApiHelper:
         response = client.post(route, json=post_body)
         expect(response.status_code).to(equal(status_code))
         body = json.loads(response.data)
-        return body['id']
+        return body["id"]
 
     @staticmethod
     def everything_get(route, client, id):
-        response = client.get(f'{route}/{id}')
+        response = client.get(f"{route}/{id}")
         expect(response.status_code).to(equal(200))
         return response.data
 
@@ -52,7 +53,7 @@ class ApiHelper:
         if id is None:
             response = client.get(route)
         else:
-            response = client.get(f'{route}/{id}')
+            response = client.get(f"{route}/{id}")
 
         body = json.loads(response.data)
 
@@ -81,23 +82,21 @@ class ApiHelper:
 
         if response.status_code == 201:
             body = json.loads(response.data)
-            return body['id']
+            return body["id"]
 
     @staticmethod
     def put_a_credential(client, put_body, credential_id):
         route = CREDENTIALS_ROUTE
 
-        response = client.put(
-            f'{route}/{credential_id}', json=put_body)
-        
+        response = client.put(f"{route}/{credential_id}", json=put_body)
+
         expect(response.status_code).to(equal(201))
 
     @staticmethod
     def patch_a_credential(client, patch_body, credential_id):
         route = CREDENTIALS_ROUTE
 
-        response = client.patch(
-            f'{route}/{credential_id}', json=patch_body)
+        response = client.patch(f"{route}/{credential_id}", json=patch_body)
 
         expect(response.status_code).to(equal(201))
 
@@ -105,19 +104,17 @@ class ApiHelper:
     @staticmethod
     def post_a_json(client, json_dict: dict):
         route = JSON_ROUTE
-        post_body = {
-            "json": dict(json_dict)
-        }
+        post_body = {"json": dict(json_dict)}
         response = client.post(route, json=post_body)
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(201))
-        return body['id']
+        return body["id"]
 
     @staticmethod
     def get_a_json_by_id(client, id: int):
         route = JSON_ROUTE
-        response = client.get(f'{route}/{id}')
+        response = client.get(f"{route}/{id}")
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(200))
@@ -127,33 +124,28 @@ class ApiHelper:
     @staticmethod
     def post_a_skill(c, skill_text: str):
         route = SKILLS_ROUTE
-        post_body = {
-            "text": skill_text
-        }
+        post_body = {"text": skill_text}
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(201))
-        return body['id']
+        return body["id"]
 
     @staticmethod
     def post_a_framework(c, skills: list):
         route = FRAMEWORKS_ROUTE
-        post_body = {
-            "name": "test framework",
-            "skills": skills
-        }
+        post_body = {"name": "test framework", "skills": skills}
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(201))
 
-        return body['id']
+        return body["id"]
 
     @staticmethod
     def get_a_framework_by_id(c, id: int):
         route = FRAMEWORKS_ROUTE
-        response = c.get(f'{route}/{id}')
+        response = c.get(f"{route}/{id}")
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(200))
@@ -163,22 +155,18 @@ class ApiHelper:
     @staticmethod
     def post_a_framework_with_no_skills(c):
         route = FRAMEWORKS_ROUTE
-        post_body = {
-            "name": "test framework"
-        }
+        post_body = {"name": "test framework"}
         response = c.post(route, json=post_body)
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(201))
 
-        return body['id']
+        return body["id"]
 
     @staticmethod
     def put_a_framework_skill(c, framework_id: int, skills: list):
         route = MN_FRAMEWORKS_SKILLS_ROUTE(framework_id)
-        put_body = {
-            "skills": skills
-        }
+        put_body = {"skills": skills}
         response = c.put(route, json=put_body)
         _ = json.loads(response.data)
 
@@ -187,9 +175,7 @@ class ApiHelper:
     @staticmethod
     def patch_a_framework_skill(c, framework_id: int, skills_list: list):
         route = MN_FRAMEWORKS_SKILLS_ROUTE(framework_id)
-        patch_body = {
-            "skills": skills_list
-        }
+        patch_body = {"skills": skills_list}
         response = c.patch(route, json=patch_body)
         _ = json.loads(response.data)
 
@@ -202,7 +188,7 @@ class ApiHelper:
         body = json.loads(response.data)
 
         expect(response.status_code).to(equal(200))
-        expect(body['skills']).to(equal(skills_list))
+        expect(body["skills"]).to(equal(skills_list))
 
     @staticmethod
     def get_frameworks_on_skill(c, skill_id: int):
@@ -216,9 +202,7 @@ class ApiHelper:
     @staticmethod
     def delete_a_framework_skill(c, framework_id: int, skills_list: list):
         route = MN_FRAMEWORKS_SKILLS_ROUTE(framework_id)
-        delete_body = {
-            'skills': skills_list
-        }
+        delete_body = {"skills": skills_list}
 
         response = c.delete(route, json=delete_body)
         body = json.loads(response.data)

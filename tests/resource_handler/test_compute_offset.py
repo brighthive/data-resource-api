@@ -1,6 +1,6 @@
-from data_resource_api.api.v1_0_0 import ResourceHandler
-from expects import expect, equal
 import pytest
+from data_resource_api.api.v1_0_0 import ResourceHandler
+from expects import equal, expect
 
 
 @pytest.mark.unit
@@ -10,6 +10,7 @@ def test_compute_offset():
     expect(handler.compute_offset(1, 20)).to(equal(0))
     # expect(handler.compute_offset(53, 19)).to(equal(0))
     # expect(handler.compute_offset(0, 20)).to(equal(0))
+
 
 # def test_build_links(self):
 #     handler = ResourceHandler()
@@ -33,7 +34,7 @@ def test_compute_page():
         handler.compute_page(1, 20),
         handler.compute_page(20, 20),
         handler.compute_page(21, 20),
-        handler.compute_page(25, 20)
+        handler.compute_page(25, 20),
     ]
 
     for item in items:

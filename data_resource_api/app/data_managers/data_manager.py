@@ -1,19 +1,17 @@
-from data_resource_api.app.utils.descriptor import (
-    Descriptor,
-    DescriptorsLoader)
-from data_resource_api.app.utils.db_handler import DBHandler
 from data_resource_api.app.utils.config import ConfigFunctions
+from data_resource_api.app.utils.db_handler import DBHandler
+from data_resource_api.app.utils.descriptor import Descriptor, DescriptorsLoader
 from data_resource_api.config import ConfigurationFactory
 from data_resource_api.db import Base
 from data_resource_api.factories import ORMFactory
 from data_resource_api.logging import LogFactory
 
 
-class DataManager(object):
+class DataManager:
     def __init__(self, logger_name: str = "data-manager", **kwargs):
-        base = kwargs.get('base', Base)
-        use_local_dirs = kwargs.get('use_local_dirs', True)
-        descriptors = kwargs.get('descriptors', [])
+        base = kwargs.get("base", Base)
+        use_local_dirs = kwargs.get("use_local_dirs", True)
+        descriptors = kwargs.get("descriptors", [])
 
         self.app_config = ConfigurationFactory.from_env()
         self.config = ConfigFunctions(self.app_config)
@@ -26,7 +24,8 @@ class DataManager(object):
         self.descriptor_directories = []
         if use_local_dirs:
             self.descriptor_directories.append(
-                self.config.get_data_resource_schema_path())
+                self.config.get_data_resource_schema_path()
+            )
 
         self.custom_descriptors = descriptors
 
@@ -39,23 +38,22 @@ class DataManager(object):
             This method wraps the core worker for this class. This method has the
             responsbility of iterating through a directory to find schema files to load.
         """
-        self.logger.info('Checking data models')
+        self.logger.info("Checking data models")
 
         # TODO this should wrap in a try except and tell us if any of the
         # properties will raise errors
         descriptors = DescriptorsLoader(
-            self.descriptor_directories,
-            self.custom_descriptors)
+            self.descriptor_directories, self.custom_descriptors
+        )
         for descriptor in descriptors.iter_descriptors():
             self.process_descriptor(descriptor)
 
-        self.logger.info('Completed check of data models')
+        self.logger.info("Completed check of data models")
 
     def process_descriptor(self, descriptor: Descriptor):
         raise NotImplementedError("Please implement this method")
 
-    def _process_descriptor(self, descriptor: Descriptor,
-                            descriptor_exists: bool):
+    def _process_descriptor(self, descriptor: Descriptor, descriptor_exists: bool):
         """Operate on a schema dict for data model changes.
 
         Note:
@@ -76,7 +74,8 @@ class DataManager(object):
 
         except Exception:
             self.logger.exception(
-                f"Error loading data resource schema '{descriptor.file_name}'")
+                f"Error loading data resource schema '{descriptor.file_name}'"
+            )
 
     def data_model_does_exist(self, descriptor: Descriptor):
         raise NotImplementedError("Please implement this method")
@@ -87,17 +86,13 @@ class DataManager(object):
     # Data store functions
     def data_exists(self, data_name: str, attribute_name: str):
         for data_object in self.data_store:
-            if getattr(data_object, attribute_name).lower(
-            ) == data_name.lower():
+            if getattr(data_object, attribute_name).lower() == data_name.lower():
                 return True
         return False
 
     def data_changed(
-            self,
-            data_name: str,
-            checksum: str,
-            name_attr: str,
-            checksum_attr: str):
+        self, data_name: str, checksum: str, name_attr: str, checksum_attr: str
+    ):
         for data_object in self.data_store:
             same_name = getattr(data_object, name_attr).lower() == data_name.lower()
             same_checksum = getattr(data_object, checksum_attr) == checksum

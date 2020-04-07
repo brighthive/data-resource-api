@@ -14,7 +14,6 @@ def test_load():
 @pytest.mark.unit
 @pytest.mark.skip
 def test_fail_on_bad_json():
-    # desc = Descriptor()
     pass
 
 

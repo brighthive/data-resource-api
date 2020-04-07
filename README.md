@@ -323,7 +323,12 @@ pipenv install --dev
 
 2. Run the tests with the following command,
 ```bash
-pipenv run pytest -c pytest.ini
+pipenv run pytest
+```
+
+To leave the database up after running,
+```bash
+DR_LEAVE_DB=true pipenv run pytest
 ```
 
 ## Troubleshooting

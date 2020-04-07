@@ -148,6 +148,8 @@ class VersionedResourceMany(VersionedResourceParent):
 
 
 class VersionedResource(VersionedResourceParent):
+    _query_route = '/query'
+
     def get(self, id=None):
         if not self.api_schema["get"]["enabled"]:
             raise MethodNotAllowed()

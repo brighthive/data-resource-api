@@ -91,7 +91,6 @@ class DataResourceManagerSync(DataManager):
 
         while True:
             run_fn()
-            # sleep_time = 10
             sleep_time = self.config.get_sleep_interval()
             self.logger.info(
                 f"Data Resource Manager Sleeping for {sleep_time} seconds..."

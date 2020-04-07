@@ -163,11 +163,6 @@ class Client:
             use_local_dirs=False, descriptors=self.schema_dicts
         )
         self.app = self.data_resource_manager.create_app()
-        # self.postgres = PostgreSQLContainer()
-        # try:
-        # self.postgres.start_container()
-        # except:
-        #     logger.exception('could not start database?')
 
         self.data_model_manager = DataModelManagerSync(
             use_local_dirs=False, descriptors=self.schema_dicts
@@ -201,16 +196,11 @@ class Client:
 
         if self.counter > self.counter_max:
             logger.info("Max fail reached; stopping postgres container")
-            # self.postgres.stop_container()
             raise UpgradeFail
 
     def clear_database(self):
         import contextlib
         from data_resource_api.db.base import Base, engine
-
-        # from sqlalchemy import MetaData
-
-        # meta = MetaData()
 
         with contextlib.closing(engine.connect()) as con:
             trans = con.begin()
@@ -225,7 +215,6 @@ class Client:
         Base.metadata.drop_all(engine)
         with engine.connect() as con:
             con.execute("DROP TABLE alembic_version")
-        # self.postgres.stop_container()
 
 
 def setup_client(descriptors: list):

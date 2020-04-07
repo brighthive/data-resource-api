@@ -1,8 +1,8 @@
-from data_resource_api.app.utils.descriptor import Descriptor
-from tests.schemas import (
-    frameworks_descriptor)
-from expects import expect, equal
+from tests.schemas import frameworks_descriptor
+
 import pytest
+from data_resource_api.app.utils.descriptor import Descriptor
+from expects import equal, expect
 
 
 @pytest.mark.unit
@@ -14,7 +14,6 @@ def test_load():
 @pytest.mark.unit
 @pytest.mark.skip
 def test_fail_on_bad_json():
-    # desc = Descriptor()
     pass
 
 
@@ -22,24 +21,21 @@ def test_fail_on_bad_json():
 def test_get_table_name():
     desc = Descriptor(frameworks_descriptor)
     table_name = desc.table_name
-    expect(table_name).to(
-        equal(frameworks_descriptor['datastore']['tablename']))
+    expect(table_name).to(equal(frameworks_descriptor["datastore"]["tablename"]))
 
 
 @pytest.mark.unit
 def test_get_table_schema():
     desc = Descriptor(frameworks_descriptor)
     table_schema = desc.table_schema
-    expect(table_schema).to(
-        equal(frameworks_descriptor['datastore']['schema']))
+    expect(table_schema).to(equal(frameworks_descriptor["datastore"]["schema"]))
 
 
 @pytest.mark.unit
 def test_get_api_schema():
     desc = Descriptor(frameworks_descriptor)
     api_schema = desc.api_schema
-    expect(api_schema).to(
-        equal(frameworks_descriptor['api']['methods'][0]))
+    expect(api_schema).to(equal(frameworks_descriptor["api"]["methods"][0]))
 
 
 @pytest.mark.unit

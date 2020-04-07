@@ -1,12 +1,14 @@
 import os
 import sys
 import time
-from data_resource_api.app.utils.descriptor import DescriptorsLoader
-from data_resource_api.db import Session, Checksum, Migrations
+
 from data_resource_api.app.utils.db_handler import DBHandler
+from data_resource_api.app.utils.descriptor import DescriptorsLoader
+from data_resource_api.db import Checksum, Migrations, Session
 from data_resource_api.logging import LogFactory
 
-logger = LogFactory.get_console_logger('backwards-compat')
+
+logger = LogFactory.get_console_logger("backwards-compat")
 
 # This will upgrade the DB of a 1.0.4 version (or earlier?) database
 # to be compatible with the 1.1.0 version.
@@ -69,6 +71,7 @@ def check_for_migrations_table():
 
     return False
 
+
 # Create the changes to DB
 def upgrade_checksum():
     session = Session()
@@ -79,7 +82,7 @@ def upgrade_checksum():
         session.execute(query)
         session.commit()
     except BaseException:
-        logger.exception('Failed to upgrade checksum')
+        logger.exception("Failed to upgrade checksum")
     finally:
         session.close()
 
@@ -96,7 +99,7 @@ def create_migrations():
         session.execute(query)
         session.commit()
     except BaseException:
-        logger.exception('Failed to create table migrations')
+        logger.exception("Failed to create table migrations")
     finally:
         session.close()
 
@@ -108,23 +111,26 @@ def push_descriptors():
     descriptors = DescriptorsLoader([SCHEMA_DIR], [])
     for desc in descriptors.iter_descriptors():
         try:
-            row = session.query(Checksum).filter(
-                Checksum.data_resource == desc.table_name
-            ).first()
+            row = (
+                session.query(Checksum)
+                .filter(Checksum.data_resource == desc.table_name)
+                .first()
+            )
 
             row.descriptor_json = desc.descriptor
             session.add(row)
             session.commit()
         except Exception:
-            logger.exception('Error pushing descriptors')
+            logger.exception("Error pushing descriptors")
             continue
         finally:
             session.close()
 
+
 def is_migrations_loaded():
     session = Session()
     result = session.query(Migrations).count()
-    logger.info(f'Found {result} rows in migrations table')
+    logger.info(f"Found {result} rows in migrations table")
     if result == 0:
         session.close()
         return False
@@ -133,21 +139,22 @@ def is_migrations_loaded():
 
 
 def push_migrations():
-    logger.info('Waiting 60s for migrations directory to load.......')
+    logger.info("Waiting 60s for migrations directory to load.......")
     time.sleep(60)
     migrations = [f for f in os.listdir(MIGRATION_DIR) if f.endswith(".py")]
-    logger.info(f'Found {len(migrations)} in {MIGRATION_DIR} directory')
+    logger.info(f"Found {len(migrations)} in {MIGRATION_DIR} directory")
     for file_name in migrations:
         try:
-            if 'create_table_checksum_and_logs' in file_name:
+            if "create_table_checksum_and_logs" in file_name:
                 continue
 
             full_file_path = os.path.join(MIGRATION_DIR, file_name)
-            with open(full_file_path, 'rb') as file_:
+            with open(full_file_path, "rb") as file_:
                 DBHandler.save_migration(file_name, file_.read())
         except Exception as e:
-            logger.exception(f'Error pushing migration files {e}')
+            logger.exception(f"Error pushing migration files {e}")
             continue
+
 
 def main():
     if not check_for_checksum_column():

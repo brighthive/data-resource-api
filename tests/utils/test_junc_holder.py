@@ -1,6 +1,6 @@
-from data_resource_api.app.utils.junc_holder import JuncHolder
-from expects import expect, be_an, raise_error, have_property, equal, be_empty, be
 import pytest
+from data_resource_api.app.utils.junc_holder import JuncHolder
+from expects import be, be_an, be_empty, equal, expect, have_property, raise_error
 
 
 @pytest.mark.unit

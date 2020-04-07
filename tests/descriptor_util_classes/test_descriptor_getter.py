@@ -1,13 +1,14 @@
-from data_resource_api.app.utils.descriptor import DescriptorsLoader
-from tests.schemas import (
-    frameworks_descriptor)
-from expects import expect, equal
+from tests.schemas import frameworks_descriptor
+
 import pytest
+from data_resource_api.app.utils.descriptor import DescriptorsLoader
+from expects import equal, expect
 
-test_descriptor_dir = './tests/io_test_files/'
+
+test_descriptor_dir = "./tests/io_test_files/"
 
 
-class TestDescriptorGetterWithNothing():
+class TestDescriptorGetterWithNothing:
     @pytest.mark.unit
     def test_load_with_nothing(self):
         _ = DescriptorsLoader()
@@ -21,7 +22,7 @@ class TestDescriptorGetterWithNothing():
             next(descriptors)
 
 
-class TestDescriptorGetterWithDir():
+class TestDescriptorGetterWithDir:
     @pytest.mark.unit
     def test_load_with_dir(self):
         _ = DescriptorsLoader([test_descriptor_dir])
@@ -39,7 +40,7 @@ class TestDescriptorGetterWithDir():
             next(descriptors)
 
 
-class TestDescriptorGetterWithCustom():
+class TestDescriptorGetterWithCustom:
     @pytest.mark.unit
     def test_load_with_custom(self):
         _ = DescriptorsLoader([], [frameworks_descriptor])
@@ -52,18 +53,14 @@ class TestDescriptorGetterWithCustom():
         next(descriptors)
 
 
-class TestDescriptorGetterWithDirAndCustom():
+class TestDescriptorGetterWithDirAndCustom:
     @pytest.mark.unit
     def test_load_with_dir_and_custom(self):
-        _ = DescriptorsLoader(
-            [test_descriptor_dir],
-            [frameworks_descriptor])
+        _ = DescriptorsLoader([test_descriptor_dir], [frameworks_descriptor])
 
     @pytest.mark.unit
     def test_yields_descriptors_from_dir_and_custom(self):
-        desc = DescriptorsLoader(
-            [test_descriptor_dir],
-            [frameworks_descriptor])
+        desc = DescriptorsLoader([test_descriptor_dir], [frameworks_descriptor])
         descriptors = desc.iter_descriptors()
 
         next(descriptors)

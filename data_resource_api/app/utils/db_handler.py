@@ -1,20 +1,20 @@
 import os
-from data_resource_api.db import Session, Checksum, Migrations
-from data_resource_api.logging import LogFactory
+
 from alembic import command
+from data_resource_api.db import Checksum, Migrations, Session
+from data_resource_api.logging import LogFactory
 
-logger = LogFactory.get_console_logger('db-handler')
+
+logger = LogFactory.get_console_logger("db-handler")
 
 
-class DBHandler(object):
+class DBHandler:
     def __init__(self, config):
         self.config = config
 
     def add_model_checksum(
-            self,
-            table_name: str,
-            model_checksum: str = '0',
-            descriptor_json: dict = {}):
+        self, table_name: str, model_checksum: str = "0", descriptor_json: dict = {}
+    ):
         """Adds a new checksum for a data model.
 
         Args:
@@ -30,11 +30,13 @@ class DBHandler(object):
             session.add(checksum)
             session.commit()
         except Exception:
-            logger.exception('Error adding checksum')
+            logger.exception("Error adding checksum")
         finally:
             session.close()
 
-    def update_model_checksum(self, table_name: str, model_checksum: str, descriptor_json: dict = {}):
+    def update_model_checksum(
+        self, table_name: str, model_checksum: str, descriptor_json: dict = {}
+    ):
         """Updates a checksum for a data model.
 
         Args:
@@ -43,19 +45,21 @@ class DBHandler(object):
 
         Returns:
             bool: True if checksum was updated. False otherwise.
-
         """
         session = Session()
         updated = False
         try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
+            checksum = (
+                session.query(Checksum)
+                .filter(Checksum.data_resource == table_name)
+                .first()
+            )
             checksum.model_checksum = model_checksum
             checksum.descriptor_json = descriptor_json
             session.commit()
             updated = True
         except Exception:
-            logger.exception('Error updating checksum')
+            logger.exception("Error updating checksum")
         finally:
             session.close()
         return updated
@@ -68,22 +72,23 @@ class DBHandler(object):
 
         Returns:
             object: The checksum object if it exists, None otherwise.
-
         """
         session = Session()
         checksum = None
         try:
-            checksum = session.query(Checksum).filter(
-                Checksum.data_resource == table_name).first()
+            checksum = (
+                session.query(Checksum)
+                .filter(Checksum.data_resource == table_name)
+                .first()
+            )
         except Exception:
-            logger.exception('Error retrieving checksum')
+            logger.exception("Error retrieving checksum")
         finally:
             session.close()
         return checksum
 
     def get_stored_descriptors(self) -> list:
-        """
-        Gets stored json models from database.
+        """Gets stored json models from database.
 
         Returns:
             list: List of JSON dictionaries
@@ -98,12 +103,13 @@ class DBHandler(object):
                         continue
                 except Exception:
                     logger.exception(
-                        "Checksum table or row does not have a value for the descriptor_json column.")
+                        "Checksum table or row does not have a value for the descriptor_json column."
+                    )
 
                 descriptor_list.append(_row.descriptor_json)
 
         except Exception:
-            logger.info('Error retrieving stored models')
+            logger.info("Error retrieving stored models")
         finally:
             session.close()
 
@@ -117,7 +123,7 @@ class DBHandler(object):
             for _row in query.all():
                 checksums.append((_row.data_resource, _row.model_checksum))
         except Exception:
-            logger.exception('Error retrieving stored models')
+            logger.exception("Error retrieving stored models")
         finally:
             session.close()
 
@@ -127,34 +133,32 @@ class DBHandler(object):
         """Migrate up to head.
 
         This method runs  the Alembic upgrade command programatically.
-
         """
         alembic_config, migrations_dir = self.config.get_alembic_config()
         if migrations_dir is not None:
-            command.upgrade(config=alembic_config, revision='head')
+            command.upgrade(config=alembic_config, revision="head")
         else:
-            logger.info('No migrations to run...')
+            logger.info("No migrations to run...")
 
     def revision(self, table_name: str, create_table: bool = True):
         """Create a new migration.
 
         This method runs the Alembic revision command programmatically.
-
         """
         alembic_config, migrations_dir = self.config.get_alembic_config()
         if migrations_dir is not None:
             if create_table:
-                message = 'Create table {}'.format(table_name)
+                message = "Create table {}".format(table_name)
             else:
-                message = 'Update table {}'.format(table_name)
-            command.revision(config=alembic_config,
-                             message=message, autogenerate=True)
+                message = "Update table {}".format(table_name)
+            command.revision(config=alembic_config, message=message, autogenerate=True)
         else:
-            logger.info('No migrations to run...')
+            logger.info("No migrations to run...")
 
     @staticmethod
     def save_migration(file_name: str, file_blob) -> None:
-        """ This function is called by alembic as a post write hook.
+        """This function is called by alembic as a post write hook.
+
         It will take a migration file and save it to the database.
         """
         logger.info("Trying to save migration files to DB...")
@@ -163,26 +167,28 @@ class DBHandler(object):
             new_migration = Migrations()
             new_migration.file_name = file_name
             new_migration.file_blob = file_blob
-            result = session.query(Migrations).filter(Migrations.file_name == file_name).count()
+            result = (
+                session.query(Migrations)
+                .filter(Migrations.file_name == file_name)
+                .count()
+            )
             if result == 0:
                 session.add(new_migration)
                 session.commit()
         except Exception:
-            logger.exception('Failed to save migration files to DB.')
+            logger.exception("Failed to save migration files to DB.")
         finally:
             session.close()
 
     def get_migrations_from_db_and_save_locally(self) -> None:
-        logger.info('Restoring migration files from DB...')
+        logger.info("Restoring migration files from DB...")
         session = Session()
         try:
             query = session.query(Migrations)
             for _row in query.all():
-                self.save_migrations_to_local_file(
-                    _row.file_name,
-                    _row.file_blob)
+                self.save_migrations_to_local_file(_row.file_name, _row.file_blob)
         except Exception:
-            logger.info('Failed to restore migration files from DB.')
+            logger.info("Failed to restore migration files from DB.")
         finally:
             session.close()
 
@@ -191,5 +197,5 @@ class DBHandler(object):
         _, migration_file_dir = self.config.get_alembic_config()
         full_migration_file_path = os.path.join(migration_file_dir, file_name)
 
-        with open(full_migration_file_path, 'wb') as file_:
+        with open(full_migration_file_path, "wb") as file_:
             file_.write(file_blob)

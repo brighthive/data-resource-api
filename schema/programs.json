@@ -1,279 +1,311 @@
 {
   "api": {
-    "resource": "programs",
     "methods": [
       {
-        "get": {
-          "enabled": true,
-          "secured": false,
-          "grants": ["get:users"]
-        },
-        "post": {
-          "enabled": true,
-          "secured": false,
-          "grants": ["get:users"]
-        },
-        "put": {
-          "enabled": true,
-          "secured": true,
-          "grants": ["get:users"]
-        },
-        "patch": {
-          "enabled": true,
-          "secured": true,
-          "grants": ["get:users"]
-        },
-        "delete": {
-          "enabled": true,
-          "secured": true,
-          "grants": ["get:users"]
-        },
         "custom": [
           {
-            "resource": "/programs/credentials",
             "methods": [
               {
+                "delete": {
+                  "enabled": true,
+                  "grants": [],
+                  "secured": false
+                },
                 "get": {
                   "enabled": true,
-                  "secured": false,
-                  "grants": ["get:users"]
-                },
-                "put": {
-                  "enabled": true,
-                  "secured": false,
-                  "grants": []
+                  "grants": [
+                    "get:users"
+                  ],
+                  "secured": false
                 },
                 "patch": {
                   "enabled": true,
-                  "secured": false,
-                  "grants": []
+                  "grants": [],
+                  "secured": false
                 },
-                "delete": {
+                "put": {
                   "enabled": true,
-                  "secured": false,
-                  "grants": []
+                  "grants": [],
+                  "secured": false
                 }
               }
-            ]
+            ],
+            "resource": "/programs/credentials"
           }
-        ]
+        ],
+        "delete": {
+          "enabled": true,
+          "grants": [
+            "get:users"
+          ],
+          "secured": true
+        },
+        "get": {
+          "enabled": true,
+          "grants": [
+            "get:users"
+          ],
+          "secured": false
+        },
+        "patch": {
+          "enabled": true,
+          "grants": [
+            "get:users"
+          ],
+          "secured": true
+        },
+        "post": {
+          "enabled": true,
+          "grants": [
+            "get:users"
+          ],
+          "secured": false
+        },
+        "put": {
+          "enabled": true,
+          "grants": [
+            "get:users"
+          ],
+          "secured": true
+        }
       }
-    ]
+    ],
+    "resource": "programs"
   },
   "datastore": {
-    "tablename": "programs",
     "restricted_fields": [],
     "schema": {
       "fields": [
         {
-          "name": "id",
-          "title": "Program ID",
-          "type": "integer",
           "description": "Program's unique identifier",
-          "required": false
+          "name": "id",
+          "required": false,
+          "title": "Program ID",
+          "type": "integer"
         },
         {
-          "name": "program_name",
-          "title": "Program Name",
-          "type": "string",
           "description": "Program's name.",
-          "required": true
+          "name": "program_name",
+          "required": true,
+          "title": "Program Name",
+          "type": "string"
         },
         {
-          "name": "program_code",
-          "title": "Program Code",
-          "type": "integer",
           "description": "Program's Code",
-          "required": true
+          "name": "program_code",
+          "required": true,
+          "title": "Program Code",
+          "type": "integer"
         },
         {
-          "name": "program_description",
-          "title": "Program Description",
-          "type": "string",
           "description": "Program's Description",
-          "required": true
+          "name": "program_description",
+          "required": true,
+          "title": "Program Description",
+          "type": "string"
         },
         {
-          "name": "program_status",
-          "title": "Program Status",
-          "type": "string",
           "description": "Program's Status",
-          "required": true
+          "name": "program_status",
+          "required": true,
+          "title": "Program Status",
+          "type": "string"
         },
         {
-          "name": "program_fees",
-          "title": "Program Fees",
-          "type": "number",
           "description": "Program's tuition fees",
-          "required": true
+          "name": "program_fees",
+          "required": true,
+          "title": "Program Fees",
+          "type": "number"
         },
         {
-          "name": "eligibility_criteria",
-          "title": "Eligibility Criteria",
-          "type": "string",
           "description": "Program's eligibility criteria",
-          "required": true
+          "name": "eligibility_criteria",
+          "required": true,
+          "title": "Eligibility Criteria",
+          "type": "string"
         },
         {
-          "name": "program_url",
-          "title": "Program URL",
-          "type": "string",
-          "format": "uri",
           "description": "Program's webpage url",
-          "required": true
+          "format": "uri",
+          "name": "program_url",
+          "required": true,
+          "title": "Program URL",
+          "type": "string"
         },
         {
-          "name": "program_contact_phone",
-          "title": "Program Contact Phone",
-          "type": "string",
           "description": "Program's contact telephone",
-          "required": false
+          "name": "program_contact_phone",
+          "required": false,
+          "title": "Program Contact Phone",
+          "type": "string"
         },
         {
-          "name": "program_contact_email",
-          "title": "Program Contact Email",
-          "type": "string",
-          "format": "email",
           "description": "Program's contact email address",
-          "required": false
+          "format": "email",
+          "name": "program_contact_email",
+          "required": false,
+          "title": "Program Contact Email",
+          "type": "string"
         },
         {
-          "name": "languages",
-          "title": "Languages",
-          "type": "string",
           "description": "Languages the program is offered in",
-          "required": false
+          "name": "languages",
+          "required": false,
+          "title": "Languages",
+          "type": "string"
         },
         {
-          "name": "current_intake_capacity",
-          "title": "Current Intake Capacity",
-          "type": "integer",
           "description": "Current intake capacity of the program",
-          "required": false
+          "name": "current_intake_capacity",
+          "required": false,
+          "title": "Current Intake Capacity",
+          "type": "integer"
         },
         {
-          "name": "program_offering_model",
-          "title": "Program Offering Model",
-          "type": "integer",
           "description": "The program's current offering model",
-          "required": false
+          "name": "program_offering_model",
+          "required": false,
+          "title": "Program Offering Model",
+          "type": "integer"
         },
         {
-          "name": "program_length_hours",
-          "title": "Program Length (Hours)",
-          "type": "number",
           "description": "Length of the program (in hours)",
-          "required": false
+          "name": "program_length_hours",
+          "required": false,
+          "title": "Program Length (Hours)",
+          "type": "number"
         },
         {
-          "name": "program_length_weeks",
-          "title": "Program Length (Weeks)",
-          "type": "number",
           "description": "Length of the program (in weeks)",
-          "required": false
+          "name": "program_length_weeks",
+          "required": false,
+          "title": "Program Length (Weeks)",
+          "type": "number"
         },
         {
-          "name": "program_soc",
-          "title": "Program SOC",
-          "type": "integer",
           "description": "Program SOC",
-          "required": false
+          "name": "program_soc",
+          "required": false,
+          "title": "Program SOC",
+          "type": "integer"
         },
         {
-          "name": "funding_sources",
-          "title": "Funding Source",
-          "type": "string",
           "description": "The program's funding source",
-          "required": false
+          "name": "funding_sources",
+          "required": false,
+          "title": "Funding Source",
+          "type": "string"
         },
         {
-          "name": "on_etpl",
-          "title": "On ETPL",
-          "type": "integer",
           "description": "Whether or not the student is on ETPL",
-          "required": false
+          "name": "on_etpl",
+          "required": false,
+          "title": "On ETPL",
+          "type": "integer"
         },
         {
-          "name": "cost_of_books_and_supplies",
-          "title": "Cost of Books and Supplies",
-          "type": "number",
           "description": "Cost of Books and Supplies",
-          "required": false
+          "name": "cost_of_books_and_supplies",
+          "required": false,
+          "title": "Cost of Books and Supplies",
+          "type": "number"
         },
         {
+          "description": "Foreign key for provider",
           "name": "provider_id",
+          "required": false,
           "title": "Provider ID",
-          "type": "integer",
-          "description": "Foreign key for provider",
-          "required": false
+          "type": "integer"
         },
         {
+          "description": "Foreign key for provider",
           "name": "location_id",
+          "required": false,
           "title": "Provider ID",
-          "type": "integer",
-          "description": "Foreign key for provider",
-          "required": false
+          "type": "integer"
         },
         {
+          "description": "Foreign key for provider",
           "name": "credential_earned",
+          "required": false,
           "title": "Provider ID",
-          "type": "integer",
-          "description": "Foreign key for provider",
-          "required": false
+          "type": "integer"
         },
         {
+          "description": "Foreign key for provider",
           "name": "potential_outcome_id",
+          "required": false,
           "title": "Provider ID",
-          "type": "integer",
-          "description": "Foreign key for provider",
-          "required": false
+          "type": "integer"
         },
         {
-          "name": "prerequisite_id",
-          "title": "Provider ID",
-          "type": "integer",
           "description": "Foreign key for provider",
-          "required": false
+          "name": "prerequisite_id",
+          "required": false,
+          "title": "Provider ID",
+          "type": "integer"
         }
       ],
-      "primaryKey": "id",
       "foreignKeys": [
         {
-          "fields": ["provider_id"],
+          "fields": [
+            "provider_id"
+          ],
           "reference": {
-            "resource": "providers",
-            "fields": ["id"]
+            "fields": [
+              "id"
+            ],
+            "resource": "providers"
           }
         },
         {
-          "fields": ["location_id"],
+          "fields": [
+            "location_id"
+          ],
           "reference": {
-            "resource": "locations",
-            "fields": ["id"]
+            "fields": [
+              "id"
+            ],
+            "resource": "locations"
           }
         },
         {
-          "fields": ["credential_earned"],
+          "fields": [
+            "credential_earned"
+          ],
           "reference": {
-            "resource": "credentials",
-            "fields": ["id"]
+            "fields": [
+              "id"
+            ],
+            "resource": "credentials"
           }
         },
         {
-          "fields": ["potential_outcome_id"],
+          "fields": [
+            "potential_outcome_id"
+          ],
           "reference": {
-            "resource": "program_potential_outcomes",
-            "fields": ["id"]
+            "fields": [
+              "id"
+            ],
+            "resource": "program_potential_outcomes"
           }
         },
         {
-          "fields": ["prerequisite_id"],
+          "fields": [
+            "prerequisite_id"
+          ],
           "reference": {
-            "resource": "program_prerequisites",
-            "fields": ["id"]
+            "fields": [
+              "id"
+            ],
+            "resource": "program_prerequisites"
           }
         }
-      ]
-    }
+      ],
+      "primaryKey": "id"
+    },
+    "tablename": "programs"
   }
 }

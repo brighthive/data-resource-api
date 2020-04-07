@@ -1,2 +1,2 @@
-from data_resource_api.logging.log_factory import LogFactory
 from data_resource_api.logging.database_handler import DatabaseHandler
+from data_resource_api.logging.log_factory import LogFactory

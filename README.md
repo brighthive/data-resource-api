@@ -1,16 +1,15 @@
 # Data Resource API
 
 ![Maintenance](https://img.shields.io/maintenance/yes/2020)
-
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/brighthive/data-resource-api)
 ![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/brighthive/data-resource-api/v1.1.1)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/brighthive/data-resource-api)
 
 ![GitHub Pipenv locked Python version](https://img.shields.io/github/pipenv/locked/python-version/brighthive/data-resource-api)
-
 ![CircleCI](https://img.shields.io/circleci/build/github/brighthive/data-resource-api)
-![Coveralls github](https://img.shields.io/coveralls/github/brighthive/data-resource-api)
 ![GitHub](https://img.shields.io/github/license/brighthive/data-resource-api)
+
+<!-- ![Coveralls github](https://img.shields.io/coveralls/github/brighthive/data-resource-api) -->
 
 ![Twitter Follow](https://img.shields.io/twitter/follow/brighthiveio?style=social)
 

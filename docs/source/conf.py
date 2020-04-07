@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = "data-resource-api"
-copyright = "2019, Gregory Mundy"
-author = "Gregory Mundy"
+copyright = "2020, BrightHive"
+author = "Gregory Mundy, Logan Ripplinger"
 
 # The full version, including alpha/beta/rc tags
 release = "1.0.0"

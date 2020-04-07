@@ -30,7 +30,6 @@ docker = "*"
 flake8 = "*"
 pytest-mock = "*"
 pre-commit = "*"
-bandit = "*"
 
 [requires]
 python_version = "3.7"

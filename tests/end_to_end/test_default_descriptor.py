@@ -63,8 +63,7 @@ def test_pagination(regular_client):
     expect(len(body["credentials"])).not_to(equal(0))
 
     # do get with pagination
-    body = ApiHelper.get_credential(regular_client, None, "?offset=0&limit=20")
-
+    _ = ApiHelper.get_credential(regular_client, None, "?offset=0&limit=20")
     # add items till we need the pagination
     for _ in range(100):
         post_body = {"credential_name": "testtesttest"}

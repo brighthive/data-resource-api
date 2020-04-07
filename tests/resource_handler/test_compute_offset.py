@@ -8,21 +8,6 @@ def test_compute_offset():
     handler = ResourceHandler()
 
     expect(handler.compute_offset(1, 20)).to(equal(0))
-    # expect(handler.compute_offset(53, 19)).to(equal(0))
-    # expect(handler.compute_offset(0, 20)).to(equal(0))
-
-
-# def test_build_links(self):
-#     handler = ResourceHandler()
-
-#     items = [
-#         handler.build_links('test', 0, 20, 5),
-#         handler.build_links('test', 1, 20, 55),
-#         handler.build_links('test', 1, -20, 55)
-#     ]
-
-#     for item in items:
-#         print(json.dumps(item, indent=4))
 
 
 @pytest.mark.unit

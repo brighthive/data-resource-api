@@ -17,8 +17,6 @@ def run_query(client, key, value, expected_value=None):
     resp_data = ApiHelper.everything_get(ROUTE, client, id_)
     resp = json.loads(resp_data)
 
-    # response = json.dumps(resp, sort_keys=True)
-    # expected_output = json.dumps(expected_string, sort_keys=True)
     expect(resp[key]).to(equal(expected_value))
     assert type(resp[key]) == type(expected_value)
 

@@ -299,9 +299,8 @@ class ResourceHandler:
         for field in table_schema["fields"]:
             accepted_fields.append(field["name"])
 
-            if field["required"]:
-                if not field["name"] in request_obj.keys():
-                    errors.append(f"Required field '{field['name']}' is missing.")
+            if field["required"] and not field["name"] in request_obj.keys():
+                errors.append(f"Required field '{field['name']}' is missing.")
 
         valid_fields = []
         many_query = []

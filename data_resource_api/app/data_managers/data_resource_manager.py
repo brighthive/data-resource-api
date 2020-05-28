@@ -14,9 +14,10 @@ from data_resource_api.app.utils.json_converter import safe_json_dumps
 from data_resource_api.db import Base, Checksum, Session
 from data_resource_api.factories import DataResourceFactory
 from data_resource_api.utils import exponential_backoff
-from flask import Flask, make_response
+from flask import Flask, make_response, request
 from flask_restful import Api, Resource
-
+from datetime import datetime as dt
+import json
 
 class DataResource:
     """A Data Resource.
@@ -160,6 +161,22 @@ class DataResourceManagerSync(DataManager):
             resp = make_response(safe_json_dumps(data), code)
             resp.headers.extend(headers or {})
             return resp
+
+        @self.app.after_request
+        def after_request(response):
+            """ Logging every request. """
+            print(json.dumps({
+                "remote_addr": request.remote_addr,
+                "request_time": str(dt.utcnow()),
+                "method": request.method,
+                "path": request.path,
+                "scheme": request.scheme.upper(),
+                "statusCode": response.status_code,
+                "status": response.status,
+                "content_length": response.content_length,
+                "user_agent": str(request.user_agent)
+            }),  flush=True)
+            return response
 
         return self.app
 

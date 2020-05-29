@@ -36,7 +36,7 @@ def test_manually_request_configuration():
     )
 
     # good configuration
-    configuration = ConfigurationFactory.get_config(config_type="TEST")
+    configuration = ConfigurationFactory.get_config(config_type="TESTING")
     expect(configuration).to(be_an(object))
     expect(configuration).to(have_property("POSTGRES_PORT"))
     expect(configuration).to(have_property("POSTGRES_HOSTNAME"))

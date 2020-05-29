@@ -44,7 +44,7 @@ class PostgreSQLContainer:
     """
 
     def __init__(self):
-        self.config = ConfigurationFactory.get_config("TEST")
+        self.config = ConfigurationFactory.get_config("TESTING")
         self.container = None
         self.docker_client = docker.from_env()
         self.db_environment = [

@@ -18,6 +18,8 @@ pip = "*"
 gevent = "*"
 pytest-env = "*"
 watchdog = "*"
+elastic-apm = "*"
+blinker = "*"
 
 [dev-packages]
 pytest = "*"

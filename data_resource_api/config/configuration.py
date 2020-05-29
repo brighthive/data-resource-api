@@ -82,7 +82,7 @@ class TestConfig(Config):
     def __init__(self):
         super().__init__()
 
-    os.environ["FLASK_ENV"] = "testing"
+    os.environ["FLASK_ENV"] = "TESTING"
     POSTGRES_PORT = 5433
     CONTAINER_NAME = "postgres-test"
     IMAGE_NAME = "postgres"
@@ -118,6 +118,7 @@ class SandboxConfig(Config):
         super().__init__()
 
     # Database Settings
+    os.environ["FLASK_ENV"] = "SANDBOX"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PROPAGATE_EXCEPTIONS = True
     POSTGRES_USER = os.getenv("POSTGRES_USER")
@@ -140,6 +141,8 @@ class ProductionConfig(Config):
     def __init__(self):
         super().__init__()
 
+    os.environ["FLASK_ENV"] = "PRODUCTION"
+
 
 class ConfigurationFactory:
     """A factory for handling configuration object creation."""
@@ -160,7 +163,7 @@ class ConfigurationFactory:
         """
 
         config_type = config_type.upper()
-        if config_type == "TEST":
+        if config_type == "TESTING":
             return TestConfig()
         elif config_type == "INTEGRATION":
             return IntegrationTestConfig()
@@ -186,5 +189,5 @@ class ConfigurationFactory:
         Returns:
             Config: Configuration object based on the configuration environment supplied in the `APP_ENV` environment variable.
         """
-        app_env = os.getenv("APP_ENV", "TEST")
+        app_env = os.getenv("APP_ENV", "TESTING")
         return ConfigurationFactory.get_config(app_env)

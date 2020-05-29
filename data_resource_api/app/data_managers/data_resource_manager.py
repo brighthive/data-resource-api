@@ -16,8 +16,10 @@ from data_resource_api.factories import DataResourceFactory
 from data_resource_api.utils import exponential_backoff
 from flask import Flask, make_response, request
 from flask_restful import Api, Resource
+from elasticapm.contrib.flask import ElasticAPM
 from datetime import datetime as dt
 import json
+import os
 
 class DataResource:
     """A Data Resource.
@@ -162,21 +164,34 @@ class DataResourceManagerSync(DataManager):
             resp.headers.extend(headers or {})
             return resp
 
+        is_testing = os.environ["APP_ENV"] == 'TESTING'
+
         @self.app.after_request
         def after_request(response):
             """ Logging every request. """
-            print(json.dumps({
-                "remote_addr": request.remote_addr,
-                "request_time": str(dt.utcnow()),
-                "method": request.method,
-                "path": request.path,
-                "scheme": request.scheme.upper(),
-                "statusCode": response.status_code,
-                "status": response.status,
-                "content_length": response.content_length,
-                "user_agent": str(request.user_agent)
-            }),  flush=True)
+            if is_testing != True:
+                print(json.dumps({
+                    "remote_addr": request.remote_addr,
+                    "request_time": str(dt.utcnow()),
+                    "method": request.method,
+                    "path": request.path,
+                    "scheme": request.scheme.upper(),
+                    "statusCode": response.status_code,
+                    "status": response.status,
+                    "content_length": response.content_length,
+                    "user_agent": str(request.user_agent)
+                }),  flush=True)
             return response
+
+        if is_testing != True:
+            apm_enabled = bool(int(os.getenv('APM_ENABLED', '0')))
+            if apm_enabled == True:
+                self.app.config['ELASTIC_APM'] = {
+                    'SERVICE_NAME': 'data-resource-api',
+                    'SECRET_TOKEN': os.getenv('APM_TOKEN', ''),
+                    'SERVER_URL': os.getenv('APM_HOSTNAME', ''),
+                }
+                apm = ElasticAPM(self.app)
 
         return self.app
 

@@ -9,6 +9,9 @@ services:
       - POSTGRES_DATABASE=data_resource_dev
       - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
+      - APM_ENABLED=0
+      - APM_TOKEN=
+      - APM_HOSTNAME=
     command: "--data-model-manager"
     volumes:
       - ./schema:/data-resource/schema
@@ -23,6 +26,9 @@ services:
       - POSTGRES_DATABASE=data_resource_dev
       - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
+      - APM_ENABLED=0
+      - APM_TOKEN=
+      - APM_HOSTNAME=
     volumes:
       - ./schema:/data-resource/schema
   postgres:

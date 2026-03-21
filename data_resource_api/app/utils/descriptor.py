@@ -80,10 +80,12 @@ class DescriptorFromFile:
                 try:
                     descriptor_dict = json.load(fh)
                 except ValueError:
-                    logger.info(
+                    raise RuntimeError(
                         f"Failed to load JSON file. JSON is probably invalid in file '{os.path.join(schema_dir, file_name)}'"
                     )
 
+        except RuntimeError:
+            raise
         except Exception:
             raise RuntimeError(f"Error opening schema {file_name}")
 
